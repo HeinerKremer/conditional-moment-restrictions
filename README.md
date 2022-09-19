@@ -13,12 +13,12 @@ pip install -e .
 ```
 
 ## Using KEL
-KEL estimators can be trained following the below syntax. The code can also be found in the notebook [example.ipynb](https://github.com/HeinerKremer/Functional-GEL/blob/main/example.ipynb).
+KEL estimators can be trained following the below syntax. The code can also be found in the notebook [example.ipynb](https://github.com/HeinerKremer/Kernel-EL/blob/main/example.ipynb).
 
 ```python
 import torch
 import numpy as np
-from kel.estimation import fgel_estimation
+from kel.estimation import estimation
 
 
 # Generate some data
@@ -50,7 +50,7 @@ model = torch.nn.Sequential(
 trained_model, stats = estimation(model=model,  # Use any PyTorch model
                                   train_data=train_data,    # Format {'t': t, 'y': y, 'z': z}
                                   moment_function=moment_function,  # moment_function(model_eval, y) -> (n_sample, dim_y)
-                                  estimation_method='KernelFGEL',   # Method in ['OLS', 'GMM', 'GEL', 'KernelEL', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural', 'KernelFGEL', 'NeuralFGEL']
+                                  estimation_method='KernelELNeural',   # Method in ['OLS', 'GMM', 'GEL', 'KernelEL', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural', 'KernelFGEL', 'NeuralFGEL']
                                   estimator_kwargs=None,    # Non-default arguments for estimators (default at `kel.default_config.py`)
                                   hyperparams=None,     # Non-default hyperparams for estimators as {name: [val1, ..]}
                                   validation_data=None,     # Format {'t': t, 'y': y, 'z': z}
@@ -58,7 +58,13 @@ trained_model, stats = estimation(model=model,  # Use any PyTorch model
                                   verbose=True)
 # Make prediction
 y_pred = trained_model(torch.Tensor(test_data['t']))
+```
 
+## Experiments and reproducibility
+To efficiently run experiments with parallel processing refer to [run_experiments.py](https://github.com/HeinerKremer/Kernel-EL/blob/main/run_experiment.py).
+As an example you can run:
+```python
+python run_experiment.py --experiment heteroskedastic --n_train 256 --method KernelELNeural --rollouts 10
 ```
 
 
