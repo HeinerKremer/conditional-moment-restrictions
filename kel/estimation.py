@@ -165,47 +165,6 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
                               'best_index': int(best_val)}
 
 
-def fgel_estimation(model, train_data, moment_function, version='kernel', divergence=None, reg_param=None,
-                    validation_data=None, val_loss_func=None, verbose=True):
-    if version == 'kernel':
-        method_name = 'KernelFGEL'
-    elif version == 'neural':
-        method_name = 'NeuralFGEL'
-    else:
-        raise NotImplementedError('Invalid `version` specified. Use either `kernel` or `neural`.')
-
-    estimator_kwargs = methods[method_name]['estimator_kwargs']
-    hyperparams = methods[method_name]['hyperparams']
-
-    if divergence is not None:
-        hyperparams.update({'divergence': divergence})
-
-    if reg_param is not None:
-        hyperparams.update({'reg_param': reg_param})
-
-    trained_model, train_statistics = estimation(model=model,
-                                                 train_data=train_data,
-                                                 moment_function=moment_function,
-                                                 estimation_method=method_name,
-                                                 estimator_kwargs=estimator_kwargs,
-                                                 hyperparams=hyperparams,
-                                                 validation_data=validation_data,
-                                                 val_loss_func=val_loss_func,
-                                                 verbose=verbose)
-    return trained_model, train_statistics
-
-
-def fgel_iv_estimation(model, train_data, version='kernel', divergence=None, reg_param=None,
-                       validation_data=None, val_loss_func=None, verbose=True):
-
-    def moment_function(model_evaluation, y):
-        return model_evaluation - y
-
-    return fgel_estimation(model=model, train_data=train_data, moment_function=moment_function,
-                           version=version, divergence=divergence, reg_param=reg_param,
-                           validation_data=validation_data, val_loss_func=val_loss_func, verbose=verbose)
-
-
 class ModelWrapper(nn.Module):
     def __init__(self, model, moment_function, dim_psi, dim_z):
         nn.Module.__init__(self)
