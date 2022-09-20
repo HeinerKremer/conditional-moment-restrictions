@@ -20,7 +20,7 @@ experiments = [
      ),
     ('poisson', {'n_train': experiment_setups['poisson']['n_train'],
                     'method': experiment_setups['poisson']["methods"],
-                    'rollouts': [20],}
+                    'rollouts': [experiment_setups['poisson']['rollouts']],}
      ),
 ]
 

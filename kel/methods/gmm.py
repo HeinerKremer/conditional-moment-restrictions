@@ -6,8 +6,8 @@ from kel.methods.abstract_estimation_method import AbstractEstimationMethod
 
 
 class GMM(AbstractEstimationMethod):
-    def __init__(self, model, alpha, num_iter=2, verbose=False):
-        AbstractEstimationMethod.__init__(self, model=model)
+    def __init__(self, model, alpha, num_iter=2, verbose=False, **kwargs):
+        super().__init__(model=model, **kwargs)
         self.alpha = alpha
         self.num_iter = num_iter
         self.verbose = verbose
@@ -19,7 +19,6 @@ class GMM(AbstractEstimationMethod):
                 self._try_fit_internal(x, z, x_val, z_val, alpha)
                 did_succeed = self.model.is_finite()
             except:
-                # print(self.model.get_parameters())
                 did_succeed = False
 
             if did_succeed or alpha > 10:
@@ -52,20 +51,15 @@ class GMM(AbstractEstimationMethod):
     def _get_inverse_covariance_matrix(self, x_tensor, alpha):
         n = x_tensor[0].shape[0]
         psi = self.model.psi(x_tensor).detach().cpu().numpy()
-        print(psi.shape)
         q = (psi.T  @ psi) / n  # dim_psi x dim_psi matrix
-        print(q)
         l = scipy.sparse.identity(n=self.dim_psi)
         q += alpha * l
-        print(q, l)#, np.linalg.solve(q, l))
         try:
-            print(np.linalg.solve(q, l))
             return np.linalg.solve(q, l)
-        except:
-            print(np.linalg.lstsq(q, l, rcond=None)[0])
+        except np.linalg.LinAlgError:
             return np.linalg.lstsq(q, l, rcond=None)[0]
 
 
 if __name__ == "__main__":
     from experiments.tests import test_mr_estimator
-    test_mr_estimator(estimation_method='GMM')
+    test_mr_estimator(estimation_method='GMM', n_train=2000)
