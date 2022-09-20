@@ -37,12 +37,12 @@ max_parallel_rollouts = None
 def get_run_path():
     path = os.path.realpath(__file__)
     path, file = os.path.split(path)
-    while file != 'Functional-GEL' and path != '/':
+    while file != 'Kernel-EL' and path != '/':
         path, file = os.path.split(path)
-    return path + '/Functional-GEL'
+    return path + '/Kernel-EL'
 
 path = get_run_path()
-venvpath = path + '/fgel_venv'
+venvpath = path + '/kel_venv'
 
 # ----------------
 
