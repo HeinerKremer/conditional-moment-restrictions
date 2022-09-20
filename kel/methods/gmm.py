@@ -67,5 +67,5 @@ class GMM(AbstractEstimationMethod):
 
 
 if __name__ == "__main__":
-    from experiments.exp_heteroskedastic import test_estimator
-    test_estimator('GMM')
+    from experiments.tests import test_mr_estimator
+    test_mr_estimator(estimation_method='GMM')

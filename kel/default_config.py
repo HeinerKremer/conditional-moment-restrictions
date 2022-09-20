@@ -8,7 +8,7 @@ from kel.methods.generalized_el import GeneralizedEL
 from kel.methods.kernel_kel import KernelELKernel
 from kel.methods.neural_kel import KernelELNeural
 from kel.methods.kernel_fgel import KernelFGEL
-from kel.methods.kel import KernelEL
+from kel.methods.kernel_el import KernelEL
 from kel.methods.neural_fgel import NeuralFGEL
 
 
