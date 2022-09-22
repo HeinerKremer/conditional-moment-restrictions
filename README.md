@@ -36,10 +36,10 @@ Below we summarize its arguments.
 | `'OLS'`| Ordinary least squares |
 | `'GMM'`| Generalized method of moments |
 | `'GEL'`| Generalized empirical likelihood |
-| `'KEL'`| Kernel empirical likelihood (ours) |
+| `'KernelEL'`| Kernel empirical likelihood (ours) |
 | Conditional moment restrictions | |
 | `'SMD'`| Sieve minimum distance |
-| `'MMR'`| Maximum moment restrictions |
+| `'KernelMMR'`| Maximum moment restrictions |
 | `'KernelVMM'`| Variational method of moments with RKHS instrument function |
 | `'NeuralVMM'`| Variational method of moments with neural net instrument function |
 | `'KernelFGEL'`| Functional generalized empirical likelihood with RKHS instrument function |
