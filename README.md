@@ -33,19 +33,19 @@ Below we summarize its arguments.
 | `estimation_method`               | Description                                                   |
 |-----------------------|-----------------------------------------------------------|
 | Unconditional moment restrictions  | |
-| `OLS`| Ordinary least squares |
-| `GMM`| Generalized method of moments |
-| `GEL`| Generalized empirical likelihood |
-| `KEL`| Kernel empirical likelihood (ours) |
+| `'OLS'`| Ordinary least squares |
+| `'GMM'`| Generalized method of moments |
+| `'GEL'`| Generalized empirical likelihood |
+| `'KEL'`| Kernel empirical likelihood (ours) |
 | Conditional moment restrictions | |
-| `SMD`| Sieve minimum distance |
-| `MMR`| Maximum moment restrictions |
-| `KernelVMM`| Variational method of moments with RKHS instrument function |
-| `NeuralVMM`| Variational method of moments with neural net instrument function |
-| `KernelFGEL`| Functional generalized empirical likelihood with RKHS instrument function |
-| `NeuralFGEL`| Functional generalized empirical likelihood with neural net instrument function |
-| `KernelELKernel`| Kernel empirical likelihood with RKHS instrument function (ours) |
-| `KernelELNeural`| Kernel empirical likelihood with neural net instrument function (ours) |
+| `'SMD'`| Sieve minimum distance |
+| `'MMR'`| Maximum moment restrictions |
+| `'KernelVMM'`| Variational method of moments with RKHS instrument function |
+| `'NeuralVMM'`| Variational method of moments with neural net instrument function |
+| `'KernelFGEL'`| Functional generalized empirical likelihood with RKHS instrument function |
+| `'NeuralFGEL'`| Functional generalized empirical likelihood with neural net instrument function |
+| `'KernelELKernel'`| Kernel empirical likelihood with RKHS instrument function (ours) |
+| `'KernelELNeural'`| Kernel empirical likelihood with neural net instrument function (ours) |
 
 
 
