@@ -245,24 +245,26 @@ if __name__ == "__main__":
                                         target_policy=target_model,
                                         env=env)
     test_risks = []
+    methods = ['KernelMMR', 'KernelELNeural', 'KernelVMM']
+    exp.prepare_dataset(n_train=50, n_val=50, n_test=50)
 
-    for i in range(1):
-        exp.prepare_dataset(n_train=10, n_val=10, n_test=10)
-        model = exp.init_model()
-        trained_model, stats = estimation(model=model,
-                                          train_data=exp.train_data,
-                                          moment_function=exp.moment_function,
-                                          estimation_method='KernelFGEL',
-                                          estimator_kwargs=None, hyperparams=None,
-                                          validation_data=exp.val_data, val_loss_func=exp.validation_loss,
-                                          verbose=True
-                                          )
+    for method in methods:
+        for i in range(1):
+            model = exp.init_model()
+            trained_model, stats = estimation(model=model,
+                                              train_data=exp.train_data,
+                                              moment_function=exp.moment_function,
+                                              estimation_method=method,
+                                              estimator_kwargs=None, hyperparams=None,
+                                              validation_data=exp.val_data, val_loss_func=exp.validation_loss,
+                                              verbose=True
+                                              )
 
         test_risks.append(exp.eval_risk(trained_model))
-
-    results = {'test_risk': test_risks}
-    print(results)
-    print(rf'Test risk: {np.mean(test_risks)} $\pm$ {np.std(test_risks)}')
+        print('Method: {}'.format(method))
+        results = {'test_risk': test_risks}
+        print(results)
+        print(rf'Test risk: {np.mean(test_risks)} $\pm$ {np.std(test_risks)}')
 
     # state_dim = target_model.observation_space.shape[0]
     # action_dim = target_model.action_space.shape[0]
