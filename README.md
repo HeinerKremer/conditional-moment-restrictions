@@ -13,8 +13,45 @@ pip install -e .
 ```
 
 ## Using KEL
-KEL estimators can be trained following the below syntax. The code can also be found in the notebook [example.ipynb](https://github.com/HeinerKremer/Kernel-EL/blob/main/example.ipynb).
+All moment restrictions estimators can be trained using the ```estimation``` function from the module [kel/estimation.py](https://github.com/HeinerKremer/Kernel-EL/blob/main/kel/estimation.py).
+Below we summarize its arguments.
 
+| Argument                | Type | Description                                                   |
+|-----------------------|-------------|--------------------------------------------------------|
+| ```model``` | torch.nn.Module | Torch model containing the parameters of interest |
+| ```train_data``` | dict, {'t': t, 'y': y, 'z': z} | Training data with treatments ```'t'```, responses ```'y'``` and instruments ```'z'```. For unconditional moment restrictions specify ```'z'=None```. |
+| ```moment_function``` | func(model_pred, y) -> torch.Tensor | Moment function $\psi$, taking as input ```model(t)``` and the responses ```y``` |
+| ```estimation_method``` | str | See below for implemented estimation methods |
+| ```estimator_kwargs``` | dict | Specify estimator parameters. Default setting is contained in [kel/default_config.py](https://github.com/HeinerKremer/Kernel-EL/blob/main/kel/default_config.py)|
+| ```hyperparams``` | dict | Specify estimator hyperparameters as ```{key: [val1, ...,]}```. Default setting is contained in [kel/default_config.py](https://github.com/HeinerKremer/Kernel-EL/blob/main/kel/default_config.py) |
+| ```validation_data``` | dict, {'t': t, 'y': y, 'z': z} | Validation data. If ```None```, ```training_data``` is used for validation.|
+| ```val_loss_func``` | func(model, val_data) -> float | Custom validation loss function. If `None` uses l2 norm of moment function for unconditional MR and maximum moment restrictions (MMR) for conditional MR.|
+| ```normalize_moment_function``` | bool | Pretrains parameters and normalizes every output component of `moment_function` to variance 1. |
+| ```verbose``` | bool | If `True` prints out optimization information. If `2` prints out even more. |
+
+### Implemented estimators
+| `estimation_method`               | Description                                                   |
+|-----------------------|-----------------------------------------------------------|
+| Unconditional moment restrictions  | |
+| `OLS`| Ordinary least squares |
+| `GMM`| Generalized method of moments |
+| `GEL`| Generalized empirical likelihood |
+| `KEL`| Kernel empirical likelihood (ours) |
+| Conditional moment restrictions | |
+| `SMD`| Sieve minimum distance |
+| `MMR`| Maximum moment restrictions |
+| `KernelVMM`| Variational method of moments with RKHS instrument function |
+| `NeuralVMM`| Variational method of moments with neural net instrument function |
+| `KernelFGEL`| Functional generalized empirical likelihood with RKHS instrument function |
+| `NeuralFGEL`| Functional generalized empirical likelihood with neural net instrument function |
+| `KernelELKernel`| Kernel empirical likelihood with RKHS instrument function (ours) |
+| `KernelELNeural`| Kernel empirical likelihood with neural net instrument function (ours) |
+
+
+
+
+### Code example
+KEL estimators can be trained following the below syntax. The code can also be found in the notebook [example.ipynb](https://github.com/HeinerKremer/Kernel-EL/blob/main/example.ipynb).
 ```python
 import torch
 import numpy as np
@@ -45,6 +82,10 @@ model = torch.nn.Sequential(
     torch.nn.LeakyReLU(),
     torch.nn.Linear(3, 1)
 )
+
+# Define moment function e.g., for IV estimation
+def moment_function(model_evaluation, y):
+    return model_evaluation - y
 
 # Train the estimator
 trained_model, stats = estimation(model=model,  # Use any PyTorch model
