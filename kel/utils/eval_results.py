@@ -341,7 +341,7 @@ def separate_gel_by_divergence(n_train=None):
 
 
 
-def separate_kel_by_reg_param(reg_params=None, n_train=None, experiment='heteroskedastic', method='KernelEL'):
+def separate_kel_by_reg_param(reg_params=None, n_train=None, experiment='heteroskedastic', exp_file=None, method='KernelEL'):
     if reg_params is None:
         reg_params = [10, 1, 0.1]
 
@@ -352,6 +352,9 @@ def separate_kel_by_reg_param(reg_params=None, n_train=None, experiment='heteros
     else:
         raise NotImplementedError
     filename = f"{path}_method={method}_n={n_train}.json"
+
+    if exp_file is not None:
+        filename = exp_file
 
     with open(filename, "r") as fp:
         results_and_summary = json.load(fp)
@@ -476,7 +479,7 @@ def plot_divergence_comparison_cmr(n_samples, kl_reg_params=None, logscale=False
     plt.show()
 
 
-def generate_table(n_train, test_metric='test_risk', remove_failed=False):
+def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg_param=None):
     methods = ['OLS',
                'KernelVMM',
                'NeuralVMM',
@@ -492,6 +495,10 @@ def generate_table(n_train, test_metric='test_risk', remove_failed=False):
         for method in methods:
             if method in ['NeuralFGEL', 'KernelFGEL']:
                 test, val = get_result_for_best_divergence(method=method, n_train=n_train, test_metric=test_metric, experiment='network_iv', func=func)
+            elif method in ['KernelELKernel', 'KernelELNeural'] and kl_reg_param is not None:
+                exp_file = f"results/NetworkIVExperiment/NetworkIVExperiment_method={method}_n={n_train}_{func}.json"
+                res = separate_kel_by_reg_param(reg_params=[kl_reg_param], n_train=n_train, exp_file=exp_file, method=method)
+                test = res[kl_reg_param]['best_separate_results']['test_risk']
             else:
                 filename = f"results/NetworkIVExperiment/NetworkIVExperiment_method={method}_n={n_train}_{func}.json"
                 res = load_and_summarize_results(filename)
@@ -552,4 +559,5 @@ if __name__ == "__main__":
 
     generate_table(n_train=2000,
                    test_metric='test_risk',
+                   kl_reg_param=1.0,
                    remove_failed=False)

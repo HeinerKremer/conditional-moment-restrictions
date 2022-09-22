@@ -8,7 +8,7 @@ Parts of the implementation are based on the codebase for the [Variational Metho
 To install the package, create a virtual environment and run the setup file from within the folder containing this README, e.g. using the following commands:
 ```bash
 python3 -m venv kel_venv
-source kel-venv/bin/activate
+source kel_venv/bin/activate
 pip install -e .
 ```
 
@@ -23,7 +23,7 @@ Below we summarize its arguments.
 | ```moment_function``` | func(model_pred, y) -> torch.Tensor | Moment function $\psi$, taking as input ```model(t)``` and the responses ```y``` |
 | ```estimation_method``` | str | See below for implemented estimation methods |
 | ```estimator_kwargs``` | dict | Specify estimator parameters. Default setting is contained in [kel/default_config.py](https://github.com/HeinerKremer/Kernel-EL/blob/main/kel/default_config.py)|
-| ```hyperparams``` | dict | Specify estimator hyperparameters as ```{key: [val1, ...,]}```. Default setting is contained in [kel/default_config.py](https://github.com/HeinerKremer/Kernel-EL/blob/main/kel/default_config.py) |
+| ```hyperparams``` | dict | Specify estimator hyperparameters search space as ```{key: [val1, ...,]}```. Default setting is contained in [kel/default_config.py](https://github.com/HeinerKremer/Kernel-EL/blob/main/kel/default_config.py) |
 | ```validation_data``` | dict, {'t': t, 'y': y, 'z': z} | Validation data. If ```None```, ```training_data``` is used for validation.|
 | ```val_loss_func``` | func(model, val_data) -> float | Custom validation loss function. If `None` uses l2 norm of moment function for unconditional MR and maximum moment restrictions (MMR) for conditional MR.|
 | ```normalize_moment_function``` | bool | Pretrains parameters and normalizes every output component of `moment_function` to variance 1. |
