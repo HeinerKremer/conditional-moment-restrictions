@@ -124,6 +124,10 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
         x_val = x_train
         z_val = z_train
 
+    if val_loss_func is None:
+        def val_loss_func(model, validation_data):
+            return None
+
     if z_train is None:
         dim_z = None
     else:
@@ -159,47 +163,6 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
         print('Best hyperparams: ', best_hparams)
     return models[best_val], {'models': models, 'val_loss': validation_loss, 'hyperparam': hparams,
                               'best_index': int(best_val)}
-
-
-def fgel_estimation(model, train_data, moment_function, version='kernel', divergence=None, reg_param=None,
-                    validation_data=None, val_loss_func=None, verbose=True):
-    if version == 'kernel':
-        method_name = 'KernelFGEL'
-    elif version == 'neural':
-        method_name = 'NeuralFGEL'
-    else:
-        raise NotImplementedError('Invalid `version` specified. Use either `kernel` or `neural`.')
-
-    estimator_kwargs = methods[method_name]['estimator_kwargs']
-    hyperparams = methods[method_name]['hyperparams']
-
-    if divergence is not None:
-        hyperparams.update({'divergence': divergence})
-
-    if reg_param is not None:
-        hyperparams.update({'reg_param': reg_param})
-
-    trained_model, train_statistics = estimation(model=model,
-                                                 train_data=train_data,
-                                                 moment_function=moment_function,
-                                                 estimation_method=method_name,
-                                                 estimator_kwargs=estimator_kwargs,
-                                                 hyperparams=hyperparams,
-                                                 validation_data=validation_data,
-                                                 val_loss_func=val_loss_func,
-                                                 verbose=verbose)
-    return trained_model, train_statistics
-
-
-def fgel_iv_estimation(model, train_data, version='kernel', divergence=None, reg_param=None,
-                       validation_data=None, val_loss_func=None, verbose=True):
-
-    def moment_function(model_evaluation, y):
-        return model_evaluation - y
-
-    return fgel_estimation(model=model, train_data=train_data, moment_function=moment_function,
-                           version=version, divergence=divergence, reg_param=reg_param,
-                           validation_data=validation_data, val_loss_func=val_loss_func, verbose=verbose)
 
 
 class ModelWrapper(nn.Module):

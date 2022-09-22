@@ -25,6 +25,7 @@ experiment_setups = {
             'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural',
                         'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
                         'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',],
+            'rollouts': 50,
         },
 
     'network_iv':
@@ -35,6 +36,7 @@ experiment_setups = {
             'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural',
                         'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
                         'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log', ],
+            'rollouts': 50,
         },
 
     'poisson':
@@ -43,6 +45,7 @@ experiment_setups = {
             'exp_params': {'poisson_param': 52},
             'n_train': [64, 128, 256, 512, 1024, 2048, 4096],
             'methods': ['OLS', 'GMM', 'GEL', 'KernelEL'],
+            'rollouts': 50,
         },
 }
 

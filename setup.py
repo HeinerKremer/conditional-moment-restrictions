@@ -49,7 +49,7 @@ setup(
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
     packages=find_packages(exclude=['data', '*.ex']),
-    
+
     # See https://www.python.org/dev/peps/pep-0440/#version-specifiers
     python_requires='>= 3.7',
 
@@ -61,6 +61,6 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['numpy', 'scipy', 'cvxpy', 'torch', 'torchvision', 'sklearn', 'matplotlib', 'tensorflow',
-                      'tqdm', 'tensorflow_probability', 'IPython', 'cvxopt', 'wandb', 'seaborn', 'tabulate', 'mosek'],
+    install_requires=['numpy', 'scipy', 'cvxpy', 'torch', 'torchvision', 'sklearn', 'matplotlib',
+                      'tqdm', 'IPython', 'cvxopt', 'wandb', 'seaborn', 'tabulate', 'mosek'],
 )

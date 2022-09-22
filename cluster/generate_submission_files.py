@@ -11,16 +11,16 @@ bid = 12
 experiments = [
     ('heteroskedastic', {'n_train': experiment_setups['heteroskedastic']['n_train'],
                          'method': experiment_setups['heteroskedastic']["methods"],
-                         'rollouts': [20],}
+                         'rollouts': [50],}
      ),
     ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
                     'method': experiment_setups['network_iv']["methods"],
-                    'rollouts': [20],
+                    'rollouts': [50],
                     'exp_option': ['abs', 'step', 'sin', 'linear']}
      ),
     ('poisson', {'n_train': experiment_setups['poisson']['n_train'],
                     'method': experiment_setups['poisson']["methods"],
-                    'rollouts': [20],}
+                    'rollouts': [experiment_setups['poisson']['rollouts']],}
      ),
 ]
 
@@ -37,12 +37,12 @@ max_parallel_rollouts = None
 def get_run_path():
     path = os.path.realpath(__file__)
     path, file = os.path.split(path)
-    while file != 'Functional-GEL' and path != '/':
+    while file != 'Kernel-EL' and path != '/':
         path, file = os.path.split(path)
-    return path + '/Functional-GEL'
+    return path + '/Kernel-EL'
 
 path = get_run_path()
-venvpath = path + '/fgel_venv'
+venvpath = path + '/kel_venv'
 
 # ----------------
 

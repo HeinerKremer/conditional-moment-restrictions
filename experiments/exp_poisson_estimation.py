@@ -29,7 +29,7 @@ class PoissonExperiment(AbstractExperiment):
     @staticmethod
     def moment_function(model_evaluation, y):
         mean = torch.Tensor(y - model_evaluation)
-        variance = torch.Tensor((y - model_evaluation)**2)
+        variance = torch.Tensor((y - torch.mean(y, dim=0, keepdim=True))**2 - model_evaluation)
         moments = torch.cat([mean, variance], dim=1)
         return moments
 
@@ -42,9 +42,9 @@ if __name__ == '__main__':
 
     np.random.seed(123485)
     torch.random.manual_seed(12345)
-    for i in range(10):
+    for i in range(1):
         exp = PoissonExperiment(poisson_param=52)
-        exp.prepare_dataset(n_train=10000, n_val=1000, n_test=1000)
+        exp.prepare_dataset(n_train=1000, n_val=1000, n_test=1000)
         model = exp.init_model()
 
         print(np.mean(exp.moment_function(model(), exp.train_data['y']).detach().numpy(), axis=0))
@@ -53,7 +53,7 @@ if __name__ == '__main__':
                                           train_data=exp.train_data,
                                           moment_function=exp.moment_function,
                                           estimation_method='GEL',
-                                          estimator_kwargs={'dual_optim': 'lbfgs'}, hyperparams={'divergence': ['chi2']},
+                                          estimator_kwargs={'theta_optim': 'lbfgs'}, hyperparams={'divergence': ['log']},
                                           validation_data=exp.val_data, val_loss_func=exp.validation_loss,
                                           verbose=True
                                           )

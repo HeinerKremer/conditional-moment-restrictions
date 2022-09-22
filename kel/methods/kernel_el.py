@@ -2,6 +2,8 @@ import cvxpy as cvx
 import numpy as np
 import torch
 
+import kel
+
 from kel.utils.rkhs_utils import get_rbf_kernel, compute_cholesky_factor
 from kel.utils.torch_utils import Parameter
 from kel.methods.generalized_el import GeneralizedEL

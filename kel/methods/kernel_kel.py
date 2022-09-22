@@ -1,7 +1,7 @@
 import cvxpy as cvx
 import torch
 
-from kel.methods.kel import KernelEL
+from kel.methods.kernel_el import KernelEL
 from kel.utils.torch_utils import Parameter
 
 cvx_solver = cvx.MOSEK
