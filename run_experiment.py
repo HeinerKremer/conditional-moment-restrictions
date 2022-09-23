@@ -11,10 +11,25 @@ import multiprocessing
 from experiments.exp_heteroskedastic import HeteroskedasticNoiseExperiment
 from experiments.exp_network_iv import NetworkIVExperiment
 from experiments.exp_poisson_estimation import PoissonExperiment
+from experiments.exp_ope import OffPolicyEvaluationExperiment
 from kel.estimation import estimation
 
 
 experiment_setups = {
+    'off_policy_evaluation':
+        {
+            'exp_class': OffPolicyEvaluationExperiment,
+            'exp_params': {
+                'env_name': 'Pendulum-v1',
+                'algorithm': 'PPO',
+                'rollout_len': 200
+            },
+            'n_train': [5, 10, 20, 50],
+            'methods': ['KernelMMR', 'NeuralVMM',
+                        'KernelELKernel', 'KernelELNeural'],
+            'rollouts': 10
+        },
+
     'heteroskedastic':
         {
             'exp_class': HeteroskedasticNoiseExperiment,

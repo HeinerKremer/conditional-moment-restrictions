@@ -29,10 +29,10 @@ if __name__ == "__main__":
     mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=100)
     print(f"mean_reward:{mean_reward:.2f} +/- {std_reward:.2f}")
     model.learn(total_timesteps=50000)
-    model.save('OPE_{}_behavioral'.format(args.algo))
+    model.save('ope_data/OPE_{}_behavioral'.format(args.algo))
 
     model.learn(total_timesteps=75000)
-    model.save("OPE_{}_target".format(args.algo))
+    model.save("ope_data/OPE_{}_target".format(args.algo))
 
     mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=100)
     print(f"mean_reward:{mean_reward:.2f} +/- {std_reward:.2f}")
