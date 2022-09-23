@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import yaml
 from pathlib import Path
+import dill as pickle
 import argparse
 from stable_baselines3 import PPO
 from experiments.abstract_experiment import AbstractExperiment
@@ -261,8 +262,9 @@ if __name__ == "__main__":
     methods = ['KernelMMR', 'KernelELKernel', 'KernelVMM',
                'KernelELNeural', 'NeuralVMM']
     n_train = [1]
+    results = {}
     for n_samples in n_train:
-        results = {}
+        results[n_samples] = {}
         exp.prepare_dataset(n_train=n_samples, n_val=20, n_test=200)
         for method in methods:
             test_risks = []
@@ -278,9 +280,14 @@ if __name__ == "__main__":
                                                   )
 
                 test_risks.append(exp.eval_risk(trained_model))
-            results[method] = np.mean(test_risks)
+            results[n_samples][method] = np.mean(test_risks)
             print("Method: {} \t {}=/-{}".format(method,
                                                  np.mean(test_risks),
                                                  np.std(test_risks)))
         print("Sample size: {}".format(n_samples))
-        print(results)
+        print(results[n_samples])
+    data_dir = Path(__file__).parent / 'ope_data'
+    file_path = data_dir / 'ope_exp_data'
+    with file_path.open('wb') as fid:
+        pickle.dump(results, fid)
+
