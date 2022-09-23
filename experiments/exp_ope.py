@@ -114,13 +114,31 @@ class DensityModel(nn.Module):
 
 
 class OffPolicyEvaluationExperiment(AbstractExperiment):
-    def __init__(self, behavioral_policy, target_policy, env, rollout_len=200):
-        self.pi_b = behavioral_policy
-        self.pi_t = target_policy
-        self.env = env
-        self.s_dim = behavioral_policy.observation_space.shape[0]
-        self.a_dim = behavioral_policy.action_space.shape[0]
-        self.rollout_len = 200
+    def __init__(self, env_name, algorithm, rollout_len=200):
+        self.pi_b, self.pi_t, self.env = self._load_policies(env_name=env_name,
+                                                             algo=algorithm)
+        self.s_dim = self.pi_b.observation_space.shape[0]
+        self.a_dim = self.pi_b.action_space.shape[0]
+        self.rollout_len = rollout_len
+
+    def _load_policies(self, env_name, algo):
+        """
+        Load policies and create training environment.
+
+        Parameters
+        ----------
+        env_name: str
+        algo: str
+
+        Returns
+        -------
+        (stable_baselines.PPO, stable_baselines.PPO, gym.Env)
+        """
+        env = gym.make(env_name)
+        data_dir = Path(__file__).parent / "ope_data"
+        pi_b = PPO.load(data_dir / "OPE_{}_{}.zip".format(algo, 'behavioral'))
+        pi_t = PPO.load(data_dir / "OPE_{}_{}.zip".format(algo, 'target'))
+        return pi_b, pi_t, env
 
     def init_model(self):
         return DensityModel(self.s_dim, 1)
@@ -199,14 +217,11 @@ class OffPolicyEvaluationExperiment(AbstractExperiment):
 
     def prepare_dataset(self, n_train, n_val=None, n_test=None):
         self.train_data = self.generate_data(n_train)
-        print('Training data done.')
         self.val_data = self.generate_data(n_val)
-        print('Validation data done.')
         self.test_data = collect_data(env=self.env,
                                       model=self.pi_t,
                                       n_rollouts=n_test,
                                       rollout_len=self.rollout_len)
-        print('Test data done.')
 
     def step_IS_policy_eval(self, model, train_data):
         density_ratios = []
@@ -230,6 +245,7 @@ class OffPolicyEvaluationExperiment(AbstractExperiment):
 parser = argparse.ArgumentParser()
 parser.add_argument('--env', type=str, default='Pendulum-v1')
 parser.add_argument('--algo', type=str, default='ppo')
+parser.add_argument('--rollout_len', type=int, default=200)
 
 
 if __name__ == "__main__":
@@ -237,39 +253,34 @@ if __name__ == "__main__":
     if args.algo != 'ppo':
         raise ValueError("Do not support algorithms other than PPO currently.")
 
-    np.random.seed(12345)
-    torch.random.manual_seed(12345)
-    behavior_model, env = setup_model(args.env, args.algo, policy='behavioral')
-    target_model, _ = setup_model(args.env, args.algo, policy='target')
-    exp = OffPolicyEvaluationExperiment(behavioral_policy=behavior_model,
-                                        target_policy=target_model,
-                                        env=env)
-    test_risks = []
-    methods = ['KernelMMR', 'KernelELNeural', 'KernelVMM']
-    exp.prepare_dataset(n_train=50, n_val=50, n_test=50)
+    np.random.seed(1234)
+    torch.random.manual_seed(1234)
+    exp = OffPolicyEvaluationExperiment(env_name=args.env,
+                                        algorithm=args.algo,
+                                        rollout_len=args.rollout_len)
+    methods = ['KernelMMR', 'KernelELKernel', 'KernelVMM',
+               'KernelELNeural', 'NeuralVMM']
+    n_train = [1]
+    for n_samples in n_train:
+        results = {}
+        exp.prepare_dataset(n_train=n_samples, n_val=20, n_test=200)
+        for method in methods:
+            test_risks = []
+            for i in range(5):
+                model = exp.init_model()
+                trained_model, stats = estimation(model=model,
+                                                  train_data=exp.train_data,
+                                                  moment_function=exp.moment_function,
+                                                  estimation_method=method,
+                                                  estimator_kwargs=None, hyperparams=None,
+                                                  validation_data=exp.val_data, val_loss_func=exp.validation_loss,
+                                                  verbose=True
+                                                  )
 
-    for method in methods:
-        for i in range(1):
-            model = exp.init_model()
-            trained_model, stats = estimation(model=model,
-                                              train_data=exp.train_data,
-                                              moment_function=exp.moment_function,
-                                              estimation_method=method,
-                                              estimator_kwargs=None, hyperparams=None,
-                                              validation_data=exp.val_data, val_loss_func=exp.validation_loss,
-                                              verbose=True
-                                              )
-
-        test_risks.append(exp.eval_risk(trained_model))
-        print('Method: {}'.format(method))
-        results = {'test_risk': test_risks}
+                test_risks.append(exp.eval_risk(trained_model))
+            results[method] = np.mean(test_risks)
+            print("Method: {} \t {}=/-{}".format(method,
+                                                 np.mean(test_risks),
+                                                 np.std(test_risks)))
+        print("Sample size: {}".format(n_samples))
         print(results)
-        print(rf'Test risk: {np.mean(test_risks)} $\pm$ {np.std(test_risks)}')
-
-    # state_dim = target_model.observation_space.shape[0]
-    # action_dim = target_model.action_space.shape[0]
-    # # collect data here
-    # train_data = collect_data(env, behavior_model, n_rollouts=50, rollout_len=200)
-    # target_data = collect_data(env, target_model, n_rollouts=50, rollout_len=200)
-    # on_policy_estimate = on_policy_value_estimator(target_data)
-    # print("On-policy value estimate: {}".format(on_policy_estimate))
