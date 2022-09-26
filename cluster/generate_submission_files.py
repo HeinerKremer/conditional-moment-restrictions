@@ -9,6 +9,13 @@ bid = 12
 
 # ---------------- Simulation details ----------------
 experiments = [
+    (
+        'off_policy_evaluation', {
+            "n_train": experiment_setups['off_policy_evaluation']['n_train'],
+            "method": experiment_setups['off_policy_evaluation']['methods'],
+            'rollouts': [experiment_setups['off_policy_evaluation']['rollouts']]
+        }
+    ),
     ('heteroskedastic', {'n_train': experiment_setups['heteroskedastic']['n_train'],
                          'method': experiment_setups['heteroskedastic']["methods"],
                          'rollouts': [50],}
