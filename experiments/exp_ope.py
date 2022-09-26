@@ -263,14 +263,14 @@ if __name__ == "__main__":
                                         rollout_len=args.rollout_len)
     methods = ['KernelMMR', 'KernelELKernel', 'KernelVMM',
                'KernelELNeural', 'NeuralVMM']
-    n_train = [1, 5, 10, 20, 50]
+    n_train = [5]
     results = {}
     for n_samples in n_train:
         results[n_samples] = {}
         exp.prepare_dataset(n_train=n_samples, n_val=50, n_test=200)
         for method in methods:
             test_risks = []
-            for i in range(10):
+            for i in range(1):
                 model = exp.init_model()
                 try:
                     trained_model, stats = estimation(model=model,

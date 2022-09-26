@@ -27,7 +27,7 @@ experiment_setups = {
             'n_train': [5, 10, 20, 50],
             'methods': ['KernelMMR', 'NeuralVMM',
                         'KernelELKernel', 'KernelELNeural'],
-            'rollouts': 10
+            'rollouts': 30
         },
 
     'heteroskedastic':
