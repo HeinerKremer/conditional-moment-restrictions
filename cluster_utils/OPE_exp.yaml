@@ -1,0 +1,11 @@
+executable: '/is/cluster/ynemmour/.virtualenvs/mpc_py/bin/python'
+log_dir: '/is/cluster/ynemmour/mpc_ws/Kernel-EL/logs'
+python_script: '/is/cluster/ynemmour/mpc_ws/Kernel-EL/run_experiment.py'
+memory: 128000
+cpu: 10
+gpu: 0
+params:
+    n_runs: 1
+    n_train: [1, 5, 10, 20, 50]
+    rollouts: [40]
+    method: ['KernelMMR', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural', 'KernelVMM']
