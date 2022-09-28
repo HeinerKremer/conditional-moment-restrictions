@@ -1,0 +1,10 @@
+executable: '/is/cluster/ynemmour/.virtualenvs/kel_env/bin/python'
+log_dir: '/is/cluster/ynemmour/mpc_ws/Kernel-EL/logs'
+python_script: '/is/cluster/ynemmour/mpc_ws/Kernel-EL/experiments/OPE_train_policies.py'
+memory: 128000
+cpu: 2
+gpu: 1
+params:
+    n_runs: 1
+    env: ['Pendulum-v1']
+    algo: ['ppo']
