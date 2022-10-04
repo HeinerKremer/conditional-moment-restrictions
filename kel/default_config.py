@@ -132,6 +132,7 @@ methods = {
         {
             'estimator_class': KernelELNeural,
             'estimator_kwargs': {
+                "batch_training": True,
                 "batch_size": 200,
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,

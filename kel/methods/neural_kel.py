@@ -9,7 +9,7 @@ cvx_solver = cvx.MOSEK
 
 class KernelELNeural(KernelEL):
 
-    def __init__(self, model, reg_param, batch_size=200, dual_func_network_kwargs=None, **kwargs):
+    def __init__(self, model, reg_param, batch_training=False, batch_size=200, dual_func_network_kwargs=None, **kwargs):
         super().__init__(model=model, theta_optim='oadam_gda', **kwargs)
         self.batch_size = batch_size
         self.l2_lambda = reg_param
@@ -17,7 +17,7 @@ class KernelELNeural(KernelEL):
 
         # FIXME: Batch training not supported because the KDRO dual RKHS function always has shape (n_sample, 1).
         #  Can play around with enforcing the constraint only for batches, this might be very interesting
-        self.batch_training = True
+        self.batch_training = batch_training
 
     def _init_dual_params(self):
         self.dual_moment_func = ModularMLPModel(**self.dual_func_network_kwargs)
