@@ -56,8 +56,8 @@ class KernelEL(GeneralizedEL):
                 self.kernel_x_cholesky = k_cholesky
             elif self.n_rff > 0:
                 # TODO(Yassine): Check if this is valid also for random features
-                self.kernel_x = (get_rff(x[0], **self.kernel_x_kwargs).type(torch.float32)
-                                 * get_rff(x[1], **self.kernel_x_kwargs).type(torch.float32))
+                self.kernel_x = (get_rff(x[0], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32)
+                                 * get_rff(x[1], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32))
             else:
                 raise ValueError("Number of random features must be larger than 0!")
 
@@ -90,14 +90,18 @@ class KernelEL(GeneralizedEL):
         return self.dual_moment_func.params
 
     def objective(self, x, z, *args, **kwargs):
-        expected_rkhs_func = torch.mean(torch.einsum('ij, ik -> k', self.rkhs_func.params, self.kernel_x))
+        if self.batch_training:
+            kx = self.kernel_x[:, self.batch_idx]
+        else:
+            kx = self.kernel_x
+        expected_rkhs_func = torch.mean(torch.einsum('ij, ik -> k', self.rkhs_func.params, kx))
         if self.n_rff == 0:
-            rkhs_norm_sq = torch.einsum('ir, ij, jr ->', self.rkhs_func.params, self.kernel_x, self.rkhs_func.params)
+            rkhs_norm_sq = torch.einsum('ir, ij, jr ->', self.rkhs_func.params, kx, self.rkhs_func.params)
         elif self.n_rff > 0:
             rkhs_norm_sq = torch.einsum('i, i ->', self.rkhs_func.params[:, 0], self.rkhs_func.params[:, 0])
         else:
             raise ValueError("Number of random featuers cannot be smaller than 0!")
-        exponent = (torch.einsum('ij, ik -> k', self.rkhs_func.params, self.kernel_x) + self.dual_normalization.params
+        exponent = (torch.einsum('ij, ik -> k', self.rkhs_func.params, kx) + self.dual_normalization.params
                     - torch.einsum('ik, ik -> i', self.eval_dual_moment_func(z), self.model.psi(x)))
         objective = (expected_rkhs_func + self.dual_normalization.params - 1 / 2 * rkhs_norm_sq
                      - self.kl_reg_param * torch.mean(self.f_divergence(1 / self.kl_reg_param * exponent)))

@@ -352,6 +352,7 @@ class GeneralizedEL(AbstractEstimationMethod):
             self.dual_moment_func.train()
             if self.batch_training:
                 for batch_idx in batch_iter:
+                    self.batch_idx = batch_idx
                     x_batch = [x_tensor[0][batch_idx], x_tensor[1][batch_idx]]
                     z_batch = z_tensor[batch_idx] if z_tensor is not None else None
                     obj = self._optimize_step_theta(x_batch, z_batch)

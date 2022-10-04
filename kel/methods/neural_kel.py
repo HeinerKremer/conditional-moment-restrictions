@@ -17,7 +17,7 @@ class KernelELNeural(KernelEL):
 
         # FIXME: Batch training not supported because the KDRO dual RKHS function always has shape (n_sample, 1).
         #  Can play around with enforcing the constraint only for batches, this might be very interesting
-        self.batch_training = False
+        self.batch_training = True
 
     def _init_dual_params(self):
         self.dual_moment_func = ModularMLPModel(**self.dual_func_network_kwargs)

@@ -77,14 +77,15 @@ if __name__ == '__main__':
     mses = []
     thetas = []
 
-    for i in range(3):
+    for i in range(1):
         exp.prepare_dataset(n_train=50, n_val=2000, n_test=20000)
         model = exp.init_model()
         trained_model, stats = estimation(model=model,
                                           train_data=exp.train_data,
                                           moment_function=exp.moment_function,
-                                          estimation_method='KernelELKernel',
-                                          estimator_kwargs={'n_random_features': 10000},
+                                          estimation_method='KernelELNeural',
+                                          estimator_kwargs={'n_random_features': 5000,
+                                                            'batch_size': 25},
                                           hyperparams=None,
                                           validation_data=exp.val_data,
                                           val_loss_func=exp.validation_loss,
