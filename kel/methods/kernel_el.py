@@ -4,7 +4,7 @@ import torch
 
 import kel
 
-from kel.utils.rkhs_utils import get_rbf_kernel, get_rff_kernel, compute_cholesky_factor
+from kel.utils.rkhs_utils import get_rbf_kernel, get_rff, compute_cholesky_factor
 from kel.utils.torch_utils import Parameter
 from kel.methods.generalized_el import GeneralizedEL
 
@@ -52,20 +52,22 @@ class KernelEL(GeneralizedEL):
             if self.n_rff == 0:
                 self.kernel_x = (get_rbf_kernel(x[0], x[0], **self.kernel_x_kwargs).type(torch.float32)
                                  * get_rbf_kernel(x[1], x[1], **self.kernel_x_kwargs).type(torch.float32))
+                k_cholesky = torch.tensor(np.transpose(compute_cholesky_factor(self.kernel_x.detach().numpy())))
+                self.kernel_x_cholesky = k_cholesky
             elif self.n_rff > 0:
-                self.kernel_x = (get_rff_kernel(x[0], x[0], **self.kernel_x_kwargs).type(torch.float32)
-                                 * get_rff_kernel(x[1], x[1], **self.kernel_x_kwargs).type(torch.float32))
+                # TODO(Yassine): Check if this is valid also for random features
+                self.kernel_x = (get_rff(x[0], **self.kernel_x_kwargs).type(torch.float32)
+                                 * get_rff(x[1], **self.kernel_x_kwargs).type(torch.float32))
             else:
                 raise ValueError("Number of random features must be larger than 0!")
-            k_cholesky = torch.tensor(np.transpose(compute_cholesky_factor(self.kernel_x.detach().numpy())))
-            self.kernel_x_cholesky = k_cholesky
 
         if x_val is not None and self.n_rff == 0:
             self.kernel_x_val = (get_rbf_kernel(x_val[0], x_val[0], **self.kernel_x_kwargs)
                                  * get_rbf_kernel(x_val[1], x_val[1], **self.kernel_x_kwargs).type(torch.float32))
         elif x_val is not None and self.n_rff > 0:
-            self.kernel_x = (get_rff_kernel(x_val[0], x_val[0], **self.kernel_x_kwargs).type(torch.float32)
-                             * get_rff_kernel(x_val[1], x_val[1], **self.kernel_x_kwargs).type(torch.float32))
+            # TODO(Yassine): Check if this is valid also for random features
+            self.kernel_x_val = (get_rff(x_val[0], **self.kernel_x_kwargs).type(torch.float32)
+                                 * get_rff(x_val[1], **self.kernel_x_kwargs).type(torch.float32))
 
     def _init_dual_params(self):
         self.dual_moment_func = Parameter(shape=(1, self.dim_psi))
@@ -89,7 +91,12 @@ class KernelEL(GeneralizedEL):
 
     def objective(self, x, z, *args, **kwargs):
         expected_rkhs_func = torch.mean(torch.einsum('ij, ik -> k', self.rkhs_func.params, self.kernel_x))
-        rkhs_norm_sq = torch.einsum('ir, ij, jr ->', self.rkhs_func.params, self.kernel_x, self.rkhs_func.params)
+        if self.n_rff == 0:
+            rkhs_norm_sq = torch.einsum('ir, ij, jr ->', self.rkhs_func.params, self.kernel_x, self.rkhs_func.params)
+        elif self.n_rff > 0:
+            rkhs_norm_sq = torch.einsum('i, i ->', self.rkhs_func.params[:, 0], self.rkhs_func.params[:, 0])
+        else:
+            raise ValueError("Number of random featuers cannot be smaller than 0!")
         exponent = (torch.einsum('ij, ik -> k', self.rkhs_func.params, self.kernel_x) + self.dual_normalization.params
                     - torch.einsum('ik, ik -> i', self.eval_dual_moment_func(z), self.model.psi(x)))
         objective = (expected_rkhs_func + self.dual_normalization.params - 1 / 2 * rkhs_norm_sq
@@ -111,7 +118,12 @@ class KernelEL(GeneralizedEL):
 
             dual_func_psi = psi @ cvx.transpose(dual_func)    # (n_sample, 1)
             expected_rkhs_func = 1/n_sample * cvx.sum(kernel_x @ rkhs_func)
-            rkhs_norm_sq = cvx.square(cvx.norm(cvx.transpose(rkhs_func) @ self.kernel_x_cholesky.detach().numpy())) #cvx.quad_form(rkhs_func, kernel_x)
+            if self.n_rff == 0:
+                rkhs_norm_sq = cvx.square(cvx.norm(cvx.transpose(rkhs_func) @ self.kernel_x_cholesky.detach().numpy())) #cvx.quad_form(rkhs_func, kernel_x)
+            elif self.n_rff > 0:
+                rkhs_norm_sq = cvx.square(cvx.norm(rkhs_func))
+            else:
+                raise ValueError('Number of random features cannot be smaller than 0!')
             objective = (expected_rkhs_func + dual_normalization - 1 / 2 * rkhs_norm_sq)
 
             exponent = cvx.sum(kernel_x @ rkhs_func + dual_normalization - dual_func_psi, axis=1)

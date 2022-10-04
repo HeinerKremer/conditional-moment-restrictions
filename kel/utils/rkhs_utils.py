@@ -26,12 +26,9 @@ def compute_cholesky_factor(kernel_matrix):
     return sqrt_kernel_matrix
 
 
-def get_rff_kernel(x_1, x_2=None, n_rff=1000, sigma=None, numpy=False):
-    if x_2 is None:
-        x_2 = x_1
-
+def get_rff(x, n_rff=1000, sigma=None, numpy=False):
     if sigma is None:
-        distsqr = calc_sq_dist(x_1, x_2, numpy=False)
+        distsqr = calc_sq_dist(x, x, numpy=False)
         kernel_width = np.sqrt(0.5 * np.median(distsqr))
 
         '''in sklearn, kernel is done by K(x, y) = exp(-gamma ||x-y||^2)'''
@@ -41,19 +38,15 @@ def get_rff_kernel(x_1, x_2=None, n_rff=1000, sigma=None, numpy=False):
 
     rbf_features = RBFSampler(gamma=kernel_gamma,
                               n_components=n_rff)
-    if not x_1.requires_grad and not x_2.requires_grad:
-        x_feat1 = torch.from_numpy(rbf_features.fit_transform(x_1))
-        x_feat2 = torch.from_numpy(rbf_features.fit_transform(x_2))
+    if not x.requires_grad:
+        x_feat = torch.from_numpy(rbf_features.fit_transform(x).T)
     else:
-        x1_detach = x_1.detach()
-        x2_detach = x_2.detach()
-        x_feat1 = torch.from_numpy(rbf_features.fit_transform(x1_detach))
-        x_feat2 = torch.from_numpy(rbf_features.fit_transform(x2_detach))
+        x_detach = x.detach()
+        x_feat = torch.from_numpy(rbf_features.fit_transform(x_detach).T)
 
-    kernel_xx = torch.matmul(x_feat1, x_feat2.t())
     if numpy:
-        kernel_xx = kernel_xx.detach().numpy()
-    return kernel_xx
+        x_feat = x_feat.detach().numpy()
+    return x_feat
 
 
 def get_rbf_kernel(x_1, x_2=None, sigma=None, numpy=False):
