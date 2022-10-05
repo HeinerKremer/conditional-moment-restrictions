@@ -72,6 +72,7 @@ def write_exp_block(subfile, exp_num, log_dir, pythonscript, hyperparams, n_runs
 def write_bash_script(file_path, work_dir, py_env):
     with open(file_path, 'w') as bashfile:
         bashfile.write('#!/bin/bash\n\n')
+        bashfile.write('source `which virtualenvwrapper.sh`\n')
         bashfile.write('workon {}\n'.format(py_env))
         bashfile.write('cd {}\n'.format(work_dir))
         bashfile.write('python $@\n')

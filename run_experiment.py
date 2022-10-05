@@ -21,7 +21,7 @@ experiment_setups = {
             'exp_class': OffPolicyEvaluationExperiment,
             'exp_params': {
                 'env_name': 'Pendulum-v1',
-                'algorithm': 'PPO',
+                'algorithm': 'ppo',
                 'rollout_len': 200
             },
             'n_train': [5, 10, 20, 50],

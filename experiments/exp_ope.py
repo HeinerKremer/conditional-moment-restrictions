@@ -137,9 +137,9 @@ class OffPolicyEvaluationExperiment(AbstractExperiment):
         """
         env = gym.make(env_name)
         data_dir = Path(__file__).parent / "ope_data"
-        pi_b = PPO.load(data_dir / "OPE_{}_{}.zip".format(algo, 'behavioral'),
+        pi_b = PPO.load(data_dir / "OPE_{}_{}".format(algo, 'behavioral'),
                         device='cpu')
-        pi_t = PPO.load(data_dir / "OPE_{}_{}.zip".format(algo, 'target'),
+        pi_t = PPO.load(data_dir / "OPE_{}_{}".format(algo, 'target'),
                         device='cpu')
         return pi_b, pi_t, env
 
