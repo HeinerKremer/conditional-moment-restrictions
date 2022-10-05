@@ -69,6 +69,16 @@ def write_exp_block(subfile, exp_num, log_dir, pythonscript, hyperparams, n_runs
         subfile.write('\n')
 
 
+def write_bash_script(file_path, work_dir, py_env):
+    with open(file_path, 'w') as bashfile:
+        bashfile.write(f'#!/bin/bash\n'
+                       + f'workon ' + py_env + '\n'
+                       + f'cd ' + work_dir + '\n'
+                       + f'python $@')
+    st = os.stat(file_path)
+    os.chmod(file_path, st.st_mode | 0o111)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_config', nargs="?", type=str, default='OPE_exp.yaml')
@@ -77,6 +87,7 @@ if __name__ == '__main__':
     job_dir = Path(__file__).parent / 'jobs_{}'.format(method)
     job_dir.mkdir(parents=True, exist_ok=True)
     sub_file = job_dir / '{}_experiments.sub'.format(method)
+    bash_file = Path(__file__).parent / "run_jobs.sh"
     with open(args.exp_config, 'r') as config_file:
         exp_config = yaml.load(config_file, Loader=yaml.FullLoader)
     with open(sub_file, 'w') as subfile:
@@ -93,3 +104,4 @@ if __name__ == '__main__':
                             pythonscript=exp_config['python_script'],
                             hyperparams=param_dict,
                             n_runs=n_runs)
+    write_bash_script(bash_file, exp_config['work_dir'], exp_config['environment'])
