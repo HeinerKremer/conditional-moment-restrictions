@@ -71,10 +71,11 @@ def write_exp_block(subfile, exp_num, log_dir, pythonscript, hyperparams, n_runs
 
 def write_bash_script(file_path, work_dir, py_env):
     with open(file_path, 'w') as bashfile:
-        bashfile.write(f'#!/bin/bash\n'
-                       + f'workon ' + py_env + '\n'
-                       + f'cd ' + work_dir + '\n'
-                       + f'python $@')
+        bashfile.write('#!/bin/bash\n\n')
+        bashfile.write('workon {}\n'.format(py_env))
+        bashfile.write('cd {}\n'.format(work_dir))
+        bashfile.write('python $@\n')
+
     st = os.stat(file_path)
     os.chmod(file_path, st.st_mode | 0o111)
 

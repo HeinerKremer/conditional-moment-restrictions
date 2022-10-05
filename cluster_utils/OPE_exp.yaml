@@ -10,3 +10,4 @@ params:
     n_train: [1, 5, 10, 20, 50]
     rollouts: [40]
     method: ['KernelMMR', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural', 'KernelVMM']
+    experiment: ['off_policy_experiment']
