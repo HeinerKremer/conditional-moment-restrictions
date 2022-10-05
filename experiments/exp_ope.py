@@ -236,7 +236,7 @@ class OffPolicyEvaluationExperiment(AbstractExperiment):
         value_estimate = np.sum(weights * train_data['r'])/np.sum(weights)
         return value_estimate
 
-    def eval_risk(self, model):
+    def eval_risk(self, model, *args, **kwargs):
         on_policy_estimate = on_policy_value_estimator(self.test_data)
         off_policy_estimate = self.step_IS_policy_eval(model, self.train_data)
         print("On-PE: {} \t Off-PE: {}".format(on_policy_estimate,
