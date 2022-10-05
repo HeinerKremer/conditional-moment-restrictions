@@ -108,8 +108,8 @@ methods = {
                 "theta_optim": 'oadam_gda',
                 "eval_freq": 100,
                 "max_num_epochs": 20000,
-                "theta_optim_args": {'lr': 1e-3},
-                "dual_optim_args": {'lr': 1e-3}},
+                "theta_optim_args": {'lr': 1e-4},
+                "dual_optim_args": {'lr': 1e-4}},
             'hyperparams': {'kl_reg_param': [1e5, 1e4, 1e3, 1e2, 1e1, 1e0, 1e-1, 1e-2, 1e-3]}
         },
 
@@ -121,8 +121,8 @@ methods = {
                 "theta_optim": 'oadam_gda',
                 "eval_freq": 100,
                 "max_num_epochs": 20000,
-                "theta_optim_args": {'lr': 1e-3},
-                "dual_optim_args": {'lr': 1e-3}},
+                "theta_optim_args": {'lr': 1e-4},
+                "dual_optim_args": {'lr': 1e-4}},
             'hyperparams': {'kl_reg_param': [1e-1, 1e0, 1e1],
                             'reg_param': [1e-1, 1e-3, 1e-6],
                         }
@@ -138,7 +138,7 @@ methods = {
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
                 "max_no_improve": 3,
-                "theta_optim_args": {'lr': 1e-3}},
+                "theta_optim_args": {'lr': 1e-4}},
             'hyperparams': {'kl_reg_param': [1e-1, 1, 1e1],
                             "reg_param": [1e-4, 1e-2, 1e0],
                         }
