@@ -70,8 +70,8 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.all_dual_params = list(self.dual_moment_func.parameters())
 
     def are_dual_params_finite(self):
-        isnan = bool(sum([np.sum(np.isnan(p.detach().numpy())) for p in self.all_dual_params]))
-        isinf = bool(sum([np.sum(np.isinf(p.detach().numpy())) for p in self.all_dual_params]))
+        isnan = bool(sum([np.sum(np.isnan(p.detach().cpu().numpy())) for p in self.all_dual_params]))
+        isinf = bool(sum([np.sum(np.isinf(p.detach().cpu().numpy())) for p in self.all_dual_params]))
         return (not isnan) and (not isinf)
 
     def _set_divergence_function(self):
@@ -246,7 +246,7 @@ class GeneralizedEL(AbstractEstimationMethod):
             raise OptimizationError('Primal variables are NaN or inf.')
         if not self.are_dual_params_finite():
             raise OptimizationError('Dual variables are NaN or inf.')
-        return float(- dual_func_obj.detach().numpy())
+        return float(- dual_func_obj.detach().cpu().numpy())
 
     """--------------------- Optimization methods for dual_func ---------------------"""
     def optimize_dual_func(self, x_tensor, z_tensor, iters=5000):
@@ -349,12 +349,24 @@ class GeneralizedEL(AbstractEstimationMethod):
         num_no_improve = 0
         cycle_num = 0
 
+        # Put everything on the same device
+        # TODO(Yassine): Make this in appropriate location and not hacky
         device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model.to(device)
-        x_tensor[0].to(device)
-        x_tensor[1].to(device)
-        z_tensor[0].to(device)
-        z_tensor[1].to(device)
+        x_tensor = [x_tensor[0].to(device),
+                    x_tensor[1].to(device)]
+        z_tensor = z_tensor.to(device)
+        # use list with dual parameters etc
+        for ele in self.all_dual_params:
+            ele.to(device)
+        try:
+            self.dual_moment_func.to(device)
+            self.rkhs_func.to(device)
+            self.dual_normalization.to(device)
+            self.kernel_x = self.kernel_x.to(device)
+        except:
+            pass
+
         for epoch_i in range(self.max_num_epochs):
             self.model.train()
             self.dual_moment_func.train()

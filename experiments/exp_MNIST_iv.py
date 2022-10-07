@@ -125,7 +125,7 @@ class NetworkIVExperiment(AbstractExperiment):
 
     def random_mnist_img(self, data, labels, label, num):
         img_idx = np.where(labels == label)[0]
-        sampled_idx = np.random.choice(img_idx, num, replace=False)
+        sampled_idx = np.random.choice(img_idx, num)
         images = data[sampled_idx, :, :]
         return images
 
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     from kel.estimation import estimation
 
     exp = NetworkIVExperiment(ftype='abs')
-    exp.prepare_dataset(n_train=100, n_val=1000, n_test=10000)
+    exp.prepare_dataset(n_train=40000, n_val=1000, n_test=10000)
     model = exp.init_model()
 
     trained_model, stats = estimation(model=model,
@@ -185,8 +185,9 @@ if __name__ == '__main__':
                                       estimation_method='KernelELNeural',
                                       estimator_kwargs={'n_random_features': 5000,
                                                         'batch_training': True,
-                                                        'batch_size': 10},
+                                                        'batch_size': 100},
                                       hyperparams=None,
+                                      normalize_moment_function=False,
                                       validation_data=exp.val_data,
                                       val_loss_func=exp.validation_loss,
                                       verbose=True
