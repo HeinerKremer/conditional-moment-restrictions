@@ -27,7 +27,7 @@ class GeneralizedEL(AbstractEstimationMethod):
                  max_num_epochs=50000, eval_freq=2000, max_no_improve=3, burn_in_cycles=5,
                  theta_optim=None, theta_optim_args=None, pretrain=True,
                  dual_optim=None, dual_optim_args=None, inneriters=None,
-                 divergence=None, kernel_z_kwargs=None,
+                 divergence=None, kernel_z_kwargs=None, dual_moment_func_type='kernel',
                  val_loss_func=None,
                  verbose=False):
         super().__init__(model=model, kernel_z_kwargs=kernel_z_kwargs, val_loss_func=val_loss_func)
@@ -45,6 +45,7 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.gel_function = self._set_gel_function()
 
         self.all_dual_params = None     # List of parameters of all dual variables
+        self.dual_moment_func_type = dual_moment_func_type
         self.dual_moment_func = None
         self.dual_optim_type = dual_optim
         self.dual_func_optim_args = dual_optim_args
@@ -315,7 +316,8 @@ class GeneralizedEL(AbstractEstimationMethod):
         """---------------------------------------------------------------------------------------------------------"""
 
     def _init_training(self, x_tensor, z_tensor, z_val_tensor=None):
-        self._set_kernel_z(z_tensor, z_val_tensor)
+        if self.dual_moment_func_type == "kernel":
+            self._set_kernel_z(z_tensor, z_val_tensor)
         self._init_dual_params()
         self._set_optimizers()
         if self.pretrain:
@@ -347,6 +349,12 @@ class GeneralizedEL(AbstractEstimationMethod):
         num_no_improve = 0
         cycle_num = 0
 
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model.to(device)
+        x_tensor[0].to(device)
+        x_tensor[1].to(device)
+        z_tensor[0].to(device)
+        z_tensor[1].to(device)
         for epoch_i in range(self.max_num_epochs):
             self.model.train()
             self.dual_moment_func.train()

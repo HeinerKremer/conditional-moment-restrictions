@@ -145,7 +145,8 @@ class KernelEL(GeneralizedEL):
         return
 
     def _init_training(self, x_tensor, z_tensor, x_val_tensor=None, z_val_tensor=None):
-        self._set_kernel_z(z_tensor, z_val_tensor)
+        if self.dual_moment_func_type == 'kernel':
+            self._set_kernel_z(z_tensor, z_val_tensor)
         self._set_kernel_x(x_tensor, x_val_tensor)
         self._init_dual_params()
         self._set_optimizers()

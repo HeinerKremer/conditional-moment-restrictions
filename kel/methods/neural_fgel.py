@@ -6,7 +6,7 @@ from kel.utils.torch_utils import ModularMLPModel
 
 class NeuralFGEL(GeneralizedEL):
     def __init__(self, model, reg_param=1e-6, batch_size=200, dual_func_network_kwargs=None, **kwargs):
-        super().__init__(model=model, theta_optim='oadam_gda', **kwargs)
+        super().__init__(model=model, theta_optim='oadam_gda', dual_moment_func_type='neural', **kwargs)
 
         self.batch_size = batch_size
         self.l2_lambda = reg_param
