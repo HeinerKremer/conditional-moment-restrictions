@@ -12,4 +12,4 @@ params:
     method: ['OLS', 'KernelMMR', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural', 'KernelVMM']
     experiment: ['network_iv']
     exp_option:
-        ['"{\"ftype\": [\"abs\", \"step\", \"sin\", \"linear\"]}"']
+        ["'{\"ftype\": [\"abs\", \"step\", \"sin\", \"linear\"]}'"]
