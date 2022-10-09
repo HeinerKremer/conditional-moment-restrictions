@@ -137,7 +137,7 @@ methods = {
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
-                "max_no_improve": 3,
+                "max_no_improve": 10,
                 "theta_optim_args": {'lr': 1e-4}},
             'hyperparams': {'kl_reg_param': [1e-1, 1, 1e1],
                             "reg_param": [1e-4, 1e-2, 1e0],

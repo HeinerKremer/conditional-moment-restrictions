@@ -83,7 +83,7 @@ def write_bash_script(file_path, work_dir, py_env):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exp_config', nargs="?", type=str, default='OPE_exp.yaml')
+    parser.add_argument('--exp_config', nargs="?", type=str, default='IV_exp.yaml')
     args = parser.parse_args()
     method = args.exp_config.split('.')[0]
     job_dir = Path(__file__).parent / 'jobs_{}'.format(method)

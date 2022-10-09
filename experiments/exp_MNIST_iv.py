@@ -176,7 +176,7 @@ if __name__ == '__main__':
     from kel.estimation import estimation
 
     exp = NetworkIVExperiment(ftype='abs')
-    exp.prepare_dataset(n_train=60000, n_val=1000, n_test=10000)
+    exp.prepare_dataset(n_train=10000, n_val=1000, n_test=10000)
     model = exp.init_model()
 
     trained_model, stats = estimation(model=model,
@@ -186,7 +186,7 @@ if __name__ == '__main__':
                                       estimator_kwargs={'n_random_features': 5000,
                                                         'batch_training': True,
                                                         'batch_size': 200,
-                                                        'max_num_epochs': 1000000,
+                                                        'max_num_epochs': 100000,
                                                         'max_no_improve': 20},
                                       hyperparams=None,
                                       normalize_moment_function=False,

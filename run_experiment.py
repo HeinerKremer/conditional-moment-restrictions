@@ -2,6 +2,7 @@ import argparse
 import copy
 import json
 import os
+from ast import literal_eval
 
 import numpy as np
 import torch
@@ -171,29 +172,33 @@ def summarize_results(result_list):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--run_sequential', action='store_true')
-    parser.add_argument('--experiment', type=str, default='heteroskedastic')
+    parser.add_argument('--run_sequential', dest='sequential', action='store_true')
+    parser.add_argument('--run_parallel', dest='sequential', action='store_false')
+    parser.add_argument('--experiment', type=str, default='network_iv')
     parser.add_argument('--exp_option', default=None)
     parser.add_argument('--n_train', type=int, default=100)
     parser.add_argument('--method', type=str, default='KernelFGEL')
     parser.add_argument('--method_option', default=None)
     parser.add_argument('--rollouts', type=int, default=2)
-
+    parser.set_defaults(sequential=False)
     args = parser.parse_args()
 
     exp_info = experiment_setups[args.experiment]
 
     if args.exp_option is not None:
-        exp_info['exp_params'] = {list(exp_info['exp_params'].keys())[0]: args.exp_option}
+        exp_option = literal_eval(args.exp_option)
+        exp_info['exp_params'] = {list(exp_info['exp_params'].keys())[0]: exp_option}
         filename = '_' + args.exp_option
     else:
         filename = ''
 
+    print(exp_info)
+    raise ValueError
     results = run_experiment_repeated(experiment=exp_info['exp_class'],
                                       exp_params=exp_info['exp_params'],
                                       n_train=args.n_train,
                                       estimation_method=args.method,
                                       repititions=args.rollouts,
-                                      parallel=not args.run_sequential,
+                                      parallel=not args.sequential,
                                       filename=filename)
     print(results['results_summarized'])
