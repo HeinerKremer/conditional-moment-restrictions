@@ -22,6 +22,7 @@ class AbstractEstimationMethod:
 
     def train(self, x_train, z_train, x_val, z_val, debugging=False):
         self._train_internal(x_train, z_train, x_val, z_val, debugging=debugging)
+        self.model.to('cpu')
         self.is_trained = True
 
     def get_trained_parameters(self):
@@ -52,7 +53,7 @@ class AbstractEstimationMethod:
             x_val = self._to_tensor(x_val)
         psi = self.model.psi(x_val)
         mse_moment_violation = torch.sum(torch.square(psi)) / psi.shape[0]
-        return float(mse_moment_violation.detach().numpy())
+        return float(mse_moment_violation.detach().cpu().numpy())
 
     def calc_validation_metric(self, x_val, z_val):
         val_data = {'t': x_val[0], 'y': x_val[1], 'z': z_val}

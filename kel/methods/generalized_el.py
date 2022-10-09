@@ -355,7 +355,10 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.model.to(device)
         x_tensor = [x_tensor[0].to(device),
                     x_tensor[1].to(device)]
+        x_val_tensor = [x_val_tensor[0].to(device),
+                        x_val_tensor[1].to(device)]
         z_tensor = z_tensor.to(device)
+        z_val_tensor = z_val_tensor.to(device)
         # use list with dual parameters etc
         for ele in self.all_dual_params:
             ele.to(device)
@@ -385,7 +388,8 @@ class GeneralizedEL(AbstractEstimationMethod):
 
             if epoch_i % eval_freq_epochs == 0:
                 cycle_num += 1
-                val_loss = self.calc_validation_metric(x_val, z_val)
+                val_loss = self.calc_validation_metric(x_val_tensor,
+                                                       z_val_tensor)
                 if self.verbose:
                     last_obj = obj[-1] if isinstance(obj, list) else obj
                     print("epoch %d, theta-obj=%f, val-loss=%f"
