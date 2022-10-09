@@ -180,14 +180,14 @@ if __name__ == "__main__":
     parser.add_argument('--method', type=str, default='KernelFGEL')
     parser.add_argument('--method_option', default=None)
     parser.add_argument('--rollouts', type=int, default=2)
-    parser.set_defaults(sequential=False)
+    parser.set_defaults(sequential=True)
     args = parser.parse_args()
 
     exp_info = experiment_setups[args.experiment]
 
     if args.exp_option is not None:
-        exp_option = literal_eval(args.exp_option)
-        exp_info['exp_params'] = {list(exp_info['exp_params'].keys())[0]: exp_option}
+        # exp_option = literal_eval(args.exp_option)
+        exp_info['exp_params'] = {list(exp_info['exp_params'].keys())[0]: args.exp_option}
         filename = '_' + args.exp_option
     else:
         filename = ''
