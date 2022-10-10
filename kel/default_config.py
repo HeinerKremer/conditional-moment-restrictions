@@ -166,7 +166,7 @@ for divergence in ['chi2', 'kl', 'log']:
                         }
         }
 
-for divergence in ['chi2', 'kl', 'log']:
+for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
     methods[f'KernelELNeural-{divergence}'] = {
             'estimator_class': KernelELNeural,
             'estimator_kwargs': {

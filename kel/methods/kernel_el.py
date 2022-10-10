@@ -35,10 +35,13 @@ class KernelEL(GeneralizedEL):
                 return torch.exp(t)
         elif self.f_divergence_reg == 'log':
             def div(t):
-                return torch.log(1 - t)
+                return -torch.log(1 - t)
         elif self.f_divergence_reg == 'chi2':
             def div(t):
-                return torch.square(1 + t)
+                return 1/2 * torch.square(1 + t)
+        elif self.f_divergence_reg == 'chi2-sqrt':
+            def div(t):
+                return 2 * torch.sqrt(1 - t)
         else:
             raise NotImplementedError('Invalid f-divergence regularizer specified.')
         return div
