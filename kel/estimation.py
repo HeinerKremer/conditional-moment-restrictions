@@ -9,9 +9,10 @@ from kel.methods.least_squares import OrdinaryLeastSquares
 from kel.default_config import methods
 
 mr_estimators = ['OLS', 'GMM', 'GEL', 'KernelEL']
-cmr_estimators = ['KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural',
+cmr_estimators = ['KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel',
                   'KernelFGEL', 'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
-                  'NeuralFGEL', 'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',]
+                  'NeuralFGEL', 'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+                  'KernelELNeural', 'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log',]
 
 
 def estimation(model, train_data, moment_function, estimation_method,
@@ -42,6 +43,7 @@ def estimation(model, train_data, moment_function, estimation_method,
 
     # Load estimator and update default estimator kwargs
     method = methods[estimation_method]
+    print(method)
     estimator_class = method['estimator_class']
     estimator_kwargs_default = method['estimator_kwargs']
     hyperparams_default = method['hyperparams']

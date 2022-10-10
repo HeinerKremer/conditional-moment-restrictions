@@ -13,15 +13,15 @@ experiments = [
                          'method': experiment_setups['heteroskedastic']["methods"],
                          'rollouts': [50],}
      ),
-    ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
-                    'method': experiment_setups['network_iv']["methods"],
-                    'rollouts': [50],
-                    'exp_option': ['abs', 'step', 'sin', 'linear']}
-     ),
-    ('poisson', {'n_train': experiment_setups['poisson']['n_train'],
-                    'method': experiment_setups['poisson']["methods"],
-                    'rollouts': [experiment_setups['poisson']['rollouts']],}
-     ),
+    # ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
+    #                 'method': experiment_setups['network_iv']["methods"],
+    #                 'rollouts': [50],
+    #                 'exp_option': ['abs', 'step', 'sin', 'linear']}
+    #  ),
+    # ('poisson', {'n_train': experiment_setups['poisson']['n_train'],
+    #                 'method': experiment_setups['poisson']["methods"],
+    #                 'rollouts': [experiment_setups['poisson']['rollouts']],}
+    #  ),
 ]
 
 max_parallel_rollouts = None

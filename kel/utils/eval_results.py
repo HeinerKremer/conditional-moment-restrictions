@@ -481,11 +481,13 @@ def plot_divergence_comparison_cmr(n_samples, kl_reg_params=None, logscale=False
 
 def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg_param=None):
     methods = ['OLS',
-               'KernelVMM',
+               'KernelMMR',
+               # 'SMD',
+               #'KernelVMM',
                'NeuralVMM',
-               'KernelFGEL',
+               #'KernelFGEL',
                'NeuralFGEL',
-               'KernelELKernel',
+               #'KernelELKernel',
                'KernelELNeural',
                ]
     funcs = ['abs', 'step', 'sin', 'linear']
@@ -552,7 +554,7 @@ if __name__ == "__main__":
 
     plot_divergence_comparison_cmr(n_samples=[64, 128, 512, 1024, 4096],
                                    logscale=True,
-                                   kl_reg_params=None,
+                                   kl_reg_params=[1.0],
                                    remove_failed=False,
                                )
 

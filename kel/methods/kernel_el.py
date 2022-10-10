@@ -16,15 +16,32 @@ class KernelEL(GeneralizedEL):
     Maximum mean discrepancy empirical likelihood estimator for unconditional moment restrictions.
     """
 
-    def __init__(self, kl_reg_param, kernel_x_kwargs=None, **kwargs):
+    def __init__(self, kl_reg_param, f_divergence_reg='kl', kernel_x_kwargs=None, **kwargs):
         super().__init__(**kwargs)
         self.kl_reg_param = kl_reg_param
+        self.f_divergence_reg = f_divergence_reg
+        self.f_divergence = self._set_f_divergence_regularizer()
 
         if kernel_x_kwargs is None:
             kernel_x_kwargs = {}
         self.kernel_x_kwargs = kernel_x_kwargs
         self.kernel_x = None
         self.kernel_x_val = None
+
+    def _set_f_divergence_regularizer(self):
+        # TODO: This can be unified with set_gel_function.
+        if self.f_divergence_reg == 'kl':
+            def div(t):
+                return torch.exp(t)
+        elif self.f_divergence_reg == 'log':
+            def div(t):
+                return torch.log(1 - t)
+        elif self.f_divergence_reg == 'chi2':
+            def div(t):
+                return torch.square(1 + t)
+        else:
+            raise NotImplementedError('Invalid f-divergence regularizer specified.')
+        return div
 
     def _set_kernel_x(self, x, x_val=None):
         if self.kernel_x is None and x is not None:
@@ -63,7 +80,7 @@ class KernelEL(GeneralizedEL):
         exponent = (torch.einsum('ij, ik -> k', self.rkhs_func.params, self.kernel_x) + self.dual_normalization.params
                     - torch.einsum('ik, ik -> i', self.eval_dual_moment_func(z), self.model.psi(x)))
         objective = (expected_rkhs_func + self.dual_normalization.params - 1 / 2 * rkhs_norm_sq
-                     - self.kl_reg_param * torch.mean(torch.exp(1 / self.kl_reg_param * exponent)))
+                     - self.kl_reg_param * torch.mean(self.f_divergence(1 / self.kl_reg_param * exponent)))
         return objective, -objective
 
     """--------------------- Optimization methods for dual_func ---------------------"""

@@ -22,9 +22,10 @@ experiment_setups = {
                            'noise': 1.0,
                            'heteroskedastic': True, },
             'n_train': [64, 128, 256, 512, 1024, 2048, 4096],
-            'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural',
+            'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel',
                         'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
-                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',],
+                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+                        'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
             'rollouts': 50,
         },
 
