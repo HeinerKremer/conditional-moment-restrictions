@@ -114,7 +114,7 @@ if __name__ == '__main__':
     trained_model, stats = estimation(model=model,
                                       train_data=exp.train_data,
                                       moment_function=exp.moment_function,
-                                      estimation_method='RFKernelELNeural',
+                                      estimation_method='DeepIV',
                                       hyperparams=None,
                                       validation_data=exp.val_data,
                                       val_loss_func=exp.validation_loss,

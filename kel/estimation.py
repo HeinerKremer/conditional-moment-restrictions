@@ -13,7 +13,7 @@ cmr_estimators = ['KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel'
                   'KernelFGEL', 'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
                   'NeuralFGEL', 'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
                   'KernelELNeural', 'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log', 'KernelELNeural-chi2-sqrt',
-                  'RFKernelELNeural', 'RFKernelELKernel']
+                  'RFKernelELNeural', 'RFKernelELKernel', 'DeepIV']
 
 
 def estimation(model, train_data, moment_function, estimation_method,
