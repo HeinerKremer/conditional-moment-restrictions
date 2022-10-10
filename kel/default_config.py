@@ -107,9 +107,7 @@ methods = {
                 "dual_optim": 'oadam_gda',
                 "theta_optim": 'oadam_gda',
                 "eval_freq": 100,
-                "max_num_epochs": 20000,
-                "theta_optim_args": {'lr': 1e-4},
-                "dual_optim_args": {'lr': 1e-4}},
+                "max_num_epochs": 20000},
             'hyperparams': {'kl_reg_param': [1e5, 1e4, 1e3, 1e2, 1e1, 1e0, 1e-1, 1e-2, 1e-3]}
         },
 
@@ -121,28 +119,55 @@ methods = {
                 "theta_optim": 'oadam_gda',
                 "eval_freq": 100,
                 "max_num_epochs": 20000,
-                "theta_optim_args": {'lr': 1e-4},
-                "dual_optim_args": {'lr': 1e-4}},
+                "max_no_improve": 3},
             'hyperparams': {'kl_reg_param': [1e-1, 1e0, 1e1],
                             'reg_param': [1e-1, 1e-3, 1e-6],
                         }
+        },
+    'RFKernelELKernel':
+        {
+            'estimator_class': KernelELKernel,
+            'estimator_kwargs': {
+                "dual_optim": 'oadam_gda',
+                "theta_optim": 'oadam_gda',
+                "n_random_features": 5000,
+                "eval_freq": 100,
+                "max_num_epochs": 20000,
+                "max_no_improve": 3},
+            'hyperparams': {'kl_reg_param': [1e-1, 1e0, 1e1],
+                            'reg_param': [1e-1, 1e-3, 1e-6],
+                            }
         },
 
     'KernelELNeural':
         {
             'estimator_class': KernelELNeural,
             'estimator_kwargs': {
-                "batch_training": True,
-                "batch_size": 200,
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
-                "max_no_improve": 10,
-                "theta_optim_args": {'lr': 1e-4}},
+                "max_no_improve": 3},
             'hyperparams': {'kl_reg_param': [1e-1, 1, 1e1],
                             "reg_param": [1e-4, 1e-2, 1e0],
                         }
         },
+
+    'RFKernelELNeural':
+        {
+            'estimator_class': KernelELNeural,
+            'estimator_kwargs': {
+                "batch_training": True,
+                "batch_size": 200,
+                "n_random_features": 5000,
+                "max_num_epochs": 20000,
+                "burn_in_cycles": 5,
+                "eval_freq": 100,
+                "max_no_improve": 3},
+            'hyperparams': {'kl_reg_param': [1e-1, 1, 1e1],
+                            "reg_param": [1e-4, 1e-2, 1e0],
+                        }
+        }
+
 }
 
 for divergence in ['chi2', 'kl', 'log']:

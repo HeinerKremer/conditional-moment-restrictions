@@ -9,6 +9,6 @@ params:
     n_runs: 1
     n_train: [2000]
     rollouts: [50]
-    method: ['KernelMMR', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural', 'KernelVMM']
+    method: ['KernelELKernel', 'KernelELNeural', 'RFKernelELNeural', 'RFKernelELKernel']
     experiment: ['network_iv']
     exp_option: ['abs', 'sin', 'step', 'linear']

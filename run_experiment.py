@@ -52,7 +52,7 @@ experiment_setups = {
             'n_train': [2000],
             'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural',
                         'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
-                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log', ],
+                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log', 'RFKernelELNeural', 'RFKernelELKernel'],
             'rollouts': 50,
         },
 
@@ -180,7 +180,7 @@ if __name__ == "__main__":
     parser.add_argument('--method', type=str, default='KernelFGEL')
     parser.add_argument('--method_option', default=None)
     parser.add_argument('--rollouts', type=int, default=2)
-    parser.set_defaults(sequential=True)
+    parser.set_defaults(sequential=False)
     args = parser.parse_args()
 
     exp_info = experiment_setups[args.experiment]
