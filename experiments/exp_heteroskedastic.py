@@ -47,7 +47,7 @@ class HeteroskedasticNoiseExperiment(AbstractExperiment):
         error1 = []
         if self.heteroskedastic:
             for i in range(num_data):
-                error1.append(np.random.normal(0, self.noise * np.abs(t[i, 0]) ** 2), size=self.dim_theta)
+                error1.append(np.random.normal(0, self.noise * np.abs(t[i, 0]) ** 2, size=self.dim_theta))
             error1 = np.asarray(error1).reshape([num_data, self.dim_theta])
         else:
             error1 = np.random.normal(0, self.noise, [num_data, 1])
