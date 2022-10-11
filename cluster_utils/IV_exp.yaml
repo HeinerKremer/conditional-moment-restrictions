@@ -10,8 +10,7 @@ params:
     n_train: [2000]
     rollouts: [50]
     method: ['KernelMMR', 'RFKernelELNeural', 'OLS', 'DeepIV', 'NeuralVMM',
-             'NeuralFGEL-log', 'NeuralFGEL-chi2', 'NeuralFGEL-kl',
-             'KernelFGEL-log', 'KernelFGEL-chi2', 'KernelFGEL-kl'
+             'NeuralFGEL', 'KernelFGEL'
              'KernelVMM', 'KernelELKernel', 'RFKernelELKernel',
              'KernelELNeural-log', 'KernelELNeural-kl', 'KernelELNeural-chi2']
     experiment: ['network_iv']

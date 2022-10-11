@@ -10,6 +10,8 @@ def eval_model(t, theta, numpy=False):
             t = torch.tensor(t)
         return torch.sum(t * theta.reshape(1, -1), dim=1, keepdim=True).float()
     else:
+        if torch.is_tensor(t):
+            t = t.numpy()
         return np.sum(t * theta.reshape(1, -1), axis=1, keepdims=True)
 
 
