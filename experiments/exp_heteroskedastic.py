@@ -47,12 +47,12 @@ class HeteroskedasticNoiseExperiment(AbstractExperiment):
         error1 = []
         if self.heteroskedastic:
             for i in range(num_data):
-                error1.append(np.random.normal(0, self.noise * np.abs(t[i, 0]) ** 2))
-            error1 = np.asarray(error1).reshape([num_data, 1])
+                error1.append(np.random.normal(0, self.noise * np.abs(t[i, 0]) ** 2, size=self.dim_theta))
+            error1 = np.asarray(error1).reshape((num_data, self.dim_theta))
         else:
             error1 = np.random.normal(0, self.noise, [num_data, 1])
         y = eval_model(t, self.theta0, numpy=True) + error1
-        return {'t': t, 'y': y, 'z': t}
+        return {'t': t, 'y': y, 'z': t[:, 0].reshape((-1, 1))}
 
     def get_true_parameters(self):
         return np.array(self.theta0)
@@ -71,27 +71,27 @@ if __name__ == '__main__':
     from kel.estimation import estimation
     np.random.seed(12345)
     torch.random.manual_seed(12345)
-    exp = HeteroskedasticNoiseExperiment(theta=[1.4], noise=2.0, heteroskedastic=True)
+    exp = HeteroskedasticNoiseExperiment(theta=[1.4, 2.3], noise=1, heteroskedastic=True)
 
     test_risks = []
     mses = []
     thetas = []
 
-    for i in range(5):
-        exp.prepare_dataset(n_train=200, n_val=2000, n_test=20000)
+    for i in range(3):
+        exp.prepare_dataset(n_train=1000, n_val=2000, n_test=20000)
         model = exp.init_model()
         trained_model, stats = estimation(model=model,
                                           train_data=exp.train_data,
                                           moment_function=exp.moment_function,
-                                          estimation_method='KernelFGEL',
-                                          estimator_kwargs=None, hyperparams=None,
+                                          estimation_method='KernelELKernel',
+                                          estimator_kwargs=None, hyperparams={'kl_reg_param': [1.0]},
                                           validation_data=exp.val_data, val_loss_func=exp.validation_loss,
                                           verbose=True
                                           )
 
         mses.append(np.mean(np.square(np.squeeze(trained_model.get_parameters()) - exp.theta0)))
         test_risks.append(exp.eval_risk(trained_model, exp.test_data))
-        thetas.append(float(np.squeeze(trained_model.get_parameters())))
+        thetas.append(np.squeeze(trained_model.get_parameters()))
 
     results = {'theta': thetas, 'test_risk': test_risks, 'mse': mses}
     print(results)
