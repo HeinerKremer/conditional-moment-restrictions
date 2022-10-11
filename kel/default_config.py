@@ -58,7 +58,7 @@ methods = {
         {
             'estimator_class': KernelVMM,
             'estimator_kwargs': {},
-            'hyperparams': {'alpha': [1e-8, 1e-6, 1e-4, 1e-2]}
+            'hyperparams': {'alpha': [1e-8, 1e-6, 1e-4]}
         },
 
     'NeuralVMM':
