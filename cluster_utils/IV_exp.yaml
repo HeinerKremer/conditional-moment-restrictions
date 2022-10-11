@@ -9,7 +9,8 @@ params:
     n_runs: 1
     n_train: [2000]
     rollouts: [50]
-    method: ['KernelMMR', 'RFKernelELNeural', 'OLS', 'DeepIV', 'NeuralVMM',
+    method: ['KernelMMR','OLS', 'DeepIV', 'NeuralVMM',
+             'RFKernelELNeural-log', 'RFKernelELNeural-kl', 'RFKernelELNeural-chi2'
              'NeuralFGEL-log', 'NeuralFGEL-chi2', 'NeuralFGEL-kl',
              'KernelFGEL-log', 'KernelFGEL-chi2', 'KernelFGEL-kl'
              'KernelVMM', 'KernelELKernel', 'RFKernelELKernel',
