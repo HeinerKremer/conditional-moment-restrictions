@@ -150,9 +150,9 @@ def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, 
     if filename is not None:
         prefix = f"results/{str(experiment.__name__)}/{str(experiment.__name__)}_method={estimation_method}_n={n_train}"
         os.makedirs(os.path.dirname(prefix), exist_ok=True)
-        time_str = datetime.datetime.now().strftime("_%d_%H_%M_%S")
-        print('Filepath: ', prefix + str(filename) + time_str +  ".json")
-        with open(prefix + filename + ".json", "w") as fp:
+        # time_str = datetime.datetime.now().strftime("_%d_%H_%M_%S")
+        print('Filepath: ', prefix + str(filename) + ".json")
+        with open(prefix + str(filename) + ".json", "w") as fp:
             json.dump(result_dict, fp)
     return result_dict
 

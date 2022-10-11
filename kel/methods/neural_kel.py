@@ -16,8 +16,6 @@ class KernelELNeural(KernelEL):
         self.l2_lambda = reg_param
         self.dual_func_network_kwargs = self._update_default_dual_func_network_kwargs(dual_func_network_kwargs)
 
-        # FIXME: Batch training not supported because the KDRO dual RKHS function always has shape (n_sample, 1).
-        #  Can play around with enforcing the constraint only for batches, this might be very interesting
         self.batch_training = batch_training
 
     def _init_dual_params(self):

@@ -492,15 +492,16 @@ def plot_divergence_comparison_cmr(n_samples, kl_reg_params=None, logscale=False
 def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg_param=None):
     methods = ['OLS',
                'KernelMMR',
-               'SMD',
                'KernelFGEL',
                'NeuralFGEL',
                'DeepIV',
                'KernelVMM',
                'NeuralVMM',
                'KernelELKernel',
-               'KernelELNeural',
+               'KernelELNeural-log',
+               'KernelELNeural-kl',
                'RFKernelELNeural',
+               'RFKernelELKernel'
                ]
     funcs = ['abs', 'step', 'sin', 'linear']
 
@@ -511,7 +512,7 @@ def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg
         for method in methods:
             if method in ['NeuralFGEL', 'KernelFGEL']:
                 test, val = get_result_for_best_divergence(method=method, n_train=n_train, test_metric=test_metric, experiment='network_iv', func=func)
-            elif method in ['KernelELKernel', 'KernelELNeural', 'RFKernelELNeural'] and kl_reg_param is not None:
+            elif method in ['KernelELKernel', 'KernelELNeural-log', 'KernelELNeural-log', 'RFKernelELKernel', 'RFKernelELNeural'] and kl_reg_param is not None:
                 exp_file = base_path / f"results/NetworkIVExperiment/NetworkIVExperiment_method={method}_n={n_train}_{func}.json"
                 res = separate_kel_by_reg_param(reg_params=[kl_reg_param], n_train=n_train, exp_file=exp_file, method=method)
                 test = res[kl_reg_param]['best_separate_results']['test_risk']
@@ -536,41 +537,41 @@ def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg
 if __name__ == "__main__":
     remove_failed = False
 
-    plot_results_over_sample_size(['OLS', 'KernelMMR', 'KernelVMM', 'NeuralVMM', 'KernelFGEL', 'NeuralFGEL',
-                                   'KernelELKernel', 'KernelELNeural'],
-                                  n_samples=[64, 128, 256, 512, 1024, 4096],
-                                  experiment='heteroskedastic',
-                                  logscale=True,
-                                  ylim=[1e-7, 1.6],
-                                  kl_reg_param=1,
-                                  remove_failed=remove_failed,
-                                  )
-
-    plot_results_over_sample_size(['OLS', 'GEL', 'KernelEL'],
-                                  n_samples=[64, 128, 256, 512, 1024, 2048, 4096],
-                                  experiment='poisson',
-                                  logscale=True,
-                                  remove_failed=False,
-                                  )
-
-    plot_mr_over_sample_size(methods=['OLS', 'GEL', 'KEL'],
-                             n_samples=[64, 128, 512, 1024, 2048, 4096],
-                             kl_reg_params=[1e3, 1e1, 1e0, 1e-1],
-                             logscale=True,
-                             ylim=[1e-5, 10],
-                             remove_failed=False)
-
-    plot_divergence_comparison_cmr(n_samples=[64, 128, 512, 1024, 4096],
-                                   logscale=True,
-                                   kl_reg_params=[10, 1, 0.1],
-                                   remove_failed=False,
-                               )
-
-    plot_divergence_comparison_cmr(n_samples=[64, 128, 512, 1024, 4096],
-                                   logscale=True,
-                                   kl_reg_params=[1.0],
-                                   remove_failed=False,
-                               )
+    # plot_results_over_sample_size(['OLS', 'KernelMMR', 'KernelVMM', 'NeuralVMM', 'KernelFGEL', 'NeuralFGEL',
+    #                                'KernelELKernel', 'KernelELNeural'],
+    #                               n_samples=[64, 128, 256, 512, 1024, 4096],
+    #                               experiment='heteroskedastic',
+    #                               logscale=True,
+    #                               ylim=[1e-7, 1.6],
+    #                               kl_reg_param=1,
+    #                               remove_failed=remove_failed,
+    #                               )
+    #
+    # plot_results_over_sample_size(['OLS', 'GEL', 'KernelEL'],
+    #                               n_samples=[64, 128, 256, 512, 1024, 2048, 4096],
+    #                               experiment='poisson',
+    #                               logscale=True,
+    #                               remove_failed=False,
+    #                               )
+    #
+    # plot_mr_over_sample_size(methods=['OLS', 'GEL', 'KEL'],
+    #                          n_samples=[64, 128, 512, 1024, 2048, 4096],
+    #                          kl_reg_params=[1e3, 1e1, 1e0, 1e-1],
+    #                          logscale=True,
+    #                          ylim=[1e-5, 10],
+    #                          remove_failed=False)
+    #
+    # plot_divergence_comparison_cmr(n_samples=[64, 128, 512, 1024, 4096],
+    #                                logscale=True,
+    #                                kl_reg_params=[10, 1, 0.1],
+    #                                remove_failed=False,
+    #                            )
+    #
+    # plot_divergence_comparison_cmr(n_samples=[64, 128, 512, 1024, 4096],
+    #                                logscale=True,
+    #                                kl_reg_params=[1.0],
+    #                                remove_failed=False,
+    #                            )
 
     generate_table(n_train=2000,
                    test_metric='test_risk',
