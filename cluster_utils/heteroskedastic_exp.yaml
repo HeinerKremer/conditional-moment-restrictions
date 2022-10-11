@@ -12,5 +12,6 @@ params:
     method: ['KernelMMR', 'RFKernelELNeural', 'OLS', 'NeuralVMM',
              'KernelVMM', 'KernelELKernel', 'RFKernelELKernel',
              'KernelELNeural-log', 'KernelELNeural-kl', 'KernelELNeural-chi2',
-             'NeuralFGEL', 'KernelFGEL']
+             'NeuralFGEL-log', 'NeuralFGEL-kl', 'NeuralFGEL-chi2',
+             'KernelFGEL-kl', 'KernelFGEL-log', 'KernelFGEL-chi2']
     experiment: ['heteroskedastic']
