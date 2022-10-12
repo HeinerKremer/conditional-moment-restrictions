@@ -12,8 +12,8 @@ params:
     method: ['KernelMMR','OLS', 'DeepIV', 'NeuralVMM',
              'RFKernelELNeural-log', 'RFKernelELNeural-kl', 'RFKernelELNeural-chi2',
              'NeuralFGEL-log', 'NeuralFGEL-chi2', 'NeuralFGEL-kl',
-             'KernelFGEL-log', 'KernelFGEL-chi2', 'KernelFGEL-kl'
-             'KernelVMM', 'KernelELKernel', 'RFKernelELKernel', 'RFKernelELNeural-MB'
+             'KernelFGEL-log', 'KernelFGEL-chi2', 'KernelFGEL-kl',
+             'KernelVMM', 'KernelELKernel', 'RFKernelELKernel', 'RFKernelELNeural-MB',
              'KernelELNeural-log', 'KernelELNeural-kl', 'KernelELNeural-chi2']
     experiment: ['network_iv']
     exp_option: ['abs', 'sin', 'step', 'linear']

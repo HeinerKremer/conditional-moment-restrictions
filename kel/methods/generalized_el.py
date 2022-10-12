@@ -351,7 +351,10 @@ class GeneralizedEL(AbstractEstimationMethod):
 
         # Put everything on the same device
         # TODO(Yassine): Make this in appropriate location and not hacky
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        if self.batch_training:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        else:
+            device = 'cpu'
         self.model.to(device)
         x_tensor = [x_tensor[0].to(device),
                     x_tensor[1].to(device)]
