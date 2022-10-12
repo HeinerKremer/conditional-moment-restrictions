@@ -409,6 +409,22 @@ class GeneralizedEL(AbstractEstimationMethod):
             print("time taken:", time.time() - time_0)
         if debugging:
             try:
+                import matplotlib
+                matplotlib.use('Qt5Agg')
+                # print rkhs lagrangian function:
+                x = np.linspace(-5, 5, 500).reshape((-1, 1))
+                from kel.utils.rkhs_utils import get_rbf_kernel, get_rff
+                if self.n_rff > 0:
+                    k = get_rff(x, self.n_rff, **self.kernel_x_kwargs)
+                else:
+                    k = (get_rbf_kernel(x_tensor[0], x, **self.kernel_x_kwargs) *
+                         get_rbf_kernel(x_tensor[1], x, **self.kernel_x_kwargs))
+                rkhs_func = torch.einsum('ij, ik -> k', self.rkhs_func.params.double(), k)
+                plt.plot(x, rkhs_func.detach().cpu().numpy())
+                plt.show()
+            except:
+                pass
+            try:
                 plt.plot(val_losses)
                 plt.show()
             except:

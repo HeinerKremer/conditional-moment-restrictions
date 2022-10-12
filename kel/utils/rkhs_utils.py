@@ -40,7 +40,9 @@ def get_rff(x, n_rff=1000, sigma=None, numpy=False):
                               n_components=n_rff)
     if len(x.shape) > 2:
         x = x.view(x.shape[0], -1)
-    if not x.requires_grad:
+    if isinstance(x, np.ndarray):
+        x_feat = torch.from_numpy(rbf_features.fit_transform(x).T)
+    elif not x.requires_grad:
         x_feat = torch.from_numpy(rbf_features.fit_transform(x).T)
     else:
         x_detach = x.detach()

@@ -55,9 +55,7 @@ class KernelEL(GeneralizedEL):
                 k_cholesky = torch.tensor(np.transpose(compute_cholesky_factor(self.kernel_x.detach().numpy())))
                 self.kernel_x_cholesky = k_cholesky
             elif self.n_rff > 0:
-                # TODO(Yassine): Check if this is valid also for random features
-                self.kernel_x = (get_rff(x[0], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32)
-                                 * get_rff(x[1], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32))
+                self.kernel_x = get_rff(torch.hstack(x), n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32)
             else:
                 raise ValueError("Number of random features must be larger than 0!")
 
@@ -65,9 +63,7 @@ class KernelEL(GeneralizedEL):
             self.kernel_x_val = (get_rbf_kernel(x_val[0], x_val[0], **self.kernel_x_kwargs)
                                  * get_rbf_kernel(x_val[1], x_val[1], **self.kernel_x_kwargs).type(torch.float32))
         elif x_val is not None and self.n_rff > 0:
-            # TODO(Yassine): Check if this is valid also for random features
-            self.kernel_x_val = (get_rff(x_val[0], **self.kernel_x_kwargs).type(torch.float32)
-                                 * get_rff(x_val[1], **self.kernel_x_kwargs).type(torch.float32))
+            self.kernel_x = get_rff(torch.hstack(x), n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32)
 
     def _init_dual_params(self):
         self.dual_moment_func = Parameter(shape=(1, self.dim_psi))
