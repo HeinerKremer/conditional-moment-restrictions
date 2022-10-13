@@ -182,9 +182,10 @@ for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
         }
 
 for reg_param in [0.1, 1, 10, 100, 1000]:
-    methods[f'KernelELNeural-reg-{reg_param}'] = {
+    methods[f'KernelELNeural-log-reg-{reg_param}'] = {
         'estimator_class': KernelELNeural,
         'estimator_kwargs': {
+            "f_divergence_reg": 'log',
             "batch_size": 200,
             "max_num_epochs": 20000,
             "burn_in_cycles": 5,
@@ -193,6 +194,21 @@ for reg_param in [0.1, 1, 10, 100, 1000]:
         'hyperparams': {'kl_reg_param': [reg_param],
                         "reg_param": [0, 1e-4, 1e-2, 1e0],
                         "f_divergence_reg": ['kl', 'log'],
+                        }
+    }
+
+for reg_param in [0.1, 1, 10, 100, 1000]:
+    methods[f'KernelELNeural-kl-reg-{reg_param}'] = {
+        'estimator_class': KernelELNeural,
+        'estimator_kwargs': {
+            "f_divergence_reg": 'kl',
+            "batch_size": 200,
+            "max_num_epochs": 20000,
+            "burn_in_cycles": 5,
+            "eval_freq": 100,
+            "max_no_improve": 3, },
+        'hyperparams': {'kl_reg_param': [reg_param],
+                        "reg_param": [0, 1e-4, 1e-2, 1e0],
                         }
     }
 
