@@ -3,7 +3,7 @@ import os
 from run_experiment import experiment_setups
 
 # ---------------- Cluster resources
-cpus = 16
+cpus = 32
 memory = 128000
 bid = 12
 
@@ -74,7 +74,7 @@ for experiment in experiments:
         experiment = experiment[0]
 
     for settings in iterate_argument_combinations(params):
-        runline = f'python3 {path}/run_experiment.py --experiment {experiment}'
+        runline = f'python3 {path}/run_experiment.py --experiment {experiment} --run_sequential'
         filename = experiment
 
         for arg, param_value in settings.items():
