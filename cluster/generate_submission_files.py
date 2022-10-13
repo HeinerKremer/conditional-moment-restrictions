@@ -9,13 +9,13 @@ bid = 12
 
 # ---------------- Simulation details ----------------
 experiments = [
-    # ('heteroskedastic1d', {'n_train': experiment_setups['heteroskedastic1d']['n_train'],
-    #                      'method': experiment_setups['heteroskedastic1d']["methods"],
-    #                      'rollouts': [50],}),
-    #
-    # ('heteroskedastic2d', {'n_train': experiment_setups['heteroskedastic2d']['n_train'],
-    #                      'method': experiment_setups['heteroskedastic2d']["methods"],
-    #                      'rollouts': [50], }),
+    ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
+                         'method': experiment_setups['heteroskedastic_one']["methods"],
+                         'rollouts': [50],}),
+
+    ('heteroskedastic_two', {'n_train': experiment_setups['heteroskedastic_two']['n_train'],
+                         'method': experiment_setups['heteroskedastic_two']["methods"],
+                         'rollouts': [50], }),
 
     ('heteroskedastic_reg_params', {'n_train': experiment_setups['heteroskedastic_reg_params']['n_train'],
                          'method': experiment_setups['heteroskedastic_reg_params']["methods"],
