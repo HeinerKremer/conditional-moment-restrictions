@@ -109,12 +109,12 @@ class FlexibleVarNetwork(nn.Module):
 
 
 class SMDHeteroskedastic(SMDIdentity):
-    def __init__(self, model, num_knots=5, polyn_degree=2, num_iter=2):
+    def __init__(self, model, num_knots=5, polyn_degree=2, num_iter=2, **kwargs):
         self.num_iter = num_iter
         self.var_network = FlexibleVarNetwork(model.dim_z, model.dim_psi)
 
         SMDIdentity.__init__(self, model=model,
-                             num_knots=num_knots, polyn_degree=polyn_degree)
+                             num_knots=num_knots, polyn_degree=polyn_degree, **kwargs)
 
     def _train_internal(self, x, z, x_val, z_val, debugging):
         self.basis.setup(z)
