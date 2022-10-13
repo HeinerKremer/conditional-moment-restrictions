@@ -180,7 +180,7 @@ if __name__ == "__main__":
     parser.add_argument('--method', type=str, default='KernelFGEL')
     parser.add_argument('--method_option', default=None)
     parser.add_argument('--rollouts', type=int, default=2)
-    parser.set_defaults(sequential=False)
+    parser.set_defaults(sequential=Trueke   )
     args = parser.parse_args()
 
     exp_info = experiment_setups[args.experiment]

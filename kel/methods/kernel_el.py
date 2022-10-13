@@ -73,7 +73,6 @@ class KernelEL(GeneralizedEL):
             #     get_rff(x_val[0], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32),
             #     get_rff(x_val[1], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32)
             # )
-        print('Done')
 
     def _init_dual_params(self):
         self.dual_moment_func = Parameter(shape=(1, self.dim_psi))
