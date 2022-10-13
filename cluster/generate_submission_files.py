@@ -19,12 +19,12 @@ experiments = [
 
     ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
                     'method': experiment_setups['network_iv']["methods"],
-                    'rollouts': experiment_setups['network_iv']['rollouts'],
+                    'rollouts': [experiment_setups['network_iv']['rollouts']],
                     'exp_option': ['abs', 'step', 'sin', 'linear']}),
 
     ('network_iv_large', {'n_train': experiment_setups['network_iv_large']['n_train'],
                     'method': experiment_setups['network_iv_large']["methods"],
-                    'rollouts': experiment_setups['network_iv_large']['rollouts'],
+                    'rollouts': [experiment_setups['network_iv_large']['rollouts']],
                     'exp_option': ['abs', 'step', 'sin', 'linear']}),
 
     # ('poisson', {'n_train': experiment_setups['poisson']['n_train'],
