@@ -10,7 +10,7 @@ from kel.methods.neural_kel import KernelELNeural
 from kel.methods.kernel_fgel import KernelFGEL
 from kel.methods.kernel_el import KernelEL
 from kel.methods.neural_fgel import NeuralFGEL
-# from kel.methods.deep_iv import DeepIV
+from kel.methods.deep_iv import DeepIV
 
 
 methods = {
@@ -64,7 +64,7 @@ methods = {
     'NeuralVMM':
         {
             'estimator_class': NeuralVMM,
-            'estimator_kwargs': {"batch_size": 200,
+            'estimator_kwargs': {"batch_size": 256,
                                  "max_num_epochs": 20000,
                                  "burn_in_cycles": 5,
                                  "eval_freq": 100,
@@ -74,12 +74,12 @@ methods = {
             'hyperparams': {"reg_param": [0, 1e-4, 1e-2, 1e0]}
         },
 
-    # 'DeepIV':
-    #     {
-    #         'estimator_class': DeepIV,
-    #         'estimator_kwargs': {},
-    #         'hyperparams': {}
-    #     },
+    'DeepIV':
+        {
+            'estimator_class': DeepIV,
+            'estimator_kwargs': {},
+            'hyperparams': {}
+        },
 
     f'KernelFGEL':
         {
@@ -98,7 +98,7 @@ methods = {
         {
             'estimator_class': NeuralFGEL,
             'estimator_kwargs': {
-                "batch_size": 200,
+                "batch_size": 256,
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
@@ -181,7 +181,7 @@ methods = {
             'estimator_kwargs': {
                 "batch_training": True,
                 "batch_size": 256,
-                "n_random_features": 5000,
+                "n_random_features": 10000,
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
@@ -211,7 +211,7 @@ for divergence in ['chi2', 'kl', 'log']:
     methods[f'NeuralFGEL-{divergence}'] = {
         'estimator_class': NeuralFGEL,
         'estimator_kwargs': {
-            "batch_size": 200,
+            "batch_size": 256,
             "max_num_epochs": 20000,
             "burn_in_cycles": 5,
             "eval_freq": 100,
@@ -244,7 +244,7 @@ for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
             'estimator_kwargs': {
                 "batch_training": True,
                 "batch_size": 256,
-                "n_random_features": 5000,
+                "n_random_features": 10000,
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
@@ -260,7 +260,7 @@ for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
             'estimator_kwargs': {
                 "batch_training": False,
                 "batch_size": 0,
-                "n_random_features": 5000,
+                "n_random_features": 000,
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,                "max_no_improve": 3},
