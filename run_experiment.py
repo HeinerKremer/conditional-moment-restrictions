@@ -154,31 +154,40 @@ def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, 
     """
     Runs the same experiment `repititions` times and computes statistics.
     """
-    if parallel:
-        results = run_parallel(experiment=experiment, exp_params=exp_params, n_train=n_train,
-                               estimation_method=estimation_method, estimator_kwargs=estimator_kwargs,
-                               hyperparams=hyperparams, repititions=repititions, seed0=seed0)
-        results = list(results)
-    else:
-        print('Using sequential debugging mode.')
-        results = []
-        for i in range(repititions):
-            stats = run_experiment(experiment=experiment, exp_params=exp_params, n_train=n_train,
+    if exp_name is None:
+        exp_name = str(experiment.__name__)
+    file = f"results/{exp_name}/{exp_name}_method={estimation_method}_n={n_train}" + str(filename) + ".json"
+    try:
+        with open(file, "r") as fp:
+            result_dict = json.load(fp)
+            print('File exists already. Skipping this run.')
+            return result_dict
+    except FileNotFoundError:
+        if parallel:
+            results = run_parallel(experiment=experiment, exp_params=exp_params, n_train=n_train,
                                    estimation_method=estimation_method, estimator_kwargs=estimator_kwargs,
-                                   hyperparams=hyperparams, seed0=seed0+i)
-            results.append(stats)
+                                   hyperparams=hyperparams, repititions=repititions, seed0=seed0)
+            results = list(results)
+        else:
+            print('Using sequential debugging mode.')
+            results = []
+            for i in range(repititions):
+                stats = run_experiment(experiment=experiment, exp_params=exp_params, n_train=n_train,
+                                       estimation_method=estimation_method, estimator_kwargs=estimator_kwargs,
+                                       hyperparams=hyperparams, seed0=seed0+i)
+                results.append(stats)
 
-    results_summarized = summarize_results(results)
-    result_dict = {"results_summarized": results_summarized, "results": results}
-    if filename is not None:
-        if exp_name is None:
-            exp_name = str(experiment.__name__)
-        prefix = f"results/{exp_name}/{exp_name}_method={estimation_method}_n={n_train}"
-        os.makedirs(os.path.dirname(prefix), exist_ok=True)
-        print('Filepath: ', prefix + str(filename) + ".json")
-        with open(prefix + filename + ".json", "w") as fp:
-            json.dump(result_dict, fp)
-    return result_dict
+        results_summarized = summarize_results(results)
+        result_dict = {"results_summarized": results_summarized, "results": results}
+        if filename is not None:
+            if exp_name is None:
+                exp_name = str(experiment.__name__)
+            prefix = f"results/{exp_name}/{exp_name}_method={estimation_method}_n={n_train}"
+            os.makedirs(os.path.dirname(prefix), exist_ok=True)
+            print('Filepath: ', prefix + str(filename) + ".json")
+            with open(prefix + filename + ".json", "w") as fp:
+                json.dump(result_dict, fp)
+        return result_dict
 
 
 def summarize_results(result_list):

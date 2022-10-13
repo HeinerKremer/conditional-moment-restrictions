@@ -186,7 +186,7 @@ class Model(nn.Module):
 
 
 if __name__ == "__main__":
-    kl_reg_param = 3.5
+    kl_reg_param = 20
     ymax = 70
     x_lim = 10
 
