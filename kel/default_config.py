@@ -64,7 +64,7 @@ methods = {
     'NeuralVMM':
         {
             'estimator_class': NeuralVMM,
-            'estimator_kwargs': {"batch_size": 256,
+            'estimator_kwargs': {"batch_size": 1024,
                                  "max_num_epochs": 20000,
                                  "burn_in_cycles": 5,
                                  "eval_freq": 100,
@@ -98,7 +98,7 @@ methods = {
         {
             'estimator_class': NeuralFGEL,
             'estimator_kwargs': {
-                "batch_size": 256,
+                "batch_size": 1024,
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
@@ -180,7 +180,7 @@ methods = {
             'estimator_class': KernelELNeural,
             'estimator_kwargs': {
                 "batch_training": True,
-                "batch_size": 256,
+                "batch_size": 1024,
                 "n_random_features": 10000,
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
@@ -211,7 +211,7 @@ for divergence in ['chi2', 'kl', 'log']:
     methods[f'NeuralFGEL-{divergence}'] = {
         'estimator_class': NeuralFGEL,
         'estimator_kwargs': {
-            "batch_size": 256,
+            "batch_size": 1024,
             "max_num_epochs": 20000,
             "burn_in_cycles": 5,
             "eval_freq": 100,
@@ -243,7 +243,7 @@ for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
             'estimator_class': KernelELNeural,
             'estimator_kwargs': {
                 "batch_training": True,
-                "batch_size": 256,
+                "batch_size": 1024,
                 "n_random_features": 10000,
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
