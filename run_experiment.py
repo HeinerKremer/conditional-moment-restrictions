@@ -15,6 +15,21 @@ from kel.estimation import estimation
 
 
 experiment_setups = {
+    'heteroskedastic':
+        {
+            'exp_class': HeteroskedasticNoiseExperiment,
+            'exp_params': {'theta': [1.7],
+                           'noise': 1.0,
+                           'heteroskedastic': True, },
+            'n_train': [64, 128, 256, 512, 1024, 2048, 4096],
+            'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel',
+                        'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
+                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+                        'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log',
+                        'KernelELKernel-chi2', 'KernelELKernel-kl', 'KernelELKernel-log'],
+            'rollouts': 50,
+        },
+
     'heteroskedastic_one':
         {
             'exp_class': HeteroskedasticNoiseExperiment,
@@ -53,7 +68,7 @@ experiment_setups = {
                            'heteroskedastic': True, },
             'n_train': [64, 128, 256, 512, 1024, 2048, 4096],
             'methods': [f'KernelELNeural-reg-{reg_param}' for reg_param in [0.1, 1, 10, 100, 1000]],
-            'rollouts': 50,
+            'rollouts': 5,
         },
 
     'network_iv':
