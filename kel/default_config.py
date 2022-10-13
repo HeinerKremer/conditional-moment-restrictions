@@ -127,7 +127,7 @@ methods = {
                 "theta_optim": 'oadam_gda',
                 "eval_freq": 100,
                 "max_num_epochs": 20000,
-                "max_no_improve": 3},
+                "max_no_improve": 5},
             'hyperparams': {'kl_reg_param': [1e-1, 1e0, 1e1],
                             'reg_param': [1e-1, 1e-3, 1e-6],
                         }
@@ -141,7 +141,7 @@ methods = {
                 "n_random_features": 5000,
                 "eval_freq": 100,
                 "max_num_epochs": 20000,
-                "max_no_improve": 3},
+                "max_no_improve": 5},
             'hyperparams': {'kl_reg_param': [1e-1, 1e0, 1e1],
                             'reg_param': [1e-1, 1e-3, 1e-6],
                             }
@@ -154,7 +154,7 @@ methods = {
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
-                "max_no_improve": 3},
+                "max_no_improve": 5},
             'hyperparams': {'kl_reg_param': [1e-1, 1, 1e1],
                             "reg_param": [1e-4, 1e-2, 1e0],
                         }
@@ -170,7 +170,7 @@ methods = {
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
-                "max_no_improve": 3},
+                "max_no_improve": 5},
             'hyperparams': {'kl_reg_param': [1e-1, 1, 1e1],
                             "reg_param": [1e-4, 1e-2, 1e0],
                         }
@@ -180,12 +180,12 @@ methods = {
             'estimator_class': KernelELNeural,
             'estimator_kwargs': {
                 "batch_training": True,
-                "batch_size": 1024,
+                "batch_size": 256,
                 "n_random_features": 10000,
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
-                "max_no_improve": 3},
+                "max_no_improve": 5},
             'hyperparams': {'kl_reg_param': [1e-1, 1, 1e1],
                             "reg_param": [1e-4, 1e-2, 1e0],
                             }
@@ -211,7 +211,7 @@ for divergence in ['chi2', 'kl', 'log']:
     methods[f'NeuralFGEL-{divergence}'] = {
         'estimator_class': NeuralFGEL,
         'estimator_kwargs': {
-            "batch_size": 1024,
+            "batch_size": 256,
             "max_num_epochs": 20000,
             "burn_in_cycles": 5,
             "eval_freq": 100,
@@ -231,7 +231,7 @@ for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
-                "max_no_improve": 3, },
+                "max_no_improve": 5,},
             'hyperparams': {'kl_reg_param': [1e2, 1e1, 1e0, 1e-1],
                             "reg_param": [0, 1e-4, 1e-2, 1e0],
                             }
@@ -243,12 +243,12 @@ for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
             'estimator_class': KernelELNeural,
             'estimator_kwargs': {
                 "batch_training": True,
-                "batch_size": 1024,
+                "batch_size": 256,
                 "n_random_features": 10000,
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
-                "max_no_improve": 3},
+                "max_no_improve": 5},
             'hyperparams': {'kl_reg_param': [1e-1, 1, 1e1],
                             "reg_param": [1e-4, 1e-2, 1e0],
                         }
@@ -263,7 +263,8 @@ for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
                 "n_random_features": 000,
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
-                "eval_freq": 100,                "max_no_improve": 3},
+                "eval_freq": 100,
+                "max_no_improve": 5},
             'hyperparams': {'kl_reg_param': [1e-1, 1, 1e1],
                             "reg_param": [1e-4, 1e-2, 1e0],
                         }
