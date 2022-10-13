@@ -407,28 +407,26 @@ class GeneralizedEL(AbstractEstimationMethod):
                     break
         if self.verbose:
             print("time taken:", time.time() - time_0)
+        debugging = True
         if debugging:
-            try:
-                import matplotlib
-                matplotlib.use('Qt5Agg')
-                # print rkhs lagrangian function:
-                x = np.linspace(-5, 5, 500).reshape((-1, 1))
-                from kel.utils.rkhs_utils import get_rbf_kernel, get_rff
-                if self.n_rff > 0:
-                    k = get_rff(x, self.n_rff, **self.kernel_x_kwargs)
-                else:
-                    k = (get_rbf_kernel(x_tensor[0], x, **self.kernel_x_kwargs) *
-                         get_rbf_kernel(x_tensor[1], x, **self.kernel_x_kwargs))
-                rkhs_func = torch.einsum('ij, ik -> k', self.rkhs_func.params.double(), k)
-                plt.plot(x, rkhs_func.detach().cpu().numpy())
-                plt.show()
-            except:
-                pass
-            try:
-                plt.plot(val_losses)
-                plt.show()
-            except:
-                pass
+            import matplotlib
+            matplotlib.use('Qt5Agg')
+            # print rkhs lagrangian function:
+            x = np.linspace(-20, 20, 500).reshape((-1, 1))
+            from kel.utils.rkhs_utils import get_rbf_kernel, get_rff
+            if self.n_rff > 0:
+                k = get_rff(x, self.n_rff, sigma=self.sigma_rff)[0]
+            else:
+                k = (get_rbf_kernel(x_tensor[0].double(), torch.from_numpy(x), sigma=self.sigma_t)[0] *
+                     get_rbf_kernel(x_tensor[1].double(), torch.from_numpy(x), sigma=self.sigma_y)[0])
+            rkhs_func = torch.einsum('ij, ik -> k', self.rkhs_func.params.double(), k)
+            plt.plot(x, rkhs_func.detach().cpu().numpy())
+            plt.show()
+            # try:
+            #     plt.plot(val_losses)
+            #     plt.show()
+            # except:
+            #     pass
 
 
 if __name__ == '__main__':

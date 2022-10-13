@@ -50,7 +50,7 @@ def get_rff(x, n_rff=1000, sigma=None, numpy=False):
 
     if numpy:
         x_feat = x_feat.detach().numpy()
-    return x_feat
+    return x_feat, sigma
 
 
 def get_rbf_kernel(x_1, x_2=None, sigma=None, numpy=False):
@@ -67,4 +67,4 @@ def get_rbf_kernel(x_1, x_2=None, sigma=None, numpy=False):
     kernel_zz = torch.exp((-1 / (2 * sigma ** 2)) * sq_dist)
     if numpy:
         kernel_zz = kernel_zz.detach().numpy()
-    return kernel_zz
+    return kernel_zz, sigma

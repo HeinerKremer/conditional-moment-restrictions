@@ -10,7 +10,7 @@ from kel.methods.neural_kel import KernelELNeural
 from kel.methods.kernel_fgel import KernelFGEL
 from kel.methods.kernel_el import KernelEL
 from kel.methods.neural_fgel import NeuralFGEL
-from kel.methods.deep_iv import DeepIV
+# from kel.methods.deep_iv import DeepIV
 
 
 methods = {
@@ -74,12 +74,12 @@ methods = {
             'hyperparams': {"reg_param": [0, 1e-4, 1e-2, 1e0]}
         },
 
-    'DeepIV':
-        {
-            'estimator_class': DeepIV,
-            'estimator_kwargs': {},
-            'hyperparams': {}
-        },
+    # 'DeepIV':
+    #     {
+    #         'estimator_class': DeepIV,
+    #         'estimator_kwargs': {},
+    #         'hyperparams': {}
+    #     },
 
     f'KernelFGEL':
         {

@@ -50,12 +50,14 @@ class KernelEL(GeneralizedEL):
     def _set_kernel_x(self, x, x_val=None):
         if self.kernel_x is None and x is not None:
             if self.n_rff == 0:
-                self.kernel_x = (get_rbf_kernel(x[0], x[0], **self.kernel_x_kwargs).type(torch.float32)
-                                 * get_rbf_kernel(x[1], x[1], **self.kernel_x_kwargs).type(torch.float32))
+                kt, self.sigma_t = get_rbf_kernel(x[0], x[0], **self.kernel_x_kwargs)
+                ky, self.sigma_y = get_rbf_kernel(x[1], x[1], **self.kernel_x_kwargs)
+                self.kernel_x = (kt.type(torch.float32) * ky.type(torch.float32))
                 k_cholesky = torch.tensor(np.transpose(compute_cholesky_factor(self.kernel_x.detach().numpy())))
                 self.kernel_x_cholesky = k_cholesky
             elif self.n_rff > 0:
-                self.kernel_x = get_rff(torch.hstack(x), n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32)
+                self.kernel_x, self.sigma_rff = get_rff(torch.hstack(x), n_rff=self.n_rff, **self.kernel_x_kwargs)
+                self.kernel_x = self.kernel_x.type(torch.float32)
                 # self.kernel_x = torch.kron(
                 #     get_rff(x[0], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32),
                 #     get_rff(x[1], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32)
@@ -64,10 +66,12 @@ class KernelEL(GeneralizedEL):
                 raise ValueError("Number of random features must be larger than 0!")
 
         if x_val is not None and self.n_rff == 0:
-            self.kernel_x_val = (get_rbf_kernel(x_val[0], x_val[0], **self.kernel_x_kwargs)
-                                 * get_rbf_kernel(x_val[1], x_val[1], **self.kernel_x_kwargs).type(torch.float32))
+            kt, self.sigma_t = get_rbf_kernel(x_val[0], x_val[0], **self.kernel_x_kwargs)
+            ky, self.sigma_y = get_rbf_kernel(x_val[1], x_val[1], **self.kernel_x_kwargs)
+            self.kernel_x_val = (kt.type(torch.float32) * ky.type(torch.float32))
         elif x_val is not None and self.n_rff > 0:
-            self.kernel_x = get_rff(torch.hstack(x), n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32)
+            self.kernel_x_val, self.simga_rff = get_rff(torch.hstack(x), n_rff=self.n_rff, **self.kernel_x_kwargs)
+            self.kernel_x_val = self.kernel_x_val.type(torch.float32)
             # This blows up too much -> not scalable
             # self.kernel_x = torch.kron(
             #     get_rff(x_val[0], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32),
