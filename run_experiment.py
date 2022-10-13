@@ -50,10 +50,21 @@ experiment_setups = {
             'exp_class': NetworkIVExperiment,
             'exp_params': {'ftype': ['abs', 'step', 'sin', 'linear']},
             'n_train': [2000],
-            'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural',
-                        'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
-                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log', ],
+            'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM',
+                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+                        'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
             'rollouts': 50,
+        },
+
+    'network_iv_large':
+        {
+            'exp_class': NetworkIVExperiment,
+            'exp_params': {'ftype': ['abs', 'step', 'sin', 'linear']},
+            'n_train': [20000],
+            'methods': ['OLS', 'SMD', 'NeuralVMM',
+                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+                        'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
+            'rollouts': 10,
         },
 
     'poisson':
