@@ -69,7 +69,7 @@ experiment_setups = {
                            'heteroskedastic': True, },
             'n_train': [64, 128, 256, 512, 1024, 2048, 4096],
             'methods': [f'KernelELNeural-reg-{reg_param}' for reg_param in [0.1, 1, 10, 100, 1000]],
-            'rollouts': 5,
+            'rollouts': 50,
         },
 
     'network_iv':

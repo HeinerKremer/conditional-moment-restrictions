@@ -9,17 +9,17 @@ bid = 12
 
 # ---------------- Simulation details ----------------
 experiments = [
-    ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
-                         'method': experiment_setups['heteroskedastic_one']["methods"],
-                         'rollouts': [50],}),
-
-    ('heteroskedastic_two', {'n_train': experiment_setups['heteroskedastic_two']['n_train'],
-                         'method': experiment_setups['heteroskedastic_two']["methods"],
-                         'rollouts': [50], }),
+    # ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
+    #                      'method': experiment_setups['heteroskedastic_one']["methods"],
+    #                      'rollouts': [50],}),
+    #
+    # ('heteroskedastic_two', {'n_train': experiment_setups['heteroskedastic_two']['n_train'],
+    #                      'method': experiment_setups['heteroskedastic_two']["methods"],
+    #                      'rollouts': [50], }),
 
     ('heteroskedastic_reg_params', {'n_train': experiment_setups['heteroskedastic_reg_params']['n_train'],
                          'method': experiment_setups['heteroskedastic_reg_params']["methods"],
-                         'rollouts': [50], }),
+                         'rollouts': [5], }),
 
     # ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
     #                 'method': experiment_setups['network_iv']["methods"],
