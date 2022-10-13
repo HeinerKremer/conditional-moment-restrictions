@@ -15,17 +15,33 @@ from kel.estimation import estimation
 
 
 experiment_setups = {
-    'heteroskedastic':
+    'heteroskedastic1d':
         {
             'exp_class': HeteroskedasticNoiseExperiment,
-            'exp_params': {'theta': [1.4, 2.3], #[1.7],
+            'exp_params': {'theta': [1.7],
                            'noise': 1.0,
                            'heteroskedastic': True, },
             'n_train': [64, 128, 256, 512, 1024, 2048, 4096],
             'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel',
                         'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
                         'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
-                        'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
+                        'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log',
+                        'KernelELKernel-chi2', 'KernelELKernel-kl', 'KernelELKernel-log'],
+            'rollouts': 50,
+        },
+
+    'heteroskedastic2d':
+        {
+            'exp_class': HeteroskedasticNoiseExperiment,
+            'exp_params': {'theta': [1.4, 2.3],  # [1.7],
+                           'noise': 1.0,
+                           'heteroskedastic': True, },
+            'n_train': [64, 128, 256, 512, 1024, 2048, 4096],
+            'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel',
+                        'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
+                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+                        'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log',
+                        'KernelELKernel-chi2', 'KernelELKernel-kl', 'KernelELKernel-log'],
             'rollouts': 50,
         },
 
@@ -112,7 +128,7 @@ def run_parallel(experiment, exp_params, n_train, estimation_method, estimator_k
 
 
 def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, estimator_kwargs=None, hyperparams=None,
-                            repititions=2, seed0=12345, parallel=True, filename=None):
+                            repititions=2, seed0=12345, parallel=True, filename=None, exp_name=None):
     """
     Runs the same experiment `repititions` times and computes statistics.
     """
@@ -133,7 +149,9 @@ def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, 
     results_summarized = summarize_results(results)
     result_dict = {"results_summarized": results_summarized, "results": results}
     if filename is not None:
-        prefix = f"results/{str(experiment.__name__)}/{str(experiment.__name__)}_method={estimation_method}_n={n_train}"
+        if exp_name is None:
+            exp_name = str(experiment.__name__)
+        prefix = f"results/{exp_name}/{exp_name}_method={estimation_method}_n={n_train}"
         os.makedirs(os.path.dirname(prefix), exist_ok=True)
         print('Filepath: ', prefix + str(filename) + ".json")
         with open(prefix + filename + ".json", "w") as fp:
@@ -180,5 +198,6 @@ if __name__ == "__main__":
                                       estimation_method=args.method,
                                       repititions=args.rollouts,
                                       parallel=not args.run_sequential,
-                                      filename=filename)
+                                      filename=filename,
+                                      exp_name=args.experiment)
     print(results['results_summarized'])
