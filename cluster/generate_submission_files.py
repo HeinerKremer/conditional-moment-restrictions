@@ -9,19 +9,24 @@ bid = 12
 
 # ---------------- Simulation details ----------------
 experiments = [
-    ('heteroskedastic1d', {'n_train': experiment_setups['heteroskedastic1d']['n_train'],
-                         'method': experiment_setups['heteroskedastic1d']["methods"],
-                         'rollouts': [50],}
-     ),
-    ('heteroskedastic2d', {'n_train': experiment_setups['heteroskedastic2d']['n_train'],
-                         'method': experiment_setups['heteroskedastic2d']["methods"],
-                         'rollouts': [50], }
-     ),
-    # ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
-    #                 'method': experiment_setups['network_iv']["methods"],
-    #                 'rollouts': [50],
-    #                 'exp_option': ['abs', 'step', 'sin', 'linear']}
-    #  ),
+    # ('heteroskedastic1d', {'n_train': experiment_setups['heteroskedastic1d']['n_train'],
+    #                      'method': experiment_setups['heteroskedastic1d']["methods"],
+    #                      'rollouts': [50],}),
+    #
+    # ('heteroskedastic2d', {'n_train': experiment_setups['heteroskedastic2d']['n_train'],
+    #                      'method': experiment_setups['heteroskedastic2d']["methods"],
+    #                      'rollouts': [50], }),
+
+    ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
+                    'method': experiment_setups['network_iv']["methods"],
+                    'rollouts': experiment_setups['network_iv']['rollouts'],
+                    'exp_option': ['abs', 'step', 'sin', 'linear']}),
+
+    ('network_iv_large', {'n_train': experiment_setups['network_iv_large']['n_train'],
+                    'method': experiment_setups['network_iv_large']["methods"],
+                    'rollouts': experiment_setups['network_iv_large']['rollouts'],
+                    'exp_option': ['abs', 'step', 'sin', 'linear']}),
+
     # ('poisson', {'n_train': experiment_setups['poisson']['n_train'],
     #                 'method': experiment_setups['poisson']["methods"],
     #                 'rollouts': [experiment_setups['poisson']['rollouts']],}
