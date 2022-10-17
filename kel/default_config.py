@@ -139,7 +139,7 @@ methods = {
                 "n_random_features": 10000,
                 "eval_freq": 100,
                 "max_num_epochs": 20000,
-                "max_no_improve": 3},
+                "max_no_improve": 5},
             'hyperparams': {'kl_reg_param': [1e-1, 1e0, 1e1],
                             'reg_param': [1e-1, 1e-3, 1e-6],
                             }
@@ -168,7 +168,7 @@ methods = {
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
-                "max_no_improve": 3},
+                "max_no_improve": 5},
             'hyperparams': {'kl_reg_param': [1e-1, 1, 1e1],
                             "reg_param": [1e-4, 1e-2, 1e0],
                         }
@@ -183,7 +183,7 @@ methods = {
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
-                "max_no_improve": 3},
+                "max_no_improve": 5},
             'hyperparams': {'kl_reg_param': [1e-1, 1, 1e1],
                             "reg_param": [1e-4, 1e-2, 1e0],
                             }
@@ -307,7 +307,7 @@ for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
-                "max_no_improve": 3},
+                "max_no_improve": 5},
             'hyperparams': {'kl_reg_param': [1e-1, 1, 1e1],
                             "reg_param": [1e-4, 1e-2, 1e0],
                         }
