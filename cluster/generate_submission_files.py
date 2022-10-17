@@ -20,7 +20,6 @@ experiments = [
     ('heteroskedastic_reg_params', {'n_train': experiment_setups['heteroskedastic_reg_params']['n_train'],
                          'method': experiment_setups['heteroskedastic_reg_params']["methods"],
                          'rollouts': [5], }),
-
     # ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
     #                 'method': experiment_setups['network_iv']["methods"],
     #                 'rollouts': [experiment_setups['network_iv']['rollouts']],
