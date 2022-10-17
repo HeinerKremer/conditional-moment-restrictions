@@ -259,5 +259,6 @@ if __name__ == "__main__":
                                       estimation_method=args.method,
                                       repititions=args.rollouts,
                                       parallel=not args.run_sequential,
-                                      filename=filename)
+                                      filename=filename,
+                                      exp_name=args.experiment)
     print(results['results_summarized'])
