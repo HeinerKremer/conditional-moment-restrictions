@@ -180,7 +180,7 @@ def run_parallel(experiment, exp_params, n_train, estimation_method, estimator_k
 
 
 def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, estimator_kwargs=None, hyperparams=None,
-                            repititions=2, seed0=12345, parallel=True, filename=None, exp_name=None):
+                            repititions=2, seed0=12345, parallel=True, filename=None, exp_name=None, overwrite=False):
     """
     Runs the same experiment `repititions` times and computes statistics.
     """
@@ -188,9 +188,12 @@ def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, 
         exp_name = str(experiment.__name__)
     file = f"results/{exp_name}/{exp_name}_method={estimation_method}_n={n_train}" + str(filename) + ".json"
     try:
+        if overwrite:
+            raise FileNotFoundError
         with open(file, "r") as fp:
             result_dict = json.load(fp)
-            print('File exists already. Skipping this run.')
+            print(f'File exists already: {file}'
+                  '\nSkipping this run.')
             return result_dict
     except FileNotFoundError:
         if parallel:
@@ -236,6 +239,7 @@ def summarize_results(result_list):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--run_sequential', action='store_true')
+    parser.add_argument('--overwrite', action='store_true')
     parser.add_argument('--experiment', type=str, default='heteroskedastic')
     parser.add_argument('--exp_option', default=None)
     parser.add_argument('--n_train', type=int, default=100)
@@ -260,5 +264,6 @@ if __name__ == "__main__":
                                       repititions=args.rollouts,
                                       parallel=not args.run_sequential,
                                       filename=filename,
-                                      exp_name=args.experiment)
+                                      exp_name=args.experiment,
+                                      overwrite=args.overwrite)
     print(results['results_summarized'])
