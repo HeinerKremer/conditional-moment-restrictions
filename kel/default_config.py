@@ -136,7 +136,7 @@ methods = {
             'estimator_kwargs': {
                 "dual_optim": 'oadam_gda',
                 "theta_optim": 'oadam_gda',
-                "n_random_features": 5000,
+                "n_random_features": 10000,
                 "eval_freq": 100,
                 "max_num_epochs": 20000,
                 "max_no_improve": 3},
@@ -164,7 +164,7 @@ methods = {
             'estimator_kwargs': {
                 "batch_training": True,
                 "batch_size": 200,
-                "n_random_features": 5000,
+                "n_random_features": 10000,
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,

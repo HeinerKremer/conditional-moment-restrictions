@@ -2,12 +2,6 @@ import argparse
 import copy
 import json
 import os
-<<<<<<< HEAD
-import datetime
-=======
-from ast import literal_eval
-
->>>>>>> a622780 (Fix command line parsing when running experiments and add yaml conf for IV experiment.)
 import numpy as np
 import torch
 from concurrent.futures import ProcessPoolExecutor
