@@ -407,7 +407,6 @@ class GeneralizedEL(AbstractEstimationMethod):
                     break
         if self.verbose:
             print("time taken:", time.time() - time_0)
-        debugging = True
         if debugging:
             import matplotlib
             matplotlib.use('Qt5Agg')
@@ -422,11 +421,11 @@ class GeneralizedEL(AbstractEstimationMethod):
             rkhs_func = torch.einsum('ij, ik -> k', self.rkhs_func.params.double(), k)
             plt.plot(x, rkhs_func.detach().cpu().numpy())
             plt.show()
-            # try:
-            #     plt.plot(val_losses)
-            #     plt.show()
-            # except:
-            #     pass
+            try:
+                plt.plot(val_losses)
+                plt.show()
+            except:
+                pass
 
 
 if __name__ == '__main__':
