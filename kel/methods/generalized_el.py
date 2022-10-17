@@ -27,7 +27,7 @@ class GeneralizedEL(AbstractEstimationMethod):
                  max_num_epochs=50000, eval_freq=2000, max_no_improve=3, burn_in_cycles=5,
                  theta_optim=None, theta_optim_args=None, pretrain=True,
                  dual_optim=None, dual_optim_args=None, inneriters=None,
-                 divergence=None, kernel_z_kwargs=None,
+                 divergence=None, kernel_z_kwargs=None, dual_moment_func_type='kernel',
                  val_loss_func=None,
                  verbose=False):
         super().__init__(model=model, kernel_z_kwargs=kernel_z_kwargs, val_loss_func=val_loss_func)
@@ -45,6 +45,7 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.gel_function = self._set_gel_function()
 
         self.all_dual_params = None     # List of parameters of all dual variables
+        self.dual_moment_func_type = dual_moment_func_type
         self.dual_moment_func = None
         self.dual_optim_type = dual_optim
         self.dual_func_optim_args = dual_optim_args
@@ -69,8 +70,8 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.all_dual_params = list(self.dual_moment_func.parameters())
 
     def are_dual_params_finite(self):
-        isnan = bool(sum([np.sum(np.isnan(p.detach().numpy())) for p in self.all_dual_params]))
-        isinf = bool(sum([np.sum(np.isinf(p.detach().numpy())) for p in self.all_dual_params]))
+        isnan = bool(sum([np.sum(np.isnan(p.detach().cpu().numpy())) for p in self.all_dual_params]))
+        isinf = bool(sum([np.sum(np.isinf(p.detach().cpu().numpy())) for p in self.all_dual_params]))
         return (not isnan) and (not isinf)
 
     def _set_divergence_function(self):
@@ -245,7 +246,7 @@ class GeneralizedEL(AbstractEstimationMethod):
             raise OptimizationError('Primal variables are NaN or inf.')
         if not self.are_dual_params_finite():
             raise OptimizationError('Dual variables are NaN or inf.')
-        return float(- dual_func_obj.detach().numpy())
+        return float(- dual_func_obj.detach().cpu().numpy())
 
     """--------------------- Optimization methods for dual_func ---------------------"""
     def optimize_dual_func(self, x_tensor, z_tensor, iters=5000):
@@ -315,7 +316,8 @@ class GeneralizedEL(AbstractEstimationMethod):
         """---------------------------------------------------------------------------------------------------------"""
 
     def _init_training(self, x_tensor, z_tensor, z_val_tensor=None):
-        self._set_kernel_z(z_tensor, z_val_tensor)
+        if self.dual_moment_func_type == "kernel":
+            self._set_kernel_z(z_tensor, z_val_tensor)
         self._init_dual_params()
         self._set_optimizers()
         if self.pretrain:
@@ -347,11 +349,36 @@ class GeneralizedEL(AbstractEstimationMethod):
         num_no_improve = 0
         cycle_num = 0
 
+        # Put everything on the same device
+        # TODO(Yassine): Make this in appropriate location and not hacky
+        if self.batch_training:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        else:
+            device = 'cpu'
+        self.model.to(device)
+        x_tensor = [x_tensor[0].to(device),
+                    x_tensor[1].to(device)]
+        x_val_tensor = [x_val_tensor[0].to(device),
+                        x_val_tensor[1].to(device)]
+        z_tensor = z_tensor.to(device)
+        z_val_tensor = z_val_tensor.to(device)
+        # use list with dual parameters etc
+        for ele in self.all_dual_params:
+            ele.to(device)
+        try:
+            self.dual_moment_func.to(device)
+            self.rkhs_func.to(device)
+            self.dual_normalization.to(device)
+            self.kernel_x = self.kernel_x.to(device)
+        except:
+            pass
+
         for epoch_i in range(self.max_num_epochs):
             self.model.train()
             self.dual_moment_func.train()
             if self.batch_training:
                 for batch_idx in batch_iter:
+                    self.batch_idx = batch_idx
                     x_batch = [x_tensor[0][batch_idx], x_tensor[1][batch_idx]]
                     z_batch = z_tensor[batch_idx] if z_tensor is not None else None
                     obj = self._optimize_step_theta(x_batch, z_batch)
@@ -364,7 +391,8 @@ class GeneralizedEL(AbstractEstimationMethod):
 
             if epoch_i % eval_freq_epochs == 0:
                 cycle_num += 1
-                val_loss = self.calc_validation_metric(x_val, z_val)
+                val_loss = self.calc_validation_metric(x_val_tensor,
+                                                       z_val_tensor)
                 if self.verbose:
                     last_obj = obj[-1] if isinstance(obj, list) else obj
                     print("epoch %d, theta-obj=%f, val-loss=%f"
@@ -380,6 +408,19 @@ class GeneralizedEL(AbstractEstimationMethod):
         if self.verbose:
             print("time taken:", time.time() - time_0)
         if debugging:
+            import matplotlib
+            matplotlib.use('Qt5Agg')
+            # print rkhs lagrangian function:
+            x = np.linspace(-20, 20, 500).reshape((-1, 1))
+            from kel.utils.rkhs_utils import get_rbf_kernel, get_rff
+            if self.n_rff > 0:
+                k = get_rff(x, self.n_rff, sigma=self.sigma_rff)[0]
+            else:
+                k = (get_rbf_kernel(x_tensor[0].double(), torch.from_numpy(x), sigma=self.sigma_t)[0] *
+                     get_rbf_kernel(x_tensor[1].double(), torch.from_numpy(x), sigma=self.sigma_y)[0])
+            rkhs_func = torch.einsum('ij, ik -> k', self.rkhs_func.params.double(), k)
+            plt.plot(x, rkhs_func.detach().cpu().numpy())
+            plt.show()
             try:
                 plt.plot(val_losses)
                 plt.show()

@@ -4,7 +4,7 @@ import torch
 
 import kel
 
-from kel.utils.rkhs_utils import get_rbf_kernel, compute_cholesky_factor
+from kel.utils.rkhs_utils import get_rbf_kernel, get_rff, compute_cholesky_factor
 from kel.utils.torch_utils import Parameter
 from kel.methods.generalized_el import GeneralizedEL
 
@@ -16,7 +16,7 @@ class KernelEL(GeneralizedEL):
     Maximum mean discrepancy empirical likelihood estimator for unconditional moment restrictions.
     """
 
-    def __init__(self, kl_reg_param, f_divergence_reg='kl', kernel_x_kwargs=None, **kwargs):
+    def __init__(self, kl_reg_param, f_divergence_reg='kl', n_random_features=0, kernel_x_kwargs=None, **kwargs):
         super().__init__(**kwargs)
         self.kl_reg_param = kl_reg_param
         self.f_divergence_reg = f_divergence_reg
@@ -25,6 +25,7 @@ class KernelEL(GeneralizedEL):
         if kernel_x_kwargs is None:
             kernel_x_kwargs = {}
         self.kernel_x_kwargs = kernel_x_kwargs
+        self.n_rff = n_random_features
         self.kernel_x = None
         self.kernel_x_val = None
 
@@ -48,14 +49,34 @@ class KernelEL(GeneralizedEL):
 
     def _set_kernel_x(self, x, x_val=None):
         if self.kernel_x is None and x is not None:
-            self.kernel_x = (get_rbf_kernel(x[0], x[0], **self.kernel_x_kwargs).type(torch.float32)
-                             * get_rbf_kernel(x[1], x[1], **self.kernel_x_kwargs).type(torch.float32))
-            k_cholesky = torch.tensor(np.transpose(compute_cholesky_factor(self.kernel_x.detach().numpy())))
-            self.kernel_x_cholesky = k_cholesky
+            if self.n_rff == 0:
+                kt, self.sigma_t = get_rbf_kernel(x[0], x[0], **self.kernel_x_kwargs)
+                ky, self.sigma_y = get_rbf_kernel(x[1], x[1], **self.kernel_x_kwargs)
+                self.kernel_x = (kt.type(torch.float32) * ky.type(torch.float32))
+                k_cholesky = torch.tensor(np.transpose(compute_cholesky_factor(self.kernel_x.detach().numpy())))
+                self.kernel_x_cholesky = k_cholesky
+            elif self.n_rff > 0:
+                self.kernel_x, self.sigma_rff = get_rff(torch.hstack(x), n_rff=self.n_rff, **self.kernel_x_kwargs)
+                self.kernel_x = self.kernel_x.type(torch.float32)
+                # self.kernel_x = torch.kron(
+                #     get_rff(x[0], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32),
+                #     get_rff(x[1], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32)
+                # )
+            else:
+                raise ValueError("Number of random features must be larger than 0!")
 
-        if x_val is not None:
-            self.kernel_x_val = (get_rbf_kernel(x_val[0], x_val[0], **self.kernel_x_kwargs)
-                                 * get_rbf_kernel(x_val[1], x_val[1], **self.kernel_x_kwargs).type(torch.float32))
+        if x_val is not None and self.n_rff == 0:
+            kt, self.sigma_t = get_rbf_kernel(x_val[0], x_val[0], **self.kernel_x_kwargs)
+            ky, self.sigma_y = get_rbf_kernel(x_val[1], x_val[1], **self.kernel_x_kwargs)
+            self.kernel_x_val = (kt.type(torch.float32) * ky.type(torch.float32))
+        elif x_val is not None and self.n_rff > 0:
+            self.kernel_x_val, self.simga_rff = get_rff(torch.hstack(x), n_rff=self.n_rff, **self.kernel_x_kwargs)
+            self.kernel_x_val = self.kernel_x_val.type(torch.float32)
+            # This blows up too much -> not scalable
+            # self.kernel_x = torch.kron(
+            #     get_rff(x_val[0], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32),
+            #     get_rff(x_val[1], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32)
+            # )
 
     def _init_dual_params(self):
         self.dual_moment_func = Parameter(shape=(1, self.dim_psi))
@@ -78,9 +99,18 @@ class KernelEL(GeneralizedEL):
         return self.dual_moment_func.params
 
     def objective(self, x, z, *args, **kwargs):
-        expected_rkhs_func = torch.mean(torch.einsum('ij, ik -> k', self.rkhs_func.params, self.kernel_x))
-        rkhs_norm_sq = torch.einsum('ir, ij, jr ->', self.rkhs_func.params, self.kernel_x, self.rkhs_func.params)
-        exponent = (torch.einsum('ij, ik -> k', self.rkhs_func.params, self.kernel_x) + self.dual_normalization.params
+        if self.batch_training:
+            kx = self.kernel_x[:, self.batch_idx]
+        else:
+            kx = self.kernel_x
+        expected_rkhs_func = torch.mean(torch.einsum('ij, ik -> k', self.rkhs_func.params, kx))
+        if self.n_rff == 0:
+            rkhs_norm_sq = torch.einsum('ir, ij, jr ->', self.rkhs_func.params, kx, self.rkhs_func.params)
+        elif self.n_rff > 0:
+            rkhs_norm_sq = torch.einsum('i, i ->', self.rkhs_func.params[:, 0], self.rkhs_func.params[:, 0])
+        else:
+            raise ValueError("Number of random featuers cannot be smaller than 0!")
+        exponent = (torch.einsum('ij, ik -> k', self.rkhs_func.params, kx) + self.dual_normalization.params
                     - torch.einsum('ik, ik -> i', self.eval_dual_moment_func(z), self.model.psi(x)))
         objective = (expected_rkhs_func + self.dual_normalization.params - 1 / 2 * rkhs_norm_sq
                      - self.kl_reg_param * torch.mean(self.f_divergence(1 / self.kl_reg_param * exponent)))
@@ -101,7 +131,12 @@ class KernelEL(GeneralizedEL):
 
             dual_func_psi = psi @ cvx.transpose(dual_func)    # (n_sample, 1)
             expected_rkhs_func = 1/n_sample * cvx.sum(kernel_x @ rkhs_func)
-            rkhs_norm_sq = cvx.square(cvx.norm(cvx.transpose(rkhs_func) @ self.kernel_x_cholesky.detach().numpy())) #cvx.quad_form(rkhs_func, kernel_x)
+            if self.n_rff == 0:
+                rkhs_norm_sq = cvx.square(cvx.norm(cvx.transpose(rkhs_func) @ self.kernel_x_cholesky.detach().numpy())) #cvx.quad_form(rkhs_func, kernel_x)
+            elif self.n_rff > 0:
+                rkhs_norm_sq = cvx.square(cvx.norm(rkhs_func))
+            else:
+                raise ValueError('Number of random features cannot be smaller than 0!')
             objective = (expected_rkhs_func + dual_normalization - 1 / 2 * rkhs_norm_sq)
 
             exponent = cvx.sum(kernel_x @ rkhs_func + dual_normalization - dual_func_psi, axis=1)
@@ -119,7 +154,8 @@ class KernelEL(GeneralizedEL):
         return
 
     def _init_training(self, x_tensor, z_tensor, x_val_tensor=None, z_val_tensor=None):
-        self._set_kernel_z(z_tensor, z_val_tensor)
+        if self.dual_moment_func_type == 'kernel':
+            self._set_kernel_z(z_tensor, z_val_tensor)
         self._set_kernel_x(x_tensor, x_val_tensor)
         self._init_dual_params()
         self._set_optimizers()

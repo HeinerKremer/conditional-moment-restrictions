@@ -1,0 +1,18 @@
+executable: '/is/cluster/ynemmour/mpc_ws/Kernel-EL/cluster_utils/run_jobs.sh'
+work_dir: '/is/cluster/ynemmour/mpc_ws/Kernel-EL'
+environment: 'kel_env'
+python_script: 'run_experiment.py'
+memory: 128000
+cpu: 20
+gpu: 0
+params:
+    n_runs: 1
+    n_train: [64, 128, 256, 512, 1024, 2048]
+    rollouts: [50]
+    method: ['KernelMMR', 'OLS', 'NeuralVMM',
+             'KernelVMM', 'KernelELKernel', 'RFKernelELKernel',
+             'RFKernelELNeural-log', 'RFKernelELNeural-kl', 'RFKernelELNeural-chi2'
+             'KernelELNeural-log', 'KernelELNeural-kl', 'KernelELNeural-chi2',
+             'NeuralFGEL-log', 'NeuralFGEL-kl', 'NeuralFGEL-chi2',
+             'KernelFGEL-kl', 'KernelFGEL-log', 'KernelFGEL-chi2']
+    experiment: ['heteroskedastic']

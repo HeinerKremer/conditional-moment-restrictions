@@ -1,5 +1,7 @@
 import numpy as np
 import torch
+import matplotlib
+matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 import cvxpy as cvx
 import seaborn as sns
@@ -75,6 +77,7 @@ NEURIPS_RCPARAMS = {
 class KernelELAnalysis(KernelEL):
     def __init__(self, x, ymax=70, **kwargs):
         super().__init__(**kwargs)
+        self.n_rff = 5000
         self._set_kernel_x(x)
         self._init_dual_params()
         self.ymax = ymax
@@ -98,7 +101,10 @@ class KernelELAnalysis(KernelEL):
 
     def objective(self, x, z, *args, **kwargs):
         expected_rkhs_func = torch.mean(torch.einsum('ij, ik -> k', self.rkhs_func.params, self.kernel_x))
-        rkhs_norm_sq = torch.einsum('ir, ij, jr ->', self.rkhs_func.params, self.kernel_x, self.rkhs_func.params)
+        if self.n_rff > 0:
+            rkhs_norm_sq = torch.einsum('ir, ij -> j', self.rkhs_func.params, self.rkhs_func.params)
+        else:
+            rkhs_norm_sq = torch.einsum('ir, ij, jr ->', self.rkhs_func.params, self.kernel_x, self.rkhs_func.params)
         exponent = (torch.einsum('ij, ik -> k', self.rkhs_func.params, self.kernel_x) + self.dual_normalization.params
                     - self.eval_psi_h(x))
         objective = (expected_rkhs_func + self.dual_normalization.params - 1 / 2 * rkhs_norm_sq
@@ -198,7 +204,8 @@ if __name__ == "__main__":
     estimator_kwargs = methods['KernelEL']['estimator_kwargs']
     model = Model()
 
-    x = [torch.Tensor(np.linspace(-x_lim, x_lim, 500)), torch.Tensor(np.linspace(-10, 10, 500))]
+    x = [torch.Tensor(np.linspace(-x_lim, x_lim, 500)).reshape((-1, 1)),
+         torch.Tensor(np.linspace(-10, 10, 500)).reshape((-1, 1))]
     estimator = KernelELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='kl', **estimator_kwargs)
     estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
     y_kl = estimator.eval_rkhs_func()

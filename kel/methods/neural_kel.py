@@ -9,15 +9,14 @@ cvx_solver = cvx.MOSEK
 
 class KernelELNeural(KernelEL):
 
-    def __init__(self, model, reg_param, batch_size=200, dual_func_network_kwargs=None, **kwargs):
-        super().__init__(model=model, theta_optim='oadam_gda', **kwargs)
+    def __init__(self, model, reg_param, batch_training=False, batch_size=200, dual_func_network_kwargs=None, **kwargs):
+        kwargs['pretrain'] = False
+        super().__init__(model=model, theta_optim='oadam_gda', dual_moment_func_type='neural', **kwargs)
         self.batch_size = batch_size
         self.l2_lambda = reg_param
         self.dual_func_network_kwargs = self._update_default_dual_func_network_kwargs(dual_func_network_kwargs)
 
-        # FIXME: Batch training not supported because the KDRO dual RKHS function always has shape (n_sample, 1).
-        #  Can play around with enforcing the constraint only for batches, this might be very interesting
-        self.batch_training = False
+        self.batch_training = batch_training
 
     def _init_dual_params(self):
         self.dual_moment_func = ModularMLPModel(**self.dual_func_network_kwargs)
@@ -35,6 +34,9 @@ class KernelELNeural(KernelEL):
         if dual_func_network_kwargs is not None:
             dual_func_network_kwargs_default.update(dual_func_network_kwargs)
         return dual_func_network_kwargs_default
+
+    def calc_validation_metric(self, x_val, z_val):
+        return self._calc_val_moment_violation(x_val)
 
     """------------- Objective of Kernel-EL-Neural ------------"""
     def eval_dual_moment_func(self, z):

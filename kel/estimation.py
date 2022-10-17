@@ -154,7 +154,7 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
         if val_loss is None:
             val_loss = estimator.calc_validation_metric(x_val, z_val)
 
-        models.append(model_wrapper)
+        models.append(model_wrapper.cpu())
         hparams.append(hyper)
         validation_loss.append(val_loss)
 
@@ -183,7 +183,7 @@ class ModelWrapper(nn.Module):
 
     def get_parameters(self):
         param_tensor = list(self.model.parameters())
-        return [p.detach().numpy() for p in param_tensor]
+        return [p.detach().cpu().numpy() for p in param_tensor]
 
     def is_finite(self):
         params = self.get_parameters()

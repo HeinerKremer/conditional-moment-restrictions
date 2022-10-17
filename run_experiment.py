@@ -15,6 +15,20 @@ from kel.estimation import estimation
 
 
 experiment_setups = {
+    'off_policy_evaluation':
+        {
+            'exp_class': OffPolicyEvaluationExperiment,
+            'exp_params': {
+                'env_name': 'Pendulum-v1',
+                'algorithm': 'PPO',
+                'rollout_len': 200
+            },
+            'n_train': [5, 10, 20, 50],
+            'methods': ['KernelMMR', 'NeuralVMM',
+                        'KernelELKernel', 'KernelELNeural'],
+            'rollouts': 30
+        },
+
     'heteroskedastic':
         {
             'exp_class': HeteroskedasticNoiseExperiment,
@@ -244,6 +258,5 @@ if __name__ == "__main__":
                                       estimation_method=args.method,
                                       repititions=args.rollouts,
                                       parallel=not args.run_sequential,
-                                      filename=filename,
-                                      exp_name=args.experiment)
+                                      filename=filename)
     print(results['results_summarized'])

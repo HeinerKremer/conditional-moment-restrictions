@@ -1,7 +1,10 @@
 import torch
 import torch.nn as nn
 import numpy as np
+import matplotlib
+matplotlib.use('Qt5Agg')
 from matplotlib import pyplot as plt
+
 
 from experiments.abstract_experiment import AbstractExperiment
 from kel.methods.least_squares import OrdinaryLeastSquares
@@ -105,15 +108,16 @@ if __name__ == '__main__':
     from kel.estimation import estimation
 
     exp = NetworkIVExperiment(ftype='abs')
-    exp.prepare_dataset(n_train=2000, n_val=2000, n_test=20000)
+    exp.prepare_dataset(n_train=2000, n_val=1000, n_test=10000)
     model = exp.init_model()
 
     trained_model, stats = estimation(model=model,
                                       train_data=exp.train_data,
                                       moment_function=exp.moment_function,
-                                      estimation_method='KernelMMR',
-                                      estimator_kwargs=None, hyperparams=None,
-                                      validation_data=exp.val_data, val_loss_func=exp.validation_loss,
+                                      estimation_method='DeepIV',
+                                      hyperparams=None,
+                                      validation_data=exp.val_data,
+                                      val_loss_func=exp.validation_loss,
                                       verbose=True
                                       )
     exp.show_function(model=model, test_data=exp.test_data, title="untrained")

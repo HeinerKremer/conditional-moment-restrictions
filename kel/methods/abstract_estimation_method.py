@@ -22,6 +22,7 @@ class AbstractEstimationMethod:
 
     def train(self, x_train, z_train, x_val, z_val, debugging=False):
         self._train_internal(x_train, z_train, x_val, z_val, debugging=debugging)
+        self.model.to('cpu')
         self.is_trained = True
 
     def get_trained_parameters(self):
@@ -31,10 +32,11 @@ class AbstractEstimationMethod:
 
     def _set_kernel_z(self, z, z_val=None):
         if self.kernel_z is None and z is not None:
-            self.kernel_z = get_rbf_kernel(z, z, **self.kernel_z_kwargs).type(torch.float32)
+            self.kernel_z, _ = get_rbf_kernel(z, z, **self.kernel_z_kwargs)
+            self.kernel_z = self.kernel_z.type(torch.float32)
             self.k_cholesky = torch.tensor(np.transpose(compute_cholesky_factor(self.kernel_z.detach().numpy())))
         if z_val is not None:
-            self.kernel_z_val = get_rbf_kernel(z_val, z_val, **self.kernel_z_kwargs)
+            self.kernel_z_val, _ = get_rbf_kernel(z_val, z_val, **self.kernel_z_kwargs)
 
     def _calc_val_mmr(self, x_val, z_val):
         if not isinstance(x_val, torch.Tensor):
@@ -52,7 +54,7 @@ class AbstractEstimationMethod:
             x_val = self._to_tensor(x_val)
         psi = self.model.psi(x_val)
         mse_moment_violation = torch.sum(torch.square(psi)) / psi.shape[0]
-        return float(mse_moment_violation.detach().numpy())
+        return float(mse_moment_violation.detach().cpu().numpy())
 
     def calc_validation_metric(self, x_val, z_val):
         val_data = {'t': x_val[0], 'y': x_val[1], 'z': z_val}
