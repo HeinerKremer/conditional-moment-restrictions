@@ -485,6 +485,7 @@ def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg
                # 'KernelELKernel',
                'KernelELNeural',
                'RFKernelELNeural',
+               'RFKernelELKernel'
                ]
     funcs = ['abs', 'step', 'sin', 'linear']
 
