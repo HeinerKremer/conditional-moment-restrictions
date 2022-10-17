@@ -256,7 +256,7 @@ if __name__ == "__main__":
         filename = '_' + args.exp_option
     else:
         filename = ''
-
+    print('Vorher: ', int(np.random.randint(10000, size=(1, 1))), int(torch.randint(high=10000, size=(1, 1)).detach().numpy()))
     results = run_experiment_repeated(experiment=exp_info['exp_class'],
                                       exp_params=exp_info['exp_params'],
                                       n_train=args.n_train,
@@ -267,3 +267,5 @@ if __name__ == "__main__":
                                       exp_name=args.experiment,
                                       overwrite=args.overwrite)
     print(results['results_summarized'])
+    print('Nachher: ', int(np.random.randint(10000, size=(1,1))), int(torch.randint(high=10000, size=(1, 1)).detach().numpy()))
+
