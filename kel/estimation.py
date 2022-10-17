@@ -86,10 +86,10 @@ def pretrain_model_and_renormalize_moment_function(moment_function, model, train
                                  moment_function=moment_function,
                                  dim_psi=dim_psi, dim_z=dim_z)
 
-    if conditional_mr:
-        estimator = KernelMMR(model=model_wrapper)
-    else:
-        estimator = OrdinaryLeastSquares(model=model_wrapper)
+    # if conditional_mr:
+    #     estimator = KernelMMR(model=model_wrapper)
+    # else:
+    estimator = OrdinaryLeastSquares(model=model_wrapper)
     estimator.train(x_train=[train_data['t'], train_data['y']], z_train=train_data['z'], x_val=None, z_val=None)
     pretrained_model = estimator.model
     normalization = torch.Tensor(np.std(moment_function(pretrained_model(train_data['t']), torch.Tensor(train_data['y'])).detach().numpy(), axis=0))
