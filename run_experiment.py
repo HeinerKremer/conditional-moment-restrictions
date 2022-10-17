@@ -254,8 +254,6 @@ if __name__ == "__main__":
     else:
         filename = ''
 
-    print(exp_info)
-    raise ValueError
     results = run_experiment_repeated(experiment=exp_info['exp_class'],
                                       exp_params=exp_info['exp_params'],
                                       n_train=args.n_train,

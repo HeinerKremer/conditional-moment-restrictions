@@ -407,7 +407,6 @@ class GeneralizedEL(AbstractEstimationMethod):
                     break
         if self.verbose:
             print("time taken:", time.time() - time_0)
-        debugging = True
         if debugging:
             import matplotlib
             matplotlib.use('Qt5Agg')
