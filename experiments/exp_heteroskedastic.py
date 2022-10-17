@@ -54,7 +54,6 @@ class HeteroskedasticNoiseExperiment(AbstractExperiment):
         else:
             error1 = np.random.normal(0, self.noise, [num_data, 1])
         y = eval_model(t, self.theta0, numpy=True) + error1
-        print({'t': t[:2], 'y': y[:2], 'z': t[:2, 0].reshape((-1, 1))})
         return {'t': t, 'y': y, 'z': t[:, 0].reshape((-1, 1))}
 
     def get_true_parameters(self):

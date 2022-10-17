@@ -182,8 +182,11 @@ class ModelWrapper(nn.Module):
         return self.moment_function(self.model(t), y)
 
     def get_parameters(self):
-        param_tensor = list(self.model.parameters())
-        return [p.detach().cpu().numpy() for p in param_tensor]
+        try:
+            return self.model.get_parameters()
+        except AttributeError:
+            param_tensor = list(self.model.parameters())
+            return [p.detach().cpu().numpy() for p in param_tensor]
 
     def is_finite(self):
         params = self.get_parameters()
