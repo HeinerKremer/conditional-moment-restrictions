@@ -50,7 +50,7 @@ class HeteroskedasticNoiseExperiment(AbstractExperiment):
         if self.heteroskedastic:
             for i in range(num_data):
                 error1.append(np.random.normal(0, self.noise * np.abs(t[i, 0]) ** 2, size=self.dim_theta))
-            error1 = np.asarray(error1).reshape([num_data, self.dim_theta])
+            error1 = np.asarray(error1).reshape((num_data, self.dim_theta))
         else:
             error1 = np.random.normal(0, self.noise, [num_data, 1])
         y = eval_model(t, self.theta0, numpy=True) + error1
@@ -79,8 +79,9 @@ if __name__ == '__main__':
     mses = []
     thetas = []
 
-    for i in range(1):
-        exp.prepare_dataset(n_train=1024, n_val=2000, n_test=20000)
+
+    for i in range(3):
+        exp.prepare_dataset(n_train=1000, n_val=2000, n_test=20000)
         model = exp.init_model()
         trained_model, stats = estimation(model=model,
                                           train_data=exp.train_data,
