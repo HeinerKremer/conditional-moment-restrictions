@@ -16,11 +16,13 @@ class KernelEL(GeneralizedEL):
     Maximum mean discrepancy empirical likelihood estimator for unconditional moment restrictions.
     """
 
-    def __init__(self, kl_reg_param, f_divergence_reg='kl', n_random_features=0, kernel_x_kwargs=None, **kwargs):
+    def __init__(self, kl_reg_param, f_divergence_reg='kl', n_random_features=0,
+                 annealing=False, kernel_x_kwargs=None, **kwargs):
         super().__init__(**kwargs)
         self.kl_reg_param = kl_reg_param
         self.f_divergence_reg = f_divergence_reg
         self.f_divergence = self._set_f_divergence_regularizer()
+        self.annealing = annealing
 
         if kernel_x_kwargs is None:
             kernel_x_kwargs = {}

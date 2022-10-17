@@ -372,10 +372,15 @@ class GeneralizedEL(AbstractEstimationMethod):
             self.kernel_x = self.kernel_x.to(device)
         except:
             pass
+        if self.annealing:
+            kl_reg_param = self.kl_reg_param
 
         for epoch_i in range(self.max_num_epochs):
             self.model.train()
             self.dual_moment_func.train()
+            if self.annealing and epoch_i % 2 == 0:
+                # self.kl_reg_param = kl_reg_param * np.exp(-0.15 * epoch_i)
+                self.kl_reg_param = self.kl_reg_param * 0.99
             if self.batch_training:
                 for batch_idx in batch_iter:
                     self.batch_idx = batch_idx

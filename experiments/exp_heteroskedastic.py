@@ -73,19 +73,19 @@ if __name__ == '__main__':
     from kel.estimation import estimation
     np.random.seed(12345)
     torch.random.manual_seed(12345)
-    exp = HeteroskedasticNoiseExperiment(theta=[1.4, 2.3], noise=1, heteroskedastic=True)
+    exp = HeteroskedasticNoiseExperiment(theta=[1.7], noise=1, heteroskedastic=True)
 
     test_risks = []
     mses = []
     thetas = []
 
-    for i in range(3):
-        exp.prepare_dataset(n_train=1000, n_val=2000, n_test=20000)
+    for i in range(1):
+        exp.prepare_dataset(n_train=100, n_val=2000, n_test=20000)
         model = exp.init_model()
         trained_model, stats = estimation(model=model,
                                           train_data=exp.train_data,
                                           moment_function=exp.moment_function,
-                                          estimation_method='SMD',
+                                          estimation_method='KernelELNeural-AN',
                                           estimator_kwargs=None, hyperparams=None,
                                           validation_data=exp.val_data, val_loss_func=exp.validation_loss,
                                           verbose=True

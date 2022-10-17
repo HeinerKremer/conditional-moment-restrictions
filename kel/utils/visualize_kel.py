@@ -77,7 +77,8 @@ NEURIPS_RCPARAMS = {
 class KernelELAnalysis(KernelEL):
     def __init__(self, x, ymax=70, **kwargs):
         super().__init__(**kwargs)
-        self.n_rff = 5000
+        kwargs.setdefault('n_random_features', 0)
+        self.n_rff = kwargs['n_random_features']
         self._set_kernel_x(x)
         self._init_dual_params()
         self.ymax = ymax
@@ -152,7 +153,12 @@ class KernelELAnalysis(KernelEL):
 
             dual_func_psi = psi    # (n_sample, 1)
             expected_rkhs_func = 1/n_sample * cvx.sum(kernel_x @ rkhs_func)
-            rkhs_norm_sq = cvx.square(cvx.norm(cvx.transpose(rkhs_func) @ self.kernel_x_cholesky.detach().numpy())) #cvx.quad_form(rkhs_func, kernel_x)
+            if self.n_rff > 0:
+                rkhs_norm_sq = cvx.square(cvx.norm(rkhs_func))
+            elif self.n_rff == 0:
+                rkhs_norm_sq = cvx.square(cvx.norm(cvx.transpose(rkhs_func) @ self.kernel_x_cholesky.detach().numpy())) #cvx.quad_form(rkhs_func, kernel_x)
+            else:
+                raise ValueError("N_rand_feat needs to be >= 0!")
             objective = (expected_rkhs_func + dual_normalization - 1 / 2 * rkhs_norm_sq)
 
             exponent = cvx.sum(kernel_x @ rkhs_func + dual_normalization - dual_func_psi, axis=1)
@@ -263,7 +269,7 @@ if __name__ == "__main__":
     # axins.set_xticklabels([])
     # axins.set_yticklabels([])
     ax.indicate_inset_zoom(axins, edgecolor="black")
-    plt.savefig('f-divergences.pdf', dpi=200)
+    plt.savefig('f-divergences.pdf', dpi=300)
     plt.show()
 
     # from matplotlib import cbook

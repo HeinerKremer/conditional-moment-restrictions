@@ -151,6 +151,23 @@ methods = {
                         }
         },
 
+    'KernelELNeural-AN':
+        {
+            'estimator_class': KernelELNeural,
+            'estimator_kwargs': {
+                "f_divergence_reg": 'log',
+                "batch_size": 200,
+                "max_num_epochs": 20000,
+                "burn_in_cycles": 5,
+                "eval_freq": 100,
+                "max_no_improve": 3,
+                "annealing": True
+            },
+            'hyperparams': {'kl_reg_param': [1e3],
+                            "reg_param": [0, 1e-4, 1e-2, 1e0],
+                            }
+        },
+
     'RFKernelELNeural':
         {
             'estimator_class': KernelELNeural,
@@ -248,6 +265,7 @@ for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
     methods[f'RFKernelELNeural-{divergence}'] = {
             'estimator_class': KernelELNeural,
             'estimator_kwargs': {
+                "f_divergence_reg": divergence,
                 "batch_training": False,
                 "batch_size": 0,
                 "n_random_features": 000,
@@ -294,6 +312,7 @@ for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
     methods[f'RFKernelELNeural-{divergence}-MB'] = {
             'estimator_class': KernelELNeural,
             'estimator_kwargs': {
+                "f_divergence_reg": divergence,
                 "batch_training": True,
                 "batch_size": 256,
                 "n_random_features": 10000,
@@ -305,20 +324,3 @@ for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
                             "reg_param": [1e-4, 1e-2, 1e0],
                         }
         }
-
-for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
-    methods[f'RFKernelELNeural-{divergence}'] = {
-            'estimator_class': KernelELNeural,
-            'estimator_kwargs': {
-                "batch_training": False,
-                "batch_size": 0,
-                "n_random_features": 10000,
-                "max_num_epochs": 20000,
-                "burn_in_cycles": 5,
-                "eval_freq": 100,
-                "max_no_improve": 3},
-            'hyperparams': {'kl_reg_param': [1e-1, 1, 1e1],
-                            "reg_param": [1e-4, 1e-2, 1e0],
-                        }
-        }
-
