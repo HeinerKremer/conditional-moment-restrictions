@@ -128,6 +128,8 @@ def run_experiment(experiment, exp_params, n_train, estimation_method, estimator
     np.random.seed(seed0)
     torch.random.manual_seed(seed0+1)
 
+    print('Vorher: ', int(np.random.randint(10000, size=(1, 1))), int(torch.randint(high=10000, size=(1, 1)).detach().numpy()))
+
     exp = experiment(**exp_params)
     exp.prepare_dataset(n_train=n_train, n_val=n_train, n_test=20000)
     model = exp.init_model()
@@ -256,7 +258,6 @@ if __name__ == "__main__":
         filename = '_' + args.exp_option
     else:
         filename = ''
-    print('Vorher: ', int(np.random.randint(10000, size=(1, 1))), int(torch.randint(high=10000, size=(1, 1)).detach().numpy()))
     results = run_experiment_repeated(experiment=exp_info['exp_class'],
                                       exp_params=exp_info['exp_params'],
                                       n_train=args.n_train,
