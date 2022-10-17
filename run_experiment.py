@@ -32,7 +32,7 @@ experiment_setups = {
     'heteroskedastic':
         {
             'exp_class': HeteroskedasticNoiseExperiment,
-            'exp_params': {'theta': [1.7],
+            'exp_params': {'theta': [1.7, 0.4, 2.3],
                            'noise': 1.0,
                            'heteroskedastic': True, },
             'n_train': [64, 128, 256, 512, 1024, 2048, 4096],
