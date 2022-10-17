@@ -2,7 +2,12 @@ import argparse
 import copy
 import json
 import os
+<<<<<<< HEAD
 import datetime
+=======
+from ast import literal_eval
+
+>>>>>>> a622780 (Fix command line parsing when running experiments and add yaml conf for IV experiment.)
 import numpy as np
 import torch
 from concurrent.futures import ProcessPoolExecutor
@@ -256,6 +261,8 @@ if __name__ == "__main__":
     else:
         filename = ''
 
+    print(exp_info)
+    raise ValueError
     results = run_experiment_repeated(experiment=exp_info['exp_class'],
                                       exp_params=exp_info['exp_params'],
                                       n_train=args.n_train,
