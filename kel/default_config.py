@@ -58,7 +58,7 @@ methods = {
         {
             'estimator_class': KernelVMM,
             'estimator_kwargs': {},
-            'hyperparams': {'alpha': [1e-8, 1e-6, 1e-4]}
+            'hyperparams': {'alpha': [1e-8, 1e-6, 1e-4, 1e-2]}
         },
 
     'NeuralVMM':
@@ -69,7 +69,7 @@ methods = {
                                  "burn_in_cycles": 5,
                                  "eval_freq": 100,
                                  "max_no_improve": 3,
-                                 "theta_optim_args": {'lr': 1e-4}
+                                 "theta_optim_args": {'lr': 1e-3}
                                  },
             'hyperparams': {"reg_param": [0, 1e-4, 1e-2, 1e0]}
         },

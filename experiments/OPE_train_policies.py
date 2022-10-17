@@ -31,10 +31,17 @@ if __name__ == "__main__":
     data_dir = Path(__file__).parent / 'ope_data'
     data_dir.mkdir(parents=True, exist_ok=True)
     model.learn(total_timesteps=50000)
+<<<<<<< HEAD
     model.save(data_dir / 'OPE_{}_behavioral'.format(args.algo))
 
     model.learn(total_timesteps=75000)
     model.save(data_dir / "OPE_{}_target".format(args.algo))
+=======
+    model.save('ope_data/OPE_{}_behavioral'.format(args.algo))
+
+    model.learn(total_timesteps=75000)
+    model.save("ope_data/OPE_{}_target".format(args.algo))
+>>>>>>> 4b8e41f (Update OPE experiment and changed some hyperparameters in the search list.")
 
     mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=100)
     print(f"mean_reward:{mean_reward:.2f} +/- {std_reward:.2f}")

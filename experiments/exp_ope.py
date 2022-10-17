@@ -263,39 +263,27 @@ if __name__ == "__main__":
                                         rollout_len=args.rollout_len)
     methods = ['KernelMMR', 'KernelELKernel', 'KernelVMM',
                'KernelELNeural', 'NeuralVMM']
-    n_train = [5]
-    results = {}
+    n_train = [1]
     for n_samples in n_train:
-        results[n_samples] = {}
-        exp.prepare_dataset(n_train=n_samples, n_val=50, n_test=200)
+        results = {}
+        exp.prepare_dataset(n_train=n_samples, n_val=20, n_test=200)
         for method in methods:
             test_risks = []
-            for i in range(1):
+            for i in range(5):
                 model = exp.init_model()
-                try:
-                    trained_model, stats = estimation(model=model,
-                                                      train_data=exp.train_data,
-                                                      moment_function=exp.moment_function,
-                                                      estimation_method=method,
-                                                      estimator_kwargs=None, hyperparams=None,
-                                                      validation_data=exp.val_data, val_loss_func=exp.validation_loss,
-                                                      verbose=False
-                                                      )
-                    # for idx in range(len(stats['models'])):
-                    #     print("Model hyperparams: ", stats['hyperparam'][idx])
-                    #     print("Validation loss: {} \t Risk: {}".format(stats['val_loss'][idx],
-                    #                                                    exp.eval_risk(stats['models'][idx])))
-                    test_risks.append(exp.eval_risk(trained_model))
-                except:
-                    test_risks.append(10)
-            results[n_samples][method] = np.mean(test_risks)
-            print("Method: {} \t {}+/-{}".format(method,
+                trained_model, stats = estimation(model=model,
+                                                  train_data=exp.train_data,
+                                                  moment_function=exp.moment_function,
+                                                  estimation_method=method,
+                                                  estimator_kwargs=None, hyperparams=None,
+                                                  validation_data=exp.val_data, val_loss_func=exp.validation_loss,
+                                                  verbose=True
+                                                  )
+
+                test_risks.append(exp.eval_risk(trained_model))
+            results[method] = np.mean(test_risks)
+            print("Method: {} \t {}=/-{}".format(method,
                                                  np.mean(test_risks),
                                                  np.std(test_risks)))
         print("Sample size: {}".format(n_samples))
-        print(results[n_samples])
-    data_dir = Path(__file__).parent / 'ope_data'
-    file_path = data_dir / 'ope_exp_data'
-    with file_path.open('wb') as fid:
-        pickle.dump(results, fid)
-
+        print(results)
