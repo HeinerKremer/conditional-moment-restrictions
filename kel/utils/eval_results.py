@@ -28,9 +28,10 @@ labels = {'SMD': 'SMD',
           'GEL': 'GEL',
           'KernelEL': 'KEL',
           'KernelVMM': 'K-VMM',
-          'NeuralVMM': 'NN-VMM',
+          'NeuralVMM': 'DeepGMM',
           'KernelELKernel': 'K-KEL',
-          'KernelELNeural': 'NN-KEL',
+          'KernelELNeural': 'MMD-EL',
+          'KernelELNeural-log': 'KEL-log',
           'RFKernelELNeural': 'RF-NN-KEL',
           'DeepIV': 'DeepIV'}
 
@@ -219,7 +220,7 @@ def get_test_metric_over_sample_size(methods, n_samples, experiment, test_metric
         for method in methods:
             if method in ['NeuralFGEL', 'KernelFGEL']:
                 test_error, val_error = get_result_for_best_divergence(method, n_train, experiment=experiment, test_metric=test_metric)
-            elif method in ['KernelELKernel', 'KernelELNeural'] and kl_reg_param is not None:
+            elif method in ['KernelELKernel', 'KernelELNeural', 'KernelELNeural-log'] and kl_reg_param is not None:
                 res = separate_kel_by_reg_param(reg_params=[kl_reg_param], n_train=n_train, experiment=experiment, method=method)
                 test_error = res[kl_reg_param]['best_separate_results']['mse']
             else:
@@ -395,22 +396,24 @@ def plot_divergence_comparison_cmr(n_samples, kl_reg_params=None, logscale=False
     #     figsize = (LINE_WIDTH/1.3, LINE_WIDTH / 1.8)
     #     fig, ax = plt.subplots(2, 1, figsize=figsize)
     # else:
-    figsize = (LINE_WIDTH*1.3, LINE_WIDTH/2.5)
-    fig, ax = plt.subplots(1, 2, figsize=figsize)
-
+    figsize = (LINE_WIDTH*.7, LINE_WIDTH*.7)
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
+    ax = [ax]
     labels = [rf'$\chi^2$', 'KL', 'Log']
     if kl_reg_params is not None:
         labels += [f'MMD, kl_reg={kl_reg}' for kl_reg in kl_reg_params]
+        labels += [f'MMD, log_reg={kl_reg}' for kl_reg in kl_reg_params]
     else:
         labels += ['MMD']
 
-    for k, version in enumerate(['Kernel', 'Neural']):
-        methods = [f'{version}FGEL-chi2', f'{version}FGEL-kl', f'{version}FGEL-log', f'KernelEL{version}']
+    for k, version in enumerate(['Neural']):
+        methods = [f'{version}FGEL-chi2', f'{version}FGEL-kl', f'{version}FGEL-log', f'KernelEL{version}', f'KernelEL{version}-log']
         results = {method: {'mean': [], 'std': []} for method in methods}
 
         if kl_reg_params is not None:
             for kl_reg in kl_reg_params:
                 results[f'KernelEL{version}' + f'_{kl_reg}'] = {'mean': [], 'std': []}
+                results[f'KernelEL{version}-log' + f'_{kl_reg}'] = {'mean': [], 'std': []}
 
         n_samples = np.sort(n_samples)
         for n_train in n_samples:
@@ -421,9 +424,9 @@ def plot_divergence_comparison_cmr(n_samples, kl_reg_params=None, logscale=False
                 if remove_failed:
                     mses = remove_failed_runs(mses, mmrs)
 
-                if (method == 'KernelELKernel' or method == 'KernelELNeural') and kl_reg_params is not None:
+                if (method == 'KernelELKernel' or method == 'KernelELNeural' or method == 'KernelELNeural-log') and kl_reg_params is not None:
                     res = separate_kel_by_reg_param(reg_params=kl_reg_params, n_train=n_train,
-                                                    experiment='heteroskedastic', method=method)
+                                                    experiment='HeteroskedasticNoiseExperiment', method=method)
                     for kl_reg, r in res.items():
                         results[method+f'_{kl_reg}']['mean'].append(r['mean_square_error'])
                         results[method+f'_{kl_reg}']['std'].append(r['std_square_error'] / np.sqrt(r['n_runs']))
@@ -433,6 +436,7 @@ def plot_divergence_comparison_cmr(n_samples, kl_reg_params=None, logscale=False
 
         if kl_reg_params is not None:
             del results[f'KernelEL{version}']
+            del results[f'KernelEL{version}-log']
 
         for i, (method, res) in enumerate(results.items()):
             print(n_samples, res['mean'], method, labels[i])
@@ -443,7 +447,7 @@ def plot_divergence_comparison_cmr(n_samples, kl_reg_params=None, logscale=False
                             alpha=0.2,
                             color=colors[i])
 
-        ax[1].set_xlabel('sample size')
+        ax[k].set_xlabel('sample size')
         ax[k].set_ylabel(r'$||\theta - \theta_0 ||^2$')
         if logscale:
             ax[k].set_xscale('log')
@@ -451,10 +455,11 @@ def plot_divergence_comparison_cmr(n_samples, kl_reg_params=None, logscale=False
 
         if kl_reg_params is None:
             ax[k].legend()
-        ax[k].set_title(f'{version}-FGEL')
+        # ax[k].set_title(f'{version}-FGEL')
     if kl_reg_params is not None:
-        ax[-1].legend(loc='lower left', bbox_to_anchor=(1.1, 0.18),
-                       borderaxespad=0, frameon=True)
+        ax[-1].legend()
+        # ax[-1].legend(loc='lower left', bbox_to_anchor=(1.1, 0.18),
+        #                borderaxespad=0, frameon=True)
     plt.tight_layout()
     if savename is None:
         if kl_reg_params is None:
@@ -484,7 +489,7 @@ def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg
         for method in methods:
             if method in ['NeuralFGEL', 'KernelFGEL']:
                 test, val = get_result_for_best_divergence(method=method, n_train=n_train, test_metric=test_metric, experiment='NetworkIVExperiment', func=func)
-            elif method in ['KernelELKernel', 'KernelELNeural', 'RFKernelELNeural'] and kl_reg_param is not None:
+            elif method in ['KernelELKernel', 'KernelELNeural', 'RFKernelELNeural', 'KernelELNeural-log'] and kl_reg_param is not None:
                 exp_file = f"results/NetworkIVExperiment/NetworkIVExperiment_method={method}_n={n_train}_{func}.json"
                 res = separate_kel_by_reg_param(reg_params=[kl_reg_param], n_train=n_train, exp_file=exp_file, method=method)
                 test = res[kl_reg_param]['best_separate_results']['test_risk']
@@ -509,18 +514,18 @@ def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg
 if __name__ == "__main__":
     remove_failed = False
 
-    #print(separate_kel_by_reg_param(reg_params=[1.0], n_train=512, experiment='heteroskedastic', exp_file=None,
-   #                           method='KernelELNeural'))
+    # print(separate_kel_by_reg_param(reg_params=[1.0], n_train=512, experiment='heteroskedastic', exp_file=None,
+    #                           method='KernelELNeural'))
 
-    plot_results_over_sample_size(['OLS', 'KernelMMR',
-                                   'NeuralVMM', 'NeuralFGEL', 'KernelELNeural'],
-                                  n_samples=[64, 128, 256, 512, 1024, 4096],
-                                  experiment='HeteroskedasticNoiseExperiment',
-                                  logscale=True,
-                                  ylim=None,#[1e-5, 1.6],
-                                  kl_reg_param=None,
-                                  remove_failed=remove_failed,
-                                  )
+    # plot_results_over_sample_size(['OLS', 'KernelMMR', 'SMD',
+    #                                'NeuralVMM', 'NeuralFGEL', 'KernelELNeural', 'KernelELNeural-log'],
+    #                               n_samples=[64, 128, 256, 512, 1024],
+    #                               experiment='HeteroskedasticNoiseExperiment',
+    #                               logscale=True,
+    #                               ylim=None, # [1e-5, 1.6],
+    #                               kl_reg_param=None,
+    #                               remove_failed=remove_failed,
+    #                               )
 
     # plot_results_over_sample_size(['OLS', 'GEL', 'KernelEL'],
     #                               n_samples=[64, 128, 256, 512, 1024, 2048, 4096],
@@ -536,11 +541,11 @@ if __name__ == "__main__":
     #                          ylim=[1e-5, 10],
     #                          remove_failed=False)
     #
-    # plot_divergence_comparison_cmr(n_samples=[64, 128, 512, 1024, 4096],
-    #                                logscale=True,
-    #                                kl_reg_params=[10, 1, 0.1],
-    #                                remove_failed=False,
-    #                            )
+    plot_divergence_comparison_cmr(n_samples=[64, 128, 512, 1024],
+                                   logscale=True,
+                                   kl_reg_params=[10, 1],
+                                   remove_failed=False,
+                               )
     #
     # plot_divergence_comparison_cmr(n_samples=[64, 128, 512, 1024, 4096],
     #                                logscale=True,

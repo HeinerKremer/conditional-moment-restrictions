@@ -132,7 +132,7 @@ methods = {
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
                 "max_no_improve": 3,},
-            'hyperparams': {'kl_reg_param': [1e0],
+            'hyperparams': {'kl_reg_param': [1e0, 10],
                             "reg_param": [0, 1e-4, 1e-2, 1e0],
                         }
         },
@@ -176,7 +176,7 @@ for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
                 "max_no_improve": 3, },
-            'hyperparams': {'kl_reg_param': [1e0],
+            'hyperparams': {'kl_reg_param': [1e0, 1e1],
                             "reg_param": [0, 1e-4, 1e-2, 1e0],
                             }
         }
