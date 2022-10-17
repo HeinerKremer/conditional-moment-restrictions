@@ -88,7 +88,8 @@ if __name__ == '__main__':
                                           train_data=exp.train_data,
                                           moment_function=exp.moment_function,
                                           estimation_method='SMD',
-                                          estimator_kwargs=None, hyperparams=None,
+                                          estimator_kwargs=None,
+                                          hyperparams=None,
                                           validation_data=exp.val_data,
                                           val_loss_func=exp.validation_loss,
                                           verbose=True
