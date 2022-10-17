@@ -129,18 +129,12 @@ def load_and_summarize_results(filename):
 
 
 def get_result_for_best_divergence(method, n_train, test_metric, experiment=None, func=None):
-    base_path = Path(__file__).parent.parent.parent
-    if experiment == 'network_iv':
+    if experiment == 'NetworkIVExperiment':
         opt = f'_{func}'
-        experiment = base_path / 'results/NetworkIVExperiment/NetworkIVExperiment'
-    elif experiment == 'heteroskedastic':
-        opt = ''
-        experiment = base_path / 'results/HeteroskedasticNoiseExperiment/HeteroskedasticNoiseExperiment'
-    elif experiment == 'poisson':
-        experiment = base_path / 'results/PoissonExperiment/PoissonExperiment'
-        opt = ''
     else:
-        raise NotImplementedError
+        opt = ''
+
+    experiment = f'results/{experiment}/{experiment}'
 
     test_metrics = []
     validation = []
@@ -346,14 +340,7 @@ def separate_kel_by_reg_param(reg_params=None, n_train=None, experiment='heteros
     if reg_params is None:
         reg_params = [10, 1, 0.1]
 
-    base_path = Path(__file__).parent.parent.parent
-
-    if experiment == 'heteroskedastic':
-        path = base_path / 'results/HeteroskedasticNoiseExperiment/HeteroskedasticNoiseExperiment'
-    elif experiment == 'poisson':
-        path = base_path / 'results/PoissonExperiment/PoissonExperiment'
-    else:
-        raise NotImplementedError
+    path = f'results/{experiment}/{experiment}'
     filename = f"{path}_method={method}_n={n_train}.json"
 
     if exp_file is not None:
@@ -363,18 +350,17 @@ def separate_kel_by_reg_param(reg_params=None, n_train=None, experiment='heteros
         results_and_summary = json.load(fp)
 
     results = results_and_summary['results']
-    separate_results = defaultdict(lambda: {'test_risk': [], 'mse': [], 'hyperparam': [], 'val_loss': []})
     best_separate_results = {reg_param: {'test_risk': [], 'mse': [], 'hyperparam': [], 'val_loss': []} for reg_param in reg_params}
 
-
     for res in results:
+        separate_results = defaultdict(lambda: {'test_risk': [], 'mse': [], 'hyperparam': [], 'val_loss': []})
+
         for i, hyper in enumerate(res['hyperparam']):
             # Separate results of a single run by kl_reg_param
             separate_results[hyper['kl_reg_param']]['test_risk'].append(res['test_risk'][i])
             separate_results[hyper['kl_reg_param']]['mse'].append(res['mse'][i])
             separate_results[hyper['kl_reg_param']]['hyperparam'].append(res['hyperparam'][i])
             separate_results[hyper['kl_reg_param']]['val_loss'].append(res['val_loss'][i])
-
         for kl_reg in reg_params:
             # Pick the best hyperparam config for each kl_reg_param
             try:
@@ -487,16 +473,14 @@ def plot_divergence_comparison_cmr(n_samples, kl_reg_params=None, logscale=False
 def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg_param=None):
     methods = ['OLS',
                'KernelMMR',
-               'KernelFGEL',
-               'NeuralFGEL',
                'DeepIV',
-               'KernelVMM',
+               #'KernelVMM',
                'NeuralVMM',
-               'KernelELKernel',
-               'KernelELNeural-log',
-               'KernelELNeural-kl',
+               # 'KernelFGEL',
+               'NeuralFGEL',
+               # 'KernelELKernel',
+               'KernelELNeural',
                'RFKernelELNeural',
-               'RFKernelELKernel'
                ]
     funcs = ['abs', 'step', 'sin', 'linear']
 
@@ -506,9 +490,9 @@ def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg
     for func in funcs:
         for method in methods:
             if method in ['NeuralFGEL', 'KernelFGEL']:
-                test, val = get_result_for_best_divergence(method=method, n_train=n_train, test_metric=test_metric, experiment='network_iv', func=func)
-            elif method in ['KernelELKernel', 'KernelELNeural-log', 'KernelELNeural-log', 'RFKernelELKernel', 'RFKernelELNeural'] and kl_reg_param is not None:
-                exp_file = base_path / f"results/NetworkIVExperiment/NetworkIVExperiment_method={method}_n={n_train}_{func}.json"
+                test, val = get_result_for_best_divergence(method=method, n_train=n_train, test_metric=test_metric, experiment='NetworkIVExperiment', func=func)
+            elif method in ['KernelELKernel', 'KernelELNeural', 'RFKernelELNeural'] and kl_reg_param is not None:
+                exp_file = f"results/NetworkIVExperiment/NetworkIVExperiment_method={method}_n={n_train}_{func}.json"
                 res = separate_kel_by_reg_param(reg_params=[kl_reg_param], n_train=n_train, exp_file=exp_file, method=method)
                 test = res[kl_reg_param]['best_separate_results']['test_risk']
             else:
@@ -532,15 +516,19 @@ def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg
 if __name__ == "__main__":
     remove_failed = False
 
-    # plot_results_over_sample_size(['OLS', 'KernelMMR', 'KernelVMM', 'NeuralVMM', 'KernelFGEL', 'NeuralFGEL',
-    #                                'KernelELKernel', 'KernelELNeural'],
-    #                               n_samples=[64, 128, 256, 512, 1024, 4096],
-    #                               experiment='heteroskedastic',
-    #                               logscale=True,
-    #                               ylim=[1e-7, 1.6],
-    #                               kl_reg_param=1,
-    #                               remove_failed=remove_failed,
-    #                               )
+    #print(separate_kel_by_reg_param(reg_params=[1.0], n_train=512, experiment='heteroskedastic', exp_file=None,
+   #                           method='KernelELNeural'))
+
+    plot_results_over_sample_size(['OLS', 'KernelMMR',
+                                   'NeuralVMM', 'NeuralFGEL', 'KernelELNeural'],
+                                  n_samples=[64, 128, 256, 512, 1024, 4096],
+                                  experiment='HeteroskedasticNoiseExperiment',
+                                  logscale=True,
+                                  ylim=None,#[1e-5, 1.6],
+                                  kl_reg_param=None,
+                                  remove_failed=remove_failed,
+                                  )
+
     # plot_results_over_sample_size(['OLS', 'GEL', 'KernelEL'],
     #                               n_samples=[64, 128, 256, 512, 1024, 2048, 4096],
     #                               experiment='poisson',
