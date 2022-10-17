@@ -255,7 +255,6 @@ if __name__ == "__main__":
     exp_info = experiment_setups[args.experiment]
 
     if args.exp_option is not None:
-        # exp_option = literal_eval(args.exp_option)
         exp_info['exp_params'] = {list(exp_info['exp_params'].keys())[0]: args.exp_option}
         filename = '_' + args.exp_option
     else:
