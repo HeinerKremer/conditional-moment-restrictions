@@ -69,7 +69,7 @@ methods = {
                                  "burn_in_cycles": 5,
                                  "eval_freq": 100,
                                  "max_no_improve": 3,
-                                 "theta_optim_args": {'lr': 1e-3}
+                                 "theta_optim_args": {'lr': 1e-4}
                                  },
             'hyperparams': {"reg_param": [0, 1e-4, 1e-2, 1e0]}
         },
