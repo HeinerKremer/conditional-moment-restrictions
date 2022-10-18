@@ -88,7 +88,7 @@ for experiment in experiments:
         experiment = experiment[0]
 
     for settings in iterate_argument_combinations(params):
-        runline = f'python3 {path}/run_experiment.py --experiment {experiment} --run_sequential'
+        runline = f'python3 {path}/run_experiment.py --experiment {experiment}'
         filename = experiment
 
         for arg, param_value in settings.items():
