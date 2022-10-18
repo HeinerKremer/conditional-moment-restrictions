@@ -1,10 +1,12 @@
 import json
 from collections import defaultdict
-
+import matplotlib
+matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from tabulate import tabulate
+from pathlib import Path
 
 LINE_WIDTH = 7.0
 COL_WIDTH = 3.333
@@ -132,7 +134,7 @@ def get_result_for_best_divergence(method, n_train, test_metric, experiment=None
     else:
         opt = ''
 
-    experiment = f'results/{experiment}/{experiment}'
+    experiment = Path(__file__).parent.parent.parent / f'results/{experiment}/{experiment}'
 
     test_metrics = []
     validation = []
@@ -224,7 +226,7 @@ def get_test_metric_over_sample_size(methods, n_samples, experiment, test_metric
                 res = separate_kel_by_reg_param(reg_params=[kl_reg_param], n_train=n_train, experiment=experiment, method=method)
                 test_error = res[kl_reg_param]['best_separate_results']['mse']
             else:
-                path = f'results/{experiment}/{experiment}'
+                path = Path(__file__).parent.parent.parent / f'results/{experiment}/{experiment}'
                 filename = f"{path}_method={method}_n={n_train}.json"
                 res = load_and_summarize_results(filename)
                 print(res.keys(), f'{test_metric}_list')
@@ -338,7 +340,8 @@ def separate_kel_by_reg_param(reg_params=None, n_train=None, experiment='heteros
     if reg_params is None:
         reg_params = [10, 1, 0.1]
 
-    path = f'results/{experiment}/{experiment}'
+    path = Path(__file__).parent.parent.parent / f'results/{experiment}/{experiment}'
+    print(path)
     filename = f"{path}_method={method}_n={n_train}.json"
 
     if exp_file is not None:
@@ -513,9 +516,9 @@ def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg
 if __name__ == "__main__":
     remove_failed = False
 
-    plot_results_over_sample_size(['OLS', 'KernelMMR', 'KernelVMM', 'NeuralVMM', 'KernelFGEL', 'NeuralFGEL',
-                                   'KernelELKernel', 'KernelELNeural'],
-                                  n_samples=[64, 128, 256, 512, 1024, 4096],
+    plot_results_over_sample_size(['OLS', 'KernelMMR', 'NeuralVMM', 'NeuralFGEL',
+                                   'KernelELNeural', 'RFKernelELNeural'],
+                                  n_samples=[64, 128, 256, 512, 1024],
                                   experiment='heteroskedastic',
                                   logscale=True,
                                   ylim=[1e-7, 1.6],
