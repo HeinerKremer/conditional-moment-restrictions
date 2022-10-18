@@ -62,6 +62,7 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.burn_in_cycles = burn_in_cycles
         self.pretrain = pretrain
         self.batch_training = False
+        self.annealing = False
         self.batch_size = None
         self.verbose = verbose
 

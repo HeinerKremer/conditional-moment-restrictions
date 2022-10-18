@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
     marker = ['v', 'o', 's', 'd', 'p', '*', 'h']
     linestyles = ['solid', 'dashed', 'solid', 'dotted', 'dashdot',]
-    colors = ['tab:red', 'tab:orange', 'tab:blue', 'tab:cyan', 'tab:purple', 'tab:olive', 'tab:pink',]
+    colors = ['tab:red', 'tab:orange', 'tab:blue', 'tab:cyan', 'tab:purple', 'tab:olive', 'tab:pink', 'tab:green']
 
     from kel.default_config import methods
     estimator_kwargs = methods['KernelEL']['estimator_kwargs']
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     x = [torch.Tensor(np.linspace(-x_lim, x_lim, 500)).reshape((-1, 1)),
          torch.Tensor(np.linspace(-10, 10, 500)).reshape((-1, 1))]
-    n_reg = 10
+    n_reg = 15
     kl_reg_params = np.logspace(3, -2, n_reg)
     y_logs = []
     for kl_reg_param in kl_reg_params:
@@ -119,8 +119,20 @@ if __name__ == "__main__":
     # ax.plot(x[0], y_true_eps, label=r'$\psi(x)^T h + \epsilon$', color=colors[1], linestyle=linestyles[1])
     ax.plot(x[0], y_exact, label=r'MMD only', color=colors[2], linestyle=linestyles[2])
     # ax.plot(x[0], y_kl, color=colors[3], linestyle=linestyles[3])
-    for y_log, alpha, reg_param in zip(y_logs, np.linspace(0, 1, n_reg), kl_reg_params):
-        ax.plot(x[0], y_log, label=r'$\epsilon = {}$'.format(np.round(reg_param, 2)), color=colors[4], linestyle=linestyles[4], alpha=alpha)
+    for y_log, alpha, reg_param in zip(y_logs, np.linspace(0.1, 1, n_reg), kl_reg_params):
+        ax.plot(x[0], y_log, color=colors[4], linestyle=linestyles[4], alpha=alpha)
+
+    ax.plot(x[0], y_logs[0],
+            label=r'$\epsilon = {}$'.format(np.round(kl_reg_params[0], 2)),
+            color=colors[4],
+            linestyle=linestyles[4],
+            alpha=0.1)
+    ax.plot(x[0], y_logs[-1],
+            label=r'$\epsilon = {}$'.format(np.round(kl_reg_params[-1], 2)),
+            color=colors[4],
+            linestyle=linestyles[4],
+            alpha=1)
+
     # ax.spines['top'].set_visible(False)
     # ax.spines['right'].set_visible(False)
     ax.set_xlabel('x')
@@ -135,24 +147,24 @@ if __name__ == "__main__":
     p = leg.get_window_extent()
     print(p)
     print(ax.get_position().bounds)
-    axins = ax.inset_axes([0.03, 0.36, 0.28, 0.31])
-    axins.plot(x[0], y_true, color=colors[0], linestyle=linestyles[0])
-    # axins.plot(x[0], y_true_eps, color=colors[1], linestyle=linestyles[1])
-    axins.plot(x[0], y_exact, color=colors[2], linestyle=linestyles[2])
-    # axins.plot(x[0], y_kl, color=colors[3], linestyle=linestyles[3])
-    for y_log, alpha in zip(y_logs, np.linspace(0, 1, 10)):
-        axins.plot(x[0], y_log, label='Log-reg', color=colors[4], linestyle=linestyles[4], alpha=alpha)
-    axins.set_xlim(-1, 1)
-    axins.set_ylim(ymax-5, ymax+2*5)
-    axins.set_yticks([])
-    axins.set_xticks([])
-    axins.spines['bottom'].set_color('grey')
-    axins.spines['top'].set_color('grey')
-    axins.spines['right'].set_color('grey')
-    axins.spines['left'].set_color('grey')
+    # axins = ax.inset_axes([0.03, 0.36, 0.28, 0.31])
+    # axins.plot(x[0], y_true, color=colors[0], linestyle=linestyles[0])
+    # # axins.plot(x[0], y_true_eps, color=colors[1], linestyle=linestyles[1])
+    # axins.plot(x[0], y_exact, color=colors[2], linestyle=linestyles[2])
+    # # axins.plot(x[0], y_kl, color=colors[3], linestyle=linestyles[3])
+    # for y_log, alpha in zip(y_logs, np.linspace(0, 1, 10)):
+    #     axins.plot(x[0], y_log, label='Log-reg', color=colors[4], linestyle=linestyles[4], alpha=alpha)
+    # axins.set_xlim(-1, 1)
+    # axins.set_ylim(ymax-5, ymax+2*5)
+    # axins.set_yticks([])
+    # axins.set_xticks([])
+    # axins.spines['bottom'].set_color('grey')
+    # axins.spines['top'].set_color('grey')
+    # axins.spines['right'].set_color('grey')
+    # axins.spines['left'].set_color('grey')
     # axins.set_xticklabels([])
     # axins.set_yticklabels([])
-    ax.indicate_inset_zoom(axins, edgecolor="black")
+    # ax.indicate_inset_zoom(axins, edgecolor="black")
     plt.savefig('annealing.pdf', dpi=300)
     plt.show()
 
