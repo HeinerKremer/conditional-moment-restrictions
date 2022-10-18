@@ -77,13 +77,14 @@ def run_parallel(experiment, exp_params, n_train, estimation_method, estimator_k
 
 
 def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, estimator_kwargs=None, hyperparams=None,
-                            repititions=2, seed0=12345, parallel=True, filename=None, exp_name=None, overwrite=False):
+                            repititions=2, seed0=12345, parallel=True, filename=None, exp_name=None,
+                            run_dir=None, overwrite=False):
     """
     Runs the same experiment `repititions` times and computes statistics.
     """
     if exp_name is None:
         exp_name = str(experiment.__name__)
-    file = f"results/{exp_name}/{exp_name}_method={estimation_method}_n={n_train}" + str(filename) + ".json"
+    file = f"results/{exp_name}/{run_dir}/{exp_name}_method={estimation_method}_n={n_train}" + str(filename) + ".json"
     try:
         if overwrite:
             raise FileNotFoundError
@@ -135,7 +136,7 @@ def summarize_results(result_list):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--run_sequential', action='store_true')
+    parser.add_argument('--run_parallel', action='store_true')
     parser.add_argument('--overwrite', action='store_true')
     parser.add_argument('--experiment', type=str, default='heteroskedastic')
     parser.add_argument('--exp_option', default=None)
@@ -143,6 +144,7 @@ if __name__ == "__main__":
     parser.add_argument('--method', type=str, default='KernelFGEL')
     parser.add_argument('--method_option', default=None)
     parser.add_argument('--rollouts', type=int, default=2)
+    parser.add_argument('--run_dir', type=str, default='exp_1')
 
     args = parser.parse_args()
 
@@ -158,9 +160,10 @@ if __name__ == "__main__":
                                       n_train=args.n_train,
                                       estimation_method=args.method,
                                       repititions=args.rollouts,
-                                      parallel=not args.run_sequential,
+                                      parallel= args.run_parallel,
                                       filename=filename,
                                       exp_name=args.experiment,
+                                      run_dir=args.run_dir,
                                       overwrite=args.overwrite)
     print(results['results_summarized'])
     # print('Nachher: ', int(np.random.randint(10000, size=(1,1))), int(torch.randint(high=10000, size=(1, 1)).detach().numpy()))
