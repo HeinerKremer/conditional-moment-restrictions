@@ -99,6 +99,7 @@ BASE_PATH = Path(__file__).parent.parent.parent
 
 
 def load_and_summarize_results(filename):
+    print(filename)
     with open(filename, "r") as fp:
         results_and_summary = json.load(fp)
 
@@ -488,16 +489,17 @@ def plot_divergence_comparison_cmr(n_samples, kl_reg_params=None, logscale=False
     plt.show()
 
 
-def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg_param=None, run_dir=''):
+def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg_param=None,
+                   experiment='network_iv', run_dir=''):
     methods = ['OLS',
-               'KernelMMR',
-               'DeepIV',
-               #'KernelVMM',
+               # 'KernelMMR',
+               # 'DeepIV',
+               # 'KernelVMM',
                'NeuralVMM',
                # 'KernelFGEL',
-               'NeuralFGEL',
+               # 'NeuralFGEL',
                # 'KernelELKernel',
-               'KernelELNeural',
+               # 'KernelELNeural',
                'RFKernelELNeural',
                ]
     funcs = ['abs', 'step', 'sin', 'linear']
@@ -509,15 +511,16 @@ def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg
                 test, val = get_result_for_best_divergence(method=method,
                                                            n_train=n_train,
                                                            test_metric=test_metric,
-                                                           experiment='NetworkIVExperiment', func=func)
+                                                           experiment=experiment,
+                                                           func=func)
             elif method in ['KernelELKernel', 'KernelELNeural', 'RFKernelELNeural', 'KernelELNeural-log'] and kl_reg_param is not None:
-                exp_file = BASE_PATH / f"results/NetworkIVExperiment"
-                exp_file = exp_file / run_dir / "NetworkIVExperiment_method={method}_n={n_train}_{func}.json"
+                exp_file = BASE_PATH / f"results/{experiment}"
+                exp_file = exp_file / run_dir / f"{experiment}_method={method}_n={n_train}_{func}.json"
                 res = separate_kel_by_reg_param(reg_params=[kl_reg_param], n_train=n_train, exp_file=exp_file, method=method)
                 test = res[kl_reg_param]['best_separate_results']['test_risk']
             else:
-                filename = BASE_PATH / f"results/NetworkIVExperiment" / run_dir
-                filename = filename / "NetworkIVExperiment_method={method}_n={n_train}_{func}.json"
+                filename = BASE_PATH / f"results/{experiment}" / run_dir
+                filename = filename / f"{experiment}_method={method}_n={n_train}_{func}.json"
                 res = load_and_summarize_results(filename)
                 test, val = res[test_metric+'_list'], res['val_loss_list']
             if remove_failed:
@@ -536,21 +539,21 @@ def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--experiment', type=str, default='heteroskedastic')
-    parser.add_argument('--exp_name', type=str, default='')
+    parser.add_argument('--experiment', type=str, default='network_iv')
+    parser.add_argument('--exp_name', type=str, default='n_50000')
     args = parser.parse_args()
     remove_failed = False
 
-    plot_results_over_sample_size(['OLS', 'KernelMMR', 'NeuralVMM', 'NeuralFGEL',
-                                   'KernelELNeural', 'RFKernelELNeural'],
-                                  n_samples=[64, 128, 1024],
-                                  experiment='heteroskedastic',
-                                  logscale=True,
-                                  ylim=[1e-7, 1.6],
-                                  kl_reg_param=1,
-                                  remove_failed=remove_failed,
-                                  run_dir=args.exp_name
-                                  )
+    # plot_results_over_sample_size(['OLS', 'KernelMMR', 'NeuralVMM', 'NeuralFGEL',
+    #                                'KernelELNeural', 'RFKernelELNeural'],
+    #                               n_samples=[64, 128, 256, 512, 1024],
+    #                               experiment='heteroskedastic',
+    #                               logscale=True,
+    #                               ylim=[1e-7, 1.6],
+    #                               kl_reg_param=1,
+    #                               remove_failed=remove_failed,
+    #                               run_dir=args.exp_name
+    #                               )
     #
     # plot_results_over_sample_size(['OLS', 'GEL', 'KernelEL'],
     #                               n_samples=[64, 128, 256, 512, 1024, 2048, 4096],
@@ -575,8 +578,9 @@ if __name__ == "__main__":
     #                                run_dir=args.exp_name)
     #
     #
-    # generate_table(n_train=2000,
-    #                test_metric='test_risk',
-    #                kl_reg_param=1.0,
-    #                remove_failed=False,
-    #                run_dir=args.exp_name)
+    generate_table(n_train=50000,
+                   test_metric='test_risk',
+                   kl_reg_param=1.0,
+                   remove_failed=False,
+                   experiment=args.experiment,
+                   run_dir=args.exp_name)
