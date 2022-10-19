@@ -80,13 +80,17 @@ class KernelELAnalysis(KernelEL):
         kwargs.setdefault('n_random_features', 0)
         self.n_rff = kwargs['n_random_features']
         self._set_kernel_x(x)
+        self.dim_psi = 1
         self._init_dual_params()
         self.ymax = ymax
 
-    def eval_psi_h(self, x):
+    def eval_psi_h(self, x, numpy=True):
         """Define by hand function to be approximated (non-smooth so that approximation won't be perfect"""
         # return torch.where(torch.abs(x[0]) > 2, 0, 0.1)
-        a = np.reshape(np.where(np.abs(x[0]) > 3.2, 0, self.ymax), (-1, 1))
+        if numpy:
+            a = np.reshape(np.where(np.abs(x[0]) > 3.2, 0, self.ymax), (-1, 1))
+        else:
+            a = torch.reshape(torch.where(torch.abs(x[0]) > 3.2, 0, self.ymax), (-1, 1))
         # a = np.reshape(np.where(np.abs(x[0] - 2.0) > 1.0, 0, 100.0), (-1, 1))
         # b = np.reshape(np.where(np.abs(x[0] + 2.0) > 1.0, 0, 100.0), (-1, 1))
         # a = a+b
@@ -101,34 +105,62 @@ class KernelELAnalysis(KernelEL):
         self.all_dual_params = list(self.dual_normalization.parameters()) + list(self.rkhs_func.parameters())
 
     def objective(self, x, z, *args, **kwargs):
-        expected_rkhs_func = torch.mean(torch.einsum('ij, ik -> k', self.rkhs_func.params, self.kernel_x))
+        rkhs_func = torch.einsum('ij, ik -> kj', self.rkhs_func.params, self.kernel_x)
+        expected_rkhs_func = torch.mean(rkhs_func)
+        # rkhs_func = self.kernel_x @ self.rkhs_func.params
+        # expected_rkhs_func = torch.mean(rkhs_func)
         if self.n_rff > 0:
             rkhs_norm_sq = torch.einsum('ir, ij -> j', self.rkhs_func.params, self.rkhs_func.params)
         else:
-            rkhs_norm_sq = torch.einsum('ir, ij, jr ->', self.rkhs_func.params, self.kernel_x, self.rkhs_func.params)
-        exponent = (torch.einsum('ij, ik -> k', self.rkhs_func.params, self.kernel_x) + self.dual_normalization.params
-                    - self.eval_psi_h(x))
+            # rkhs_norm_sq = torch.einsum('ir, ij, jr ->', self.rkhs_func.params, self.kernel_x, self.rkhs_func.params)
+            rkhs_norm_sq = torch.norm(self.rkhs_func.params.t() @ self.kernel_x_cholesky) ** 2
+
+        exponent = (rkhs_func + self.dual_normalization.params - self.eval_psi_h(x, kwargs['numpy']))
         objective = (expected_rkhs_func + self.dual_normalization.params - 1 / 2 * rkhs_norm_sq
                      - self.kl_reg_param * torch.mean(self.f_divergence(1 / self.kl_reg_param * exponent)))
         return objective, -objective
 
-    def optimize_dual(self, x_tensor, z_tensor):
-        self.dual_func_optimizer = torch.optim.LBFGS(self.all_dual_params,
-                                                     max_iter=500,
-                                                     line_search_fn="strong_wolfe")
+    def _optimize_dual_func_lbfgs(self, x_tensor, z_tensor):
+        self.dual_func_optimizer = torch.optim.LBFGS(params=self.all_dual_params)
+
         def closure():
             if torch.is_grad_enabled():
                 self.dual_func_optimizer.zero_grad()
-            _, loss_dual_func = self.objective(x_tensor, z_tensor)
+            _, loss_dual_func = self.objective(x_tensor, z_tensor, numpy=False)
             if loss_dual_func.requires_grad:
                 loss_dual_func.backward()
             if not self.are_dual_params_finite():
                 raise OptimizationError('Dual variables are NaN or inf.')
             return loss_dual_func
 
-        for _ in range(2):
+        for _ in range(8):
             self.dual_func_optimizer.step(closure)
-        return
+        return [self.eval_rkhs_func()]
+
+    def _optimize_dual_func_gd(self, x_tensor, z_tensor, iters):
+        self.dual_func_optimizer = torch.optim.Adam(params=self.all_dual_params,
+                                                    lr=1e-3)
+        rkhs_fun = []
+        loss = []
+        print(self.annealing)
+        for i in range(iters):
+            if self.annealing and i % 100 == 0:
+                self.kl_reg_param = self.kl_reg_param * 0.99
+            if i % 5000 == 0:
+                print("Epoch {}".format(i))
+                with torch.no_grad():
+                    rkhs_fun.append(self.eval_rkhs_func())
+            self.dual_func_optimizer.zero_grad()
+            _, loss_dual_func = self.objective(x_tensor, z_tensor, numpy=False)
+            loss_dual_func.backward(retain_graph=True)
+            loss.append(-loss_dual_func.clone().detach().numpy())
+            self.dual_func_optimizer.step()
+            if not self.are_dual_params_finite():
+                raise OptimizationError('Dual variables are NaN or inf.')
+        loss = np.asarray(loss).squeeze()
+        plt.plot(loss)
+        plt.show()
+        return rkhs_fun
 
     def _optimize_dual_func_cvxpy(self, x_tensor, z_tensor, f_divergence):
         with torch.no_grad():
@@ -170,10 +202,9 @@ class KernelELAnalysis(KernelEL):
 
             if f_divergence == 'log':
                 constraints += [1 / self.kl_reg_param * exponent <= 0.99]
-
             problem = cvx.Problem(cvx.Maximize(objective), constraints=constraints)
             problem.solve(solver=cvx.MOSEK, verbose=True)
-
+            print(objective.value)
             if dual_normalization.value is None or rkhs_func.value is None:
                 raise RuntimeError('Dual parameter optimization failed.')
 

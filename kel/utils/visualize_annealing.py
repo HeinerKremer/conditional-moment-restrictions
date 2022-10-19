@@ -10,69 +10,7 @@ import seaborn as sns
 from kel.methods.kernel_el import KernelEL
 from kel.utils.torch_utils import Parameter, OptimizationError
 from kel.utils.visualize_kel import KernelELAnalysis, Model
-
-
-LINE_WIDTH = 7.0
-COL_WIDTH = 3.333
-
-FIG_SIZE_DOUBLE = (COL_WIDTH / 2, COL_WIDTH / 2 * 4/6)
-NEURIPS_LINE_WIDTH = 5.5  # Text width: 5.5in (double figure minus spacing 0.2in).
-FIG_SIZE_NEURIPS_DOUBLE = (NEURIPS_LINE_WIDTH / 2, NEURIPS_LINE_WIDTH / 2 * 4/6)
-figsize = (LINE_WIDTH*1.4, LINE_WIDTH/2)
-
-NEURIPS_RCPARAMS = {
-    "figure.autolayout": False,         # Makes sure nothing the feature is neat & tight.
-    "figure.figsize": FIG_SIZE_NEURIPS_DOUBLE,
-    "figure.dpi": 150,                  # Displays figures nicely in notebooks.
-    # Axes params
-    "axes.linewidth": 0.5,              # Matplotlib's current default is 0.8.
-    "ytick.major.width": 0.5,
-    "ytick.minor.width": 0.5,
-
-    "hatch.linewidth": 0.3,
-    "xtick.major.width": 0.5,
-    'xtick.major.pad': 1.0,
-    'xtick.major.size': 1.75,
-    'xtick.minor.pad': 1.0,
-    'xtick.minor.size': 1.0,
-
-    'ytick.major.pad': 1.0,
-    'ytick.major.size': 1.75,
-    'ytick.minor.pad': 1.0,
-    'ytick.minor.size': 1.0,
-
-    "axes.labelpad": 0.5,
-    # Grid
-    "grid.linewidth": 0.3,
-    # Plot params
-    "lines.linewidth": 1.0,
-    "lines.markersize": 4,
-    'errorbar.capsize': 3.0,
-    # Font
-    "text.usetex": True,                # use LaTeX to write all text
-    "font.family": "Times New Roman", #""serif",             # use serif rather than sans-serif
-    "font.serif": "Times New Roman",    # use "Times New Roman" as the standard font
-    "font.size": 8.5,
-    "axes.titlesize": 8.5,                # LaTeX default is 10pt font.
-    "axes.labelsize": 8.5,                # LaTeX default is 10pt font.
-    "xtick.labelsize": 8,
-    "ytick.labelsize": 8,
-    # Legend
-    "legend.fontsize": 7,        # Make the legend/label fonts a little smaller
-    "legend.frameon": True,              # Remove the black frame around the legend
-    "legend.handletextpad": 0.3,
-    "legend.borderaxespad": 0.2,
-    "legend.labelspacing": 0.1,
-    "patch.linewidth": 0.5,
-    # PDF
-    "pgf.texsystem": "xelatex",         # use Xelatex which is TTF font aware
-    "pgf.rcfonts": False,               # Use pgf.preamble, ignore standard Matplotlib RC
-    "pgf.preamble": [
-        r'\usepackage{fontspec}',
-        r'\usepackage{unicode-math}',
-        r'\setmainfont{Times New Roman}',
-    ],
-}
+from kel.utils.visualize_kel import *
 
 
 if __name__ == "__main__":
@@ -92,16 +30,20 @@ if __name__ == "__main__":
          torch.Tensor(np.linspace(-10, 10, 500)).reshape((-1, 1))]
     n_reg = 15
     kl_reg_params = np.logspace(3, -2, n_reg)
-    y_logs = []
-    for kl_reg_param in kl_reg_params:
-        print("KL Regparam: {}".format(kl_reg_param))
-        estimator = KernelELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
-        estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
-        y_logs.append(estimator.eval_rkhs_func())
+    # y_logs = []
+    # for kl_reg_param in kl_reg_params:
+    #     print("KL Regparam: {}".format(kl_reg_param))
+    #     estimator = KernelELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
+    #     estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
+    #     y_logs.append(estimator.eval_rkhs_func())
 
-    # estimator = KernelELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='kl', **estimator_kwargs)
-    # estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
-    # y_kl = estimator.eval_rkhs_func()
+    estimator = KernelELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=1000, f_divergence_reg='kl',
+                                 annealing=True, **estimator_kwargs)
+    y_annealing = estimator._optimize_dual_func_gd(x_tensor=x, z_tensor=x[0], iters=100000)
+
+    estimator = KernelELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=0.01, f_divergence_reg='kl', **estimator_kwargs)
+    estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
+    y_kl = estimator.eval_rkhs_func()
     #
     estimator = KernelELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
     estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='exact')
@@ -116,22 +58,26 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots(1, figsize=(LINE_WIDTH/2, LINE_WIDTH/3.5))
     ax.plot(x[0], y_true, label=r'$\psi(x)^T h$', color=colors[0], linestyle=linestyles[0])
-    # ax.plot(x[0], y_true_eps, label=r'$\psi(x)^T h + \epsilon$', color=colors[1], linestyle=linestyles[1])
+    ax.plot(x[0], y_kl, label=r'$\epsilon = 0.01$', color=colors[1], linestyle=linestyles[1])
     ax.plot(x[0], y_exact, label=r'MMD only', color=colors[2], linestyle=linestyles[2])
-    # ax.plot(x[0], y_kl, color=colors[3], linestyle=linestyles[3])
-    for y_log, alpha, reg_param in zip(y_logs, np.linspace(0.1, 1, n_reg), kl_reg_params):
-        ax.plot(x[0], y_log, color=colors[4], linestyle=linestyles[4], alpha=alpha)
+    for y_an, alpha in zip(y_annealing, np.logspace(-1, 0, len(y_annealing))):
+        ax.plot(x[0], y_an, color=colors[4], linestyle=linestyles[4], alpha=alpha)
 
-    ax.plot(x[0], y_logs[0],
-            label=r'$\epsilon = {}$'.format(np.round(kl_reg_params[0], 2)),
-            color=colors[4],
-            linestyle=linestyles[4],
-            alpha=0.1)
-    ax.plot(x[0], y_logs[-1],
-            label=r'$\epsilon = {}$'.format(np.round(kl_reg_params[-1], 2)),
-            color=colors[4],
-            linestyle=linestyles[4],
-            alpha=1)
+    ax.plot(x[0], y_an, label='annealed', color=colors[4], linestyle=linestyles[4], alpha=alpha)
+
+    # for y_log, alpha, reg_param in zip(y_logs, np.linspace(0.1, 1, n_reg), kl_reg_params):
+    #     ax.plot(x[0], y_log, color=colors[4], linestyle=linestyles[4], alpha=alpha)
+    #
+    # ax.plot(x[0], y_logs[0],
+    #         label=r'$\epsilon = {}$'.format(np.round(kl_reg_params[0], 2)),
+    #         color=colors[4],
+    #         linestyle=linestyles[4],
+    #         alpha=0.1)
+    # ax.plot(x[0], y_logs[-1],
+    #         label=r'$\epsilon = {}$'.format(np.round(kl_reg_params[-1], 2)),
+    #         color=colors[4],
+    #         linestyle=linestyles[4],
+    #         alpha=1)
 
     # ax.spines['top'].set_visible(False)
     # ax.spines['right'].set_visible(False)
