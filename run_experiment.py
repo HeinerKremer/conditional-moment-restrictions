@@ -113,7 +113,7 @@ def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, 
         if filename is not None:
             if exp_name is None:
                 exp_name = str(experiment.__name__)
-            prefix = f"results/{exp_name}/{exp_name}_method={estimation_method}_n={n_train}"
+            prefix = f"results/{exp_name}/{run_dir}/{exp_name}_method={estimation_method}_n={n_train}"
             os.makedirs(os.path.dirname(prefix), exist_ok=True)
             print('Filepath: ', prefix + str(filename) + ".json")
             with open(prefix + filename + ".json", "w") as fp:
@@ -141,10 +141,10 @@ if __name__ == "__main__":
     parser.add_argument('--experiment', type=str, default='heteroskedastic')
     parser.add_argument('--exp_option', default=None)
     parser.add_argument('--n_train', type=int, default=100)
-    parser.add_argument('--method', type=str, default='KernelFGEL')
+    parser.add_argument('--method', type=str, default='KernelELNeural')
     parser.add_argument('--method_option', default=None)
     parser.add_argument('--rollouts', type=int, default=2)
-    parser.add_argument('--run_dir', type=str, default='exp_1')
+    parser.add_argument('--run_dir', type=str, default='')
 
     args = parser.parse_args()
 

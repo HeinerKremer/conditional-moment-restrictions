@@ -46,6 +46,8 @@ def create_log_dir(log_dir, hyperparams, run_num, time_str):
 def write_exp_block(subfile, exp_num, log_dir, pythonscript, hyperparams, n_runs):
     # unique identifier per exp configuration
     time_str = datetime.datetime.now().strftime("%d_%H_%M_%S")
+    if 'run_dir' in hyperparams:
+        hyperparams['run_dir'] = 'exp_' + time_str
     fixed_seed = hyperparams.pop('fixed_seed', None)
     for i in range(n_runs):
         exp_name = str(i) + str(exp_num) + "_" + time_str
@@ -83,7 +85,7 @@ def write_bash_script(file_path, work_dir, py_env):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exp_config', nargs="?", type=str, default='IV_exp.yaml')
+    parser.add_argument('--exp_config', nargs="?", type=str, default='heteroskedastic_exp.yaml')
     args = parser.parse_args()
     method = args.exp_config.split('.')[0]
     job_dir = Path(__file__).parent / 'jobs_{}'.format(method)

@@ -7,6 +7,7 @@ import numpy as np
 import seaborn as sns
 from tabulate import tabulate
 from pathlib import Path
+import argparse
 
 LINE_WIDTH = 7.0
 COL_WIDTH = 3.333
@@ -35,6 +36,8 @@ labels = {'SMD': 'SMD',
           'KernelELNeural': 'MMD-EL',
           'KernelELNeural-log': 'KEL-log',
           'RFKernelELNeural': 'RF-NN-KEL',
+          'KernelELNeural-kl': 'KEL-kl',
+          'RFKernelELNeural-kl': 'RF-KEL-kl',
           'DeepIV': 'DeepIV'}
 
 
@@ -92,6 +95,8 @@ NEURIPS_RCPARAMS = {
     ],
 }
 
+BASE_PATH = Path(__file__).parent.parent.parent
+
 
 def load_and_summarize_results(filename):
     with open(filename, "r") as fp:
@@ -128,13 +133,13 @@ def load_and_summarize_results(filename):
     return results_summarized
 
 
-def get_result_for_best_divergence(method, n_train, test_metric, experiment=None, func=None):
+def get_result_for_best_divergence(method, n_train, test_metric, experiment=None, func=None, run_dir=''):
     if experiment == 'NetworkIVExperiment':
         opt = f'_{func}'
     else:
         opt = ''
 
-    experiment = Path(__file__).parent.parent.parent / f'results/{experiment}/{experiment}'
+    experiment = BASE_PATH / f'results/{experiment}/{run_dir}/{experiment}'
 
     test_metrics = []
     validation = []
@@ -154,7 +159,7 @@ def get_result_for_best_divergence(method, n_train, test_metric, experiment=None
 
 
 def plot_mr_over_sample_size(methods, n_samples, kl_reg_params=None, logscale=False,
-                             ylim=None, remove_failed=False):
+                             ylim=None, remove_failed=False, run_dir=''):
     plt.rcParams.update(NEURIPS_RCPARAMS)
     sns.set_theme()
 
@@ -182,7 +187,7 @@ def plot_mr_over_sample_size(methods, n_samples, kl_reg_params=None, logscale=Fa
                     results[f'KEL, kl_reg={key}']['mean'].append(val["mean_square_error"])
                     results[f'KEL, kl_reg={key}']['std'].append(val["std_square_error"])
             else:
-                path = Path(__file__).parent.parent.parent + '/results/PoissonExperiment/PoissonExperiment'
+                path = BASE_PATH / '/results/PoissonExperiment' / run_dir / 'PoissonExperiment'
                 filename = f"{path}_method={method}_n={n_train}.json"
                 res = load_and_summarize_results(filename)
                 test_error, val_error = res[f'{test_metric}_list'], res['val_loss_list']
@@ -211,22 +216,29 @@ def plot_mr_over_sample_size(methods, n_samples, kl_reg_params=None, logscale=Fa
 
     plt.legend()
     plt.tight_layout()
-    plt.savefig(Path(__file__).parent.parent.parent + '/results/Poisson_separated.pdf', dpi=200)
+    plt.savefig(BASE_PATH / '/results/Poisson_separated.pdf', dpi=200)
     plt.show()
 
 
-def get_test_metric_over_sample_size(methods, n_samples, experiment, test_metric='mse', remove_failed=False, kl_reg_param=None):
+def get_test_metric_over_sample_size(methods, n_samples, experiment, test_metric='mse', remove_failed=False,
+                                     kl_reg_param=None, run_dir=''):
     results = {method: {'mean': [], 'std': []} for method in methods}
     n_samples = np.sort(n_samples)
     for n_train in n_samples:
         for method in methods:
-            if method in ['NeuralFGEL', 'KernelFGEL']:
-                test_error, val_error = get_result_for_best_divergence(method, n_train, experiment=experiment, test_metric=test_metric)
-            elif method in ['KernelELKernel', 'KernelELNeural'] and kl_reg_param is not None:
-                res = separate_kel_by_reg_param(reg_params=[kl_reg_param], n_train=n_train, experiment=experiment, method=method)
+            if method in ['NeuralFGEL', 'KernelFGEL', 'KernelELNeural', 'RFKernelELNeural']:
+                test_error, val_error = get_result_for_best_divergence(method, n_train,
+                                                                       experiment=experiment,
+                                                                       test_metric=test_metric,
+                                                                       run_dir=run_dir)
+            elif method in ['KernelELKernel'] and kl_reg_param is not None:
+                res = separate_kel_by_reg_param(reg_params=[kl_reg_param],
+                                                n_train=n_train,
+                                                experiment=experiment,
+                                                method=method)
                 test_error = res[kl_reg_param]['best_separate_results']['mse']
             else:
-                path = Path(__file__).parent.parent.parent / f'results/{experiment}/{experiment}'
+                path = BASE_PATH / f'results/{experiment}/{run_dir}/{experiment}'
                 filename = f"{path}_method={method}_n={n_train}.json"
                 res = load_and_summarize_results(filename)
                 print(res.keys(), f'{test_metric}_list')
@@ -249,8 +261,9 @@ def remove_failed_runs(mses, mmrs, proportion=0.9):
     return best_mses
 
 
-def plot_results_over_sample_size(methods, n_samples, experiment='poisson', test_metric='mse', logscale=False,
-                                  ylim=None, remove_failed=False, kl_reg_param=None):
+def plot_results_over_sample_size(methods, n_samples, experiment='poisson', test_metric='mse',
+                                  logscale=False, ylim=None, remove_failed=False,
+                                  kl_reg_param=None, run_dir=None):
     plt.rcParams.update(NEURIPS_RCPARAMS)
     sns.set_theme()
 
@@ -265,7 +278,7 @@ def plot_results_over_sample_size(methods, n_samples, experiment='poisson', test
 
     results = get_test_metric_over_sample_size(methods=methods, n_samples=n_samples, experiment=experiment,
                                                test_metric=test_metric, remove_failed=remove_failed,
-                                               kl_reg_param=kl_reg_param)
+                                               kl_reg_param=kl_reg_param, run_dir=run_dir)
 
     for i, (method, res) in enumerate(results.items()):
         ax[0].plot(n_samples, res['mean'], label=labels[method], color=colors[i], marker=marker[i], ms=10)
@@ -285,13 +298,13 @@ def plot_results_over_sample_size(methods, n_samples, experiment='poisson', test
 
     plt.legend()
     plt.tight_layout()
-    plt.savefig(f'results/{experiment}_mse_over_n.pdf', dpi=200)
+    plt.savefig(BASE_PATH / f'results/{experiment}_mse_over_n.pdf', dpi=200)
     plt.show()
 
 
 def separate_gel_by_divergence(n_train=None):
     divergences = ['chi2', 'kl', 'log']
-    path = 'results/PoissonExperiment/PoissonExperiment'
+    path = BASE_PATH / 'results/PoissonExperiment/PoissonExperiment'
     filename = f"{path}_method=GEL_n={n_train}.json"
 
     with open(filename, "r") as fp:
@@ -336,11 +349,12 @@ def separate_gel_by_divergence(n_train=None):
 
 
 
-def separate_kel_by_reg_param(reg_params=None, n_train=None, experiment='heteroskedastic', exp_file=None, method='KernelEL'):
+def separate_kel_by_reg_param(reg_params=None, n_train=None, experiment='heteroskedastic',
+                              exp_file=None, method='KernelEL', run_dir=''):
     if reg_params is None:
         reg_params = [10, 1, 0.1]
 
-    path = Path(__file__).parent.parent.parent / f'results/{experiment}/{experiment}'
+    path = BASE_PATH / f'results/{experiment}/{run_dir}/{experiment}'
     print(path)
     filename = f"{path}_method={method}_n={n_train}.json"
 
@@ -389,7 +403,8 @@ def separate_kel_by_reg_param(reg_params=None, n_train=None, experiment='heteros
     return final_result
 
 
-def plot_divergence_comparison_cmr(n_samples, kl_reg_params=None, logscale=False, remove_failed=False, savename=None):
+def plot_divergence_comparison_cmr(n_samples, kl_reg_params=None, logscale=False, remove_failed=False, savename=None,
+                                   run_dir=''):
     plt.rcParams.update(NEURIPS_RCPARAMS)
     sns.set_theme()
     marker = ['v', 'o', 's', 'd', 'p', '*', 'h', 'o', 'o', 'o']
@@ -420,7 +435,8 @@ def plot_divergence_comparison_cmr(n_samples, kl_reg_params=None, logscale=False
         n_samples = np.sort(n_samples)
         for n_train in n_samples:
             for method in methods:
-                filename = f"results/HeteroskedasticNoiseExperiment/HeteroskedasticNoiseExperiment_method={method}_n={n_train}.json"
+                filename = BASE_PATH / f"results/HeteroskedasticNoiseExperiment" / run_dir
+                filename = filename / "HeteroskedasticNoiseExperiment_method={method}_n={n_train}.json"
                 res = load_and_summarize_results(filename)
                 mses, mmrs = res['mse_list'], res['val_loss_list']
                 if remove_failed:
@@ -465,14 +481,14 @@ def plot_divergence_comparison_cmr(n_samples, kl_reg_params=None, logscale=False
     plt.tight_layout()
     if savename is None:
         if kl_reg_params is None:
-            savename = 'results/DivergenceComparison_CMR.pdf'
+            savename = BASE_PATH / 'results/DivergenceComparison_CMR.pdf'
         else:
-            savename = 'results/DivergenceComparison_CMR_KL-Param.pdf'
+            savename = BASE_PATH / 'results/DivergenceComparison_CMR_KL-Param.pdf'
     plt.savefig(savename, dpi=200)
     plt.show()
 
 
-def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg_param=None):
+def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg_param=None, run_dir=''):
     methods = ['OLS',
                'KernelMMR',
                'DeepIV',
@@ -490,13 +506,18 @@ def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg
     for func in funcs:
         for method in methods:
             if method in ['NeuralFGEL', 'KernelFGEL']:
-                test, val = get_result_for_best_divergence(method=method, n_train=n_train, test_metric=test_metric, experiment='NetworkIVExperiment', func=func)
+                test, val = get_result_for_best_divergence(method=method,
+                                                           n_train=n_train,
+                                                           test_metric=test_metric,
+                                                           experiment='NetworkIVExperiment', func=func)
             elif method in ['KernelELKernel', 'KernelELNeural', 'RFKernelELNeural', 'KernelELNeural-log'] and kl_reg_param is not None:
-                exp_file = f"results/NetworkIVExperiment/NetworkIVExperiment_method={method}_n={n_train}_{func}.json"
+                exp_file = BASE_PATH / f"results/NetworkIVExperiment"
+                exp_file = exp_file / run_dir / "NetworkIVExperiment_method={method}_n={n_train}_{func}.json"
                 res = separate_kel_by_reg_param(reg_params=[kl_reg_param], n_train=n_train, exp_file=exp_file, method=method)
                 test = res[kl_reg_param]['best_separate_results']['test_risk']
             else:
-                filename = f"results/NetworkIVExperiment/NetworkIVExperiment_method={method}_n={n_train}_{func}.json"
+                filename = BASE_PATH / f"results/NetworkIVExperiment" / run_dir
+                filename = filename / "NetworkIVExperiment_method={method}_n={n_train}_{func}.json"
                 res = load_and_summarize_results(filename)
                 test, val = res[test_metric+'_list'], res['val_loss_list']
             if remove_failed:
@@ -514,46 +535,48 @@ def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--experiment', type=str, default='heteroskedastic')
+    parser.add_argument('--exp_name', type=str, default='')
+    args = parser.parse_args()
     remove_failed = False
 
     plot_results_over_sample_size(['OLS', 'KernelMMR', 'NeuralVMM', 'NeuralFGEL',
                                    'KernelELNeural', 'RFKernelELNeural'],
-                                  n_samples=[64, 128, 256, 512, 1024],
+                                  n_samples=[64, 128, 1024],
                                   experiment='heteroskedastic',
                                   logscale=True,
                                   ylim=[1e-7, 1.6],
                                   kl_reg_param=1,
                                   remove_failed=remove_failed,
+                                  run_dir=args.exp_name
                                   )
-
-    plot_results_over_sample_size(['OLS', 'GEL', 'KernelEL'],
-                                  n_samples=[64, 128, 256, 512, 1024, 2048, 4096],
-                                  experiment='poisson',
-                                  logscale=True,
-                                  remove_failed=False,
-                                  )
-
-    plot_mr_over_sample_size(methods=['OLS', 'GEL', 'KEL'],
-                             n_samples=[64, 128, 512, 1024, 2048, 4096],
-                             kl_reg_params=[1e3, 1e1, 1e0, 1e-1],
-                             logscale=True,
-                             ylim=[1e-5, 10],
-                             remove_failed=False)
-
-    plot_divergence_comparison_cmr(n_samples=[64, 128, 512, 1024, 4096],
-                                   logscale=True,
-                                   kl_reg_params=[10, 1, 0.1],
-                                   remove_failed=False,
-                               )
-
-    plot_divergence_comparison_cmr(n_samples=[64, 128, 512, 1024, 4096],
-                                   logscale=True,
-                                   kl_reg_params=[1.0],
-                                   remove_failed=False,
-                               )
-
-
-    generate_table(n_train=2000,
-                   test_metric='test_risk',
-                   kl_reg_param=1.0,
-                   remove_failed=False)
+    #
+    # plot_results_over_sample_size(['OLS', 'GEL', 'KernelEL'],
+    #                               n_samples=[64, 128, 256, 512, 1024, 2048, 4096],
+    #                               experiment='poisson',
+    #                               logscale=True,
+    #                               remove_failed=False,
+    #                               run_dir=args.exp_name
+    #                               )
+    #
+    # plot_mr_over_sample_size(methods=['OLS', 'GEL', 'KEL'],
+    #                          n_samples=[64, 128, 512, 1024, 2048, 4096],
+    #                          kl_reg_params=[1e3, 1e1, 1e0, 1e-1],
+    #                          logscale=True,
+    #                          ylim=[1e-5, 10],
+    #                          remove_failed=False,
+    #                          run_dir=args.exp_name)
+    #
+    # plot_divergence_comparison_cmr(n_samples=[64, 128, 512, 1024, 4096],
+    #                                logscale=True,
+    #                                kl_reg_params=[10, 1, 0.1],
+    #                                remove_failed=False,
+    #                                run_dir=args.exp_name)
+    #
+    #
+    # generate_table(n_train=2000,
+    #                test_metric='test_risk',
+    #                kl_reg_param=1.0,
+    #                remove_failed=False,
+    #                run_dir=args.exp_name)
