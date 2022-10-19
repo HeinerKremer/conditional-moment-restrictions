@@ -9,6 +9,19 @@ bid = 12
 
 # ---------------- Simulation details ----------------
 experiments = [
+    ('bennet_multi', {'n_train': experiment_setups['bennet_multi']['n_train'],
+                      'method': experiment_setups['bennet_multi']["methods"],
+                      'rollouts': [experiment_setups['bennet_multi']['rollouts']],
+                      }),
+    ('bennet_simple', {'n_train': experiment_setups['bennet_simple']['n_train'],
+                      'method': experiment_setups['bennet_simple']["methods"],
+                      'rollouts': [experiment_setups['bennet_simple']['rollouts']],
+                      }),
+    ('bennet_hetero', {'n_train': experiment_setups['bennet_hetero']['n_train'],
+                      'method': experiment_setups['bennet_hetero']["methods"],
+                      'rollouts': [experiment_setups['bennet_hetero']['rollouts']],
+                      }),
+
     # ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
     #                      'method': experiment_setups['heteroskedastic_one']["methods"],
     #                      'rollouts': [50],}),
@@ -17,9 +30,9 @@ experiments = [
     #                      'method': experiment_setups['heteroskedastic_two']["methods"],
     #                      'rollouts': [50], }),
 
-    ('heteroskedastic_reg_params', {'n_train': experiment_setups['heteroskedastic_reg_params']['n_train'],
-                         'method': experiment_setups['heteroskedastic_reg_params']["methods"],
-                         'rollouts': [5], }),
+    # ('heteroskedastic_reg_params', {'n_train': experiment_setups['heteroskedastic_reg_params']['n_train'],
+    #                      'method': experiment_setups['heteroskedastic_reg_params']["methods"],
+    #                      'rollouts': [5], }),
 
     # ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
     #                 'method': experiment_setups['network_iv']["methods"],

@@ -92,7 +92,7 @@ experiment_setups = {
             'exp_class': NetworkIVExperiment,
             'exp_params': {'ftype': ['abs', 'step', 'sin', 'linear']},
             'n_train': [20000],
-            'methods': ['OLS', 'SMD', 'NeuralVMM',
+            'methods': ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
                         'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
                         'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
             'rollouts': 10,
@@ -111,26 +111,32 @@ experiment_setups = {
         {
             'exp_class': HeteroskedasticIVScenario,
             'exp_params': {},
-            'n_train': [100],
-            'methods': ['OLS', 'MMR'],
-            'rollouts': [50]
+            'n_train': [4000],
+            'methods': ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
+                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+                        'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
+            'rollouts': [30]
         },
 
     'bennet_simple':
         {
             'exp_class': SimpleIVScenario,
             'exp_params': {},
-            'n_train': [100],
-            'methods': ['OLS', 'MMR'],
-            'rollouts': [50]
+            'n_train': [4000],
+            'methods': ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
+                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+                        'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
+            'rollouts': [30]
         },
 
     'bennet_multi':
         {
             'exp_class': MultiOutputIVScenario,
             'exp_params': {},
-            'n_train': [100],
-            'methods': ['OLS', 'MMR'],
-            'rollouts': [50]
+            'n_train': [4000],
+            'methods': ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
+                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+                        'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
+            'rollouts': [30]
         },
 }

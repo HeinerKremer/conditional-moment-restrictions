@@ -160,7 +160,7 @@ if __name__ == "__main__":
                                       n_train=args.n_train,
                                       estimation_method=args.method,
                                       repititions=args.rollouts,
-                                      parallel= args.run_parallel,
+                                      parallel=args.run_parallel,
                                       filename=filename,
                                       exp_name=args.experiment,
                                       run_dir=args.run_dir,

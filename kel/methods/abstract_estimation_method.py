@@ -80,11 +80,11 @@ class AbstractEstimationMethod:
         def closure():
             optimizer.zero_grad()
             psi = self.model.psi(x)
-            # if mmr and z is not None:
-            #     self._set_kernel_z(z=z)
-            #     loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z, psi) / (x[0].shape[0] ** 2)
-            # else:
-            loss = (psi ** 2).mean()
+            if mmr and z is not None:
+                self._set_kernel_z(z=z)
+                loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z, psi) / (x[0].shape[0] ** 2)
+            else:
+                loss = (psi ** 2).mean()
             loss.backward()
             return loss
         optimizer.step(closure)
