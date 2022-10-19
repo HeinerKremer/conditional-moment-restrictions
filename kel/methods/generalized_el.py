@@ -325,8 +325,9 @@ class GeneralizedEL(AbstractEstimationMethod):
             self.dual_func_optimizer.step()
             if not self.are_dual_params_finite():
                 raise OptimizationError('Dual variables are NaN or inf.')
-            return loss_dual_func
-        """---------------------------------------------------------------------------------------------------------"""
+        return loss_dual_func
+
+    """---------------------------------------------------------------------------------------------------------"""
 
     def _train_internal(self, x_train, z_train, x_val, z_val, debugging):
         x_tensor = self._to_tensor(x_train)
