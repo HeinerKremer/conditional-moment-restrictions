@@ -63,16 +63,15 @@ class KernelEL(GeneralizedEL):
             kx = self.kernel_x[:, self.batch_idx]
         else:
             kx = self.kernel_x
-        expected_rkhs_func = torch.mean(torch.einsum('ij, ik -> k', self.rkhs_func.params, kx))
+        rkhs_func = torch.einsum('ij, ik -> kj', self.rkhs_func.params, kx)
         if self.n_rff == 0:
             rkhs_norm_sq = torch.einsum('ir, ij, jr ->', self.rkhs_func.params, kx, self.rkhs_func.params)
         elif self.n_rff > 0:
             rkhs_norm_sq = torch.einsum('i, i ->', self.rkhs_func.params[:, 0], self.rkhs_func.params[:, 0])
         else:
-            raise ValueError("Number of random featuers cannot be smaller than 0!")
-        exponent = (torch.einsum('ij, ik -> k', self.rkhs_func.params, kx) + self.dual_normalization.params
-                    - torch.einsum('ik, ik -> i', self.eval_dual_moment_func(z), self.model.psi(x)))
-        objective = (expected_rkhs_func + self.dual_normalization.params - 1 / 2 * rkhs_norm_sq
+            raise ValueError("Number of random features cannot be smaller than 0!")
+        exponent = (rkhs_func + self.dual_normalization.params - torch.sum(self.eval_dual_moment_func(z) * self.model.psi(x), axis=1, keepdim=True))
+        objective = (torch.mean(rkhs_func) + self.dual_normalization.params - 1 / 2 * rkhs_norm_sq
                      - self.kl_reg_param * torch.mean(self.conj_divergence(1 / self.kl_reg_param * exponent)))
         return objective, -objective
 

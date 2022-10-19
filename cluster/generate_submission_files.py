@@ -22,9 +22,9 @@ experiments = [
                       'rollouts': [experiment_setups['bennet_hetero']['rollouts']],
                       }),
 
-    # ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
-    #                      'method': experiment_setups['heteroskedastic_one']["methods"],
-    #                      'rollouts': [50],}),
+    ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
+                         'method': experiment_setups['heteroskedastic_one']["methods"],
+                         'rollouts': [50],}),
     #
     # ('heteroskedastic_two', {'n_train': experiment_setups['heteroskedastic_two']['n_train'],
     #                      'method': experiment_setups['heteroskedastic_two']["methods"],
@@ -34,15 +34,15 @@ experiments = [
     #                      'method': experiment_setups['heteroskedastic_reg_params']["methods"],
     #                      'rollouts': [5], }),
 
-    # ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
-    #                 'method': experiment_setups['network_iv']["methods"],
-    #                 'rollouts': [experiment_setups['network_iv']['rollouts']],
-    #                 'exp_option': ['abs', 'step', 'sin', 'linear']}),
-    #
-    # ('network_iv_large', {'n_train': experiment_setups['network_iv_large']['n_train'],
-    #                 'method': experiment_setups['network_iv_large']["methods"],
-    #                 'rollouts': [experiment_setups['network_iv_large']['rollouts']],
-    #                 'exp_option': ['abs', 'step', 'sin', 'linear']}),
+    ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
+                    'method': experiment_setups['network_iv']["methods"],
+                    'rollouts': [experiment_setups['network_iv']['rollouts']],
+                    'exp_option': ['abs', 'step', 'sin', 'linear']}),
+
+    ('network_iv_large', {'n_train': experiment_setups['network_iv_large']['n_train'],
+                    'method': experiment_setups['network_iv_large']["methods"],
+                    'rollouts': [experiment_setups['network_iv_large']['rollouts']],
+                    'exp_option': ['abs', 'step', 'sin', 'linear']}),
 
     # ('poisson', {'n_train': experiment_setups['poisson']['n_train'],
     #                 'method': experiment_setups['poisson']["methods"],
