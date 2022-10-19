@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import matplotlib
-matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt5Agg')
 from matplotlib import pyplot as plt
 
 

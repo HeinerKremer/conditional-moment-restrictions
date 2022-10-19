@@ -111,32 +111,35 @@ experiment_setups = {
         {
             'exp_class': HeteroskedasticIVScenario,
             'exp_params': {},
-            'n_train': [4000],
+            'n_train': [2000],
             'methods': ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
                         'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
-                        'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
-            'rollouts': [30]
+                        'KernelELNeural-kl', 'KernelELNeural-log',
+                        'RFKernelELNeural-MB'],
+            'rollouts': 20,
         },
 
     'bennet_simple':
         {
             'exp_class': SimpleIVScenario,
             'exp_params': {},
-            'n_train': [4000],
+            'n_train': [2000],
             'methods': ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
                         'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
-                        'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
-            'rollouts': [30]
+                        'KernelELNeural-kl', 'KernelELNeural-log',
+                        'RFKernelELNeural-MB'],
+            'rollouts': 20,
         },
 
     'bennet_multi':
         {
             'exp_class': MultiOutputIVScenario,
             'exp_params': {},
-            'n_train': [4000],
+            'n_train': [2000],
             'methods': ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
                         'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
-                        'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
-            'rollouts': [30]
+                        'KernelELNeural-kl', 'KernelELNeural-log',
+                        'RFKernelELNeural-MB'],
+            'rollouts': 20,
         },
 }

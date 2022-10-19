@@ -19,13 +19,19 @@ class KernelFGEL(GeneralizedEL):
         self.all_dual_params = list(self.dual_moment_func.parameters())
         # self.dual_normalization = Parameter(shape=(1, 1))
 
-    def get_rkhs_norm(self):
+    def _init_training(self, x_tensor, z_tensor):
+        self._set_kernel_z(z=z_tensor)
+        super()._init_training(x_tensor=x_tensor, z_tensor=z_tensor)
+
+    def get_rkhs_norm_sq(self):
         return torch.einsum('ir, ij, jr ->', self.dual_moment_func.params, self.kernel_z, self.dual_moment_func.params)
 
+    def eval_dual_moment_func(self, z):
+        return torch.einsum('ij, ik -> kj', self.dual_moment_func.params, self.kernel_z)
+
     def objective(self, x, z, *args, **kwargs):
-        dual_func_k_psi = torch.einsum('jr, ji, ir -> i', self.dual_moment_func.params, self.kernel_z, self.model.psi(x))
-        objective = torch.mean(self.gel_function(dual_func_k_psi))
-        regularizer = self.reg_param/2 * torch.sqrt(self.get_rkhs_norm())
+        objective, _ = super().objective(x, z, *args, **kwargs)
+        regularizer = self.reg_param/2 * self.get_rkhs_norm_sq()
         return objective, - objective + regularizer
 
     # def objective(self, x, z, *args, **kwargs):
@@ -49,7 +55,7 @@ class KernelFGEL(GeneralizedEL):
                 for k in range(self.dim_psi):
                     dual_func_psi += dual_func[:, k] @ self.kernel_z.detach().numpy() @ cvx.diag(psi[:, k])
 
-                objective = (1/n_sample * cvx.sum(self.gel_function(dual_func_psi, cvxpy=True))
+                objective = (1/n_sample * cvx.sum(self.conj_divergence(dual_func_psi, cvxpy=True))
                              - self.reg_param/2 * cvx.square(cvx.norm(cvx.transpose(dual_func) @ self.k_cholesky.detach().numpy())))
                 if self.divergence_type == 'log':
                     constraint = [dual_func_psi <= 1 - n_sample]

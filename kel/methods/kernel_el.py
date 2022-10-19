@@ -18,10 +18,8 @@ class KernelEL(GeneralizedEL):
 
     def __init__(self, kl_reg_param, f_divergence_reg='kl', n_random_features=0,
                  annealing=False, kernel_x_kwargs=None, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(divergence=f_divergence_reg, **kwargs)
         self.kl_reg_param = kl_reg_param
-        self.f_divergence_reg = f_divergence_reg
-        self.f_divergence = self._set_f_divergence_regularizer()
         self.annealing = annealing
 
         if kernel_x_kwargs is None:
@@ -29,27 +27,13 @@ class KernelEL(GeneralizedEL):
         self.kernel_x_kwargs = kernel_x_kwargs
         self.n_rff = n_random_features
         self.kernel_x = None
-        self.kernel_x_val = None
 
-    def _set_f_divergence_regularizer(self):
-        # TODO: This can be unified with set_gel_function.
-        if self.f_divergence_reg == 'kl':
-            def div(t):
-                return torch.exp(t)
-        elif self.f_divergence_reg == 'log':
-            def div(t):
-                return -torch.log(1 - t)
-        elif self.f_divergence_reg == 'chi2':
-            def div(t):
-                return 1/2 * torch.square(1 + t)
-        elif self.f_divergence_reg == 'chi2-sqrt':
-            def div(t):
-                return 2 * torch.sqrt(1 - t)
-        else:
-            raise NotImplementedError('Invalid f-divergence regularizer specified.')
-        return div
+    def _set_divergence(self):
+        def divergence(weights=None, cvxpy=False):
+            raise NotImplementedError('MMD divergence non-trivial to compute here')
+        return divergence
 
-    def _set_kernel_x(self, x, x_val=None):
+    def _set_kernel_x(self, x):
         if self.kernel_x is None and x is not None:
             if self.n_rff == 0:
                 kt, self.sigma_t = get_rbf_kernel(x[0], x[0], **self.kernel_x_kwargs)
@@ -60,25 +44,8 @@ class KernelEL(GeneralizedEL):
             elif self.n_rff > 0:
                 self.kernel_x, self.sigma_rff = get_rff(torch.hstack(x), n_rff=self.n_rff, **self.kernel_x_kwargs)
                 self.kernel_x = self.kernel_x.type(torch.float32)
-                # self.kernel_x = torch.kron(
-                #     get_rff(x[0], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32),
-                #     get_rff(x[1], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32)
-                # )
             else:
                 raise ValueError("Number of random features must be larger than 0!")
-
-        if x_val is not None and self.n_rff == 0:
-            kt, self.sigma_t = get_rbf_kernel(x_val[0], x_val[0], **self.kernel_x_kwargs)
-            ky, self.sigma_y = get_rbf_kernel(x_val[1], x_val[1], **self.kernel_x_kwargs)
-            self.kernel_x_val = (kt.type(torch.float32) * ky.type(torch.float32))
-        elif x_val is not None and self.n_rff > 0:
-            self.kernel_x_val, self.simga_rff = get_rff(torch.hstack(x), n_rff=self.n_rff, **self.kernel_x_kwargs)
-            self.kernel_x_val = self.kernel_x_val.type(torch.float32)
-            # This blows up too much -> not scalable
-            # self.kernel_x = torch.kron(
-            #     get_rff(x_val[0], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32),
-            #     get_rff(x_val[1], n_rff=self.n_rff, **self.kernel_x_kwargs).type(torch.float32)
-            # )
 
     def _init_dual_params(self):
         self.dual_moment_func = Parameter(shape=(1, self.dim_psi))
@@ -86,20 +53,11 @@ class KernelEL(GeneralizedEL):
         self.dual_normalization = Parameter(shape=(1, 1))
         self.all_dual_params = list(self.dual_moment_func.parameters()) + list(self.dual_normalization.parameters()) + list(self.rkhs_func.parameters())
 
-    def _set_divergence_function(self):
-        def divergence(weights=None, cvxpy=False):
-            raise NotImplementedError('MMD divergence non-trivial to compute here')
-        return divergence
-
-    def _set_gel_function(self):
-        def gel_function():
-            raise NotImplementedError('gel_function not used for MMD-GEL')
-        return gel_function
+    def _init_training(self, x_tensor, z_tensor):
+        self._set_kernel_x(x_tensor)
+        super()._init_training(x_tensor=x_tensor, z_tensor=z_tensor)
 
     """------------- Objective of MMD-GEL ------------"""
-    def eval_dual_moment_func(self, z):
-        return self.dual_moment_func.params
-
     def objective(self, x, z, *args, **kwargs):
         if self.batch_training:
             kx = self.kernel_x[:, self.batch_idx]
@@ -115,7 +73,7 @@ class KernelEL(GeneralizedEL):
         exponent = (torch.einsum('ij, ik -> k', self.rkhs_func.params, kx) + self.dual_normalization.params
                     - torch.einsum('ik, ik -> i', self.eval_dual_moment_func(z), self.model.psi(x)))
         objective = (expected_rkhs_func + self.dual_normalization.params - 1 / 2 * rkhs_norm_sq
-                     - self.kl_reg_param * torch.mean(self.f_divergence(1 / self.kl_reg_param * exponent)))
+                     - self.kl_reg_param * torch.mean(self.conj_divergence(1 / self.kl_reg_param * exponent)))
         return objective, -objective
 
     """--------------------- Optimization methods for dual_func ---------------------"""
@@ -154,15 +112,6 @@ class KernelEL(GeneralizedEL):
             self.rkhs_func.update_params(rkhs_func.value)
             self.dual_normalization.update_params(dual_normalization.value)
         return
-
-    def _init_training(self, x_tensor, z_tensor, x_val_tensor=None, z_val_tensor=None):
-        if self.dual_moment_func_type == 'kernel':
-            self._set_kernel_z(z_tensor, z_val_tensor)
-        self._set_kernel_x(x_tensor, x_val_tensor)
-        self._init_dual_params()
-        self._set_optimizers()
-        if self.pretrain:
-            self._pretrain_theta(x=x_tensor, z=z_tensor)
 
 
 if __name__ == '__main__':

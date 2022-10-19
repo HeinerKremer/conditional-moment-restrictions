@@ -67,8 +67,8 @@ def get_run_path():
         path, file = os.path.split(path)
     return path + '/Kernel-EL'
 
-# path = get_run_path()
-path = '/lustre/work/hkremer/Kernel-EL'
+path = get_run_path()
+# path = '/lustre/work/hkremer/Kernel-EL'
 venvpath = path + '/kel_venv'
 
 # ----------------

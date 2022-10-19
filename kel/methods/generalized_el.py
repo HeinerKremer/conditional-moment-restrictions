@@ -27,8 +27,7 @@ class GeneralizedEL(AbstractEstimationMethod):
                  max_num_epochs=50000, eval_freq=2000, max_no_improve=3, burn_in_cycles=5,
                  theta_optim=None, theta_optim_args=None, pretrain=True,
                  dual_optim=None, dual_optim_args=None, inneriters=None,
-                 divergence=None, kernel_z_kwargs=None, dual_moment_func_type='kernel',
-                 val_loss_func=None,
+                 divergence=None, kernel_z_kwargs=None, val_loss_func=None,
                  verbose=False):
         super().__init__(model=model, kernel_z_kwargs=kernel_z_kwargs, val_loss_func=val_loss_func)
 
@@ -41,11 +40,10 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.reg_param = reg_param
         self.divergence_type = divergence
         self.softplus = torch.nn.Softplus(beta=10)
-        self.divergence = self._set_divergence_function()
-        self.gel_function = self._set_gel_function()
+        self.divergence = self._set_divergence()
+        self.conj_divergence = self._set_conjugate_divergence()
 
         self.all_dual_params = None     # List of parameters of all dual variables
-        self.dual_moment_func_type = dual_moment_func_type
         self.dual_moment_func = None
         self.dual_optim_type = dual_optim
         self.dual_func_optim_args = dual_optim_args
@@ -75,7 +73,7 @@ class GeneralizedEL(AbstractEstimationMethod):
         isinf = bool(sum([np.sum(np.isinf(p.detach().cpu().numpy())) for p in self.all_dual_params]))
         return (not isnan) and (not isinf)
 
-    def _set_divergence_function(self):
+    def _set_divergence(self):
         if self.divergence_type == 'log':
             def divergence(weights=None, cvxpy=False):
                 n_sample = weights.shape[0]
@@ -110,31 +108,37 @@ class GeneralizedEL(AbstractEstimationMethod):
             raise NotImplementedError()
         return divergence
 
-    def _set_gel_function(self):
+    def _set_conjugate_divergence(self):
         if self.divergence_type == 'log':
-            def gel_function(x=None, cvxpy=False):
+            def conj_divergence(x=None, cvxpy=False):
                 if not cvxpy:
-                    return torch.log(self.softplus(1 - x) + 1 / x.shape[0])
+                    return - torch.log(self.softplus(1 - x) + 1 / x.shape[0])
                 else:
-                    return cvx.log(1 - x)
+                    return - cvx.log(1 - x)
 
         elif self.divergence_type == 'chi2':
-            def gel_function(x=None, cvxpy=False):
+            def conj_divergence(x=None, cvxpy=False):
                 if not cvxpy:
-                    return - 1/2 * torch.square(x + 1)  # -1/2 * torch.square(x + 1)
+                    return 1/2 * torch.square(x + 1)  # -1/2 * torch.square(x + 1)
                 else:
-                    return - cvx.square(1/2 * x + 1)
+                    return cvx.square(1/2 * x + 1)
         elif self.divergence_type == 'kl':
-            def gel_function(x=None, cvxpy=False):
+            def conj_divergence(x=None, cvxpy=False):
                 if not cvxpy:
-                    return - torch.exp(x)
+                    return torch.exp(x)
                 else:
-                    return - cvx.exp(x)
+                    return cvx.exp(x)
+        elif self.divergence_type == 'chi2-sqrt':
+            def conj_divergence(x=None, cvxpy=False):
+                if not cvxpy:
+                    return 2 * torch.sqrt(1 - x)
+                else:
+                    return 2 * cvx.square(1 - x)
         elif self.divergence_type == 'off':
             return None
         else:
             raise NotImplementedError
-        return gel_function
+        return conj_divergence
 
     def _set_theta_optimizer(self):
         # Outer optimization settings (theta)
@@ -179,12 +183,20 @@ class GeneralizedEL(AbstractEstimationMethod):
         self._set_dual_optimizer()
         self._set_theta_optimizer()
 
-    """------------- Objective of standard finite dimensional GEL to be overridden for FGEL ------------"""
+    def _init_training(self, x_tensor, z_tensor):
+        self._init_dual_params()
+        self._set_optimizers()
+        if self.pretrain:
+            self._pretrain_theta(x=x_tensor, z=z_tensor)
+
+    """------------- Objective of standard finite dimensional GEL ------------"""
+    def eval_dual_moment_func(self, z):
+        return self.dual_moment_func.params
+
     def objective(self, x, z, *args, **kwargs):
-        dual_func_psi = self.model.psi(x) @ torch.transpose(self.dual_moment_func.params, 1, 0)
-        objective = torch.mean(self.gel_function(dual_func_psi)) - self.reg_param * torch.norm(self.dual_moment_func.params)
-        # print(objective, self.dual_moment_func.get_parameters(), self.model.get_parameters())
-        return objective, -objective
+        dual_func_psi = torch.einsum('ij, ij -> i', self.model.psi(x), self.eval_dual_moment_func(z))
+        objective = - torch.mean(self.conj_divergence(dual_func_psi))
+        return objective, -objective + self.reg_param * torch.norm(self.eval_dual_moment_func(z))
 
     """--------------------- Optimization methods for theta ---------------------"""
     def _optimize_step_theta(self, x_tensor, z_tensor):
@@ -278,7 +290,7 @@ class GeneralizedEL(AbstractEstimationMethod):
             psi = self.model.psi(x).detach().numpy()   # (n_sample, k)
             dual_func_psi = psi @ cvx.transpose(dual_func)    # (n_sample, 1)
 
-            objective = 1/n_sample * cvx.sum(self.gel_function(dual_func_psi, cvxpy=True))
+            objective = - 1/n_sample * cvx.sum(self.conj_divergence(dual_func_psi, cvxpy=True))
             if self.divergence_type == 'log':
                 constraint = [dual_func_psi <= 1 - n_sample]
             else:
@@ -315,14 +327,6 @@ class GeneralizedEL(AbstractEstimationMethod):
                 raise OptimizationError('Dual variables are NaN or inf.')
             return loss_dual_func
         """---------------------------------------------------------------------------------------------------------"""
-
-    def _init_training(self, x_tensor, z_tensor, z_val_tensor=None):
-        if self.dual_moment_func_type == "kernel":
-            self._set_kernel_z(z_tensor, z_val_tensor)
-        self._init_dual_params()
-        self._set_optimizers()
-        if self.pretrain:
-            self._pretrain_theta(x=x_tensor, z=z_tensor)
 
     def _train_internal(self, x_train, z_train, x_val, z_val, debugging):
         x_tensor = self._to_tensor(x_train)

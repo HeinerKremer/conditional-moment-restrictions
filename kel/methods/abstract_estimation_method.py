@@ -30,7 +30,7 @@ class AbstractEstimationMethod:
             raise RuntimeError("Need to fit model before getting fitted params")
         return self.model.get_parameters()
 
-    def _set_kernel_z(self, z, z_val=None):
+    def _set_kernel_z(self, z=None, z_val=None):
         if self.kernel_z is None and z is not None:
             self.kernel_z, _ = get_rbf_kernel(z, z, **self.kernel_z_kwargs)
             self.kernel_z = self.kernel_z.type(torch.float32)
@@ -44,7 +44,7 @@ class AbstractEstimationMethod:
         if not isinstance(z_val, torch.Tensor):
             z_val = self._to_tensor(z_val)
         n = z_val.shape[0]
-        self._set_kernel_z(z=None, z_val=z_val)
+        self._set_kernel_z(z_val=z_val)
         psi = self.model.psi(x_val)
         loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z_val, psi) / (n ** 2)
         return float(loss.detach().numpy())

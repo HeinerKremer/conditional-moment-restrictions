@@ -6,7 +6,7 @@ from kel.utils.torch_utils import ModularMLPModel
 
 class NeuralFGEL(GeneralizedEL):
     def __init__(self, model, reg_param=1e-6, batch_size=200, dual_func_network_kwargs=None, **kwargs):
-        super().__init__(model=model, theta_optim='oadam_gda', dual_moment_func_type='neural', **kwargs)
+        super().__init__(model=model, theta_optim='oadam_gda', **kwargs)
 
         self.batch_size = batch_size
         self.l2_lambda = reg_param
@@ -29,15 +29,16 @@ class NeuralFGEL(GeneralizedEL):
             dual_func_network_kwargs_default.update(dual_func_network_kwargs)
         return dual_func_network_kwargs_default
 
+    def eval_dual_moment_func(self, z):
+        return self.dual_moment_func(z)
+
     def objective(self, x, z, *args):
-        hz = self.dual_moment_func(z)
-        h_psi = torch.einsum('ik, ik -> i', hz, self.model.psi(x))
-        moment = torch.mean(self.gel_function(h_psi))
+        objective, _ = super().objective(x, z, *args)
         if self.l2_lambda > 0:
-            l_reg = self.l2_lambda * torch.mean(hz ** 2)
+            l_reg = self.l2_lambda * torch.mean(self.dual_moment_func(z) ** 2)
         else:
             l_reg = 0
-        return moment, -moment + l_reg
+        return objective, -objective + l_reg
 
     # def objective(self, x, z, *args):
     #     hz = self.dual_func(z)
