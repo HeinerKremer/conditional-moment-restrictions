@@ -178,22 +178,25 @@ class KernelELAnalysis(KernelEL):
             n_sample = x[0].shape[0]
 
             dual_normalization = cvx.Variable(shape=(1, 1))
-            rkhs_func = cvx.Variable(shape=(n_sample, 1))
+            if self.n_rff > 0:
+                rkhs_func = cvx.Variable(shape=(self.n_rff, 1))
+            else:
+                rkhs_func = cvx.Variable(shape=(n_sample, 1))
 
             kernel_x = self.kernel_x.detach().numpy()
             psi = self.eval_psi_h(x)   # (n_sample, k)
 
             dual_func_psi = psi    # (n_sample, 1)
-            expected_rkhs_func = 1/n_sample * cvx.sum(kernel_x @ rkhs_func)
+            expected_rkhs_func = 1/n_sample * cvx.sum(kernel_x.T @ rkhs_func)
             if self.n_rff > 0:
-                rkhs_norm_sq = cvx.square(cvx.norm(rkhs_func))
+                rkhs_norm_sq = 1/(n_sample**2) * cvx.square(cvx.norm(rkhs_func))
             elif self.n_rff == 0:
                 rkhs_norm_sq = cvx.square(cvx.norm(cvx.transpose(rkhs_func) @ self.kernel_x_cholesky.detach().numpy())) #cvx.quad_form(rkhs_func, kernel_x)
             else:
                 raise ValueError("N_rand_feat needs to be >= 0!")
             objective = (expected_rkhs_func + dual_normalization - 1 / 2 * rkhs_norm_sq)
 
-            exponent = cvx.sum(kernel_x @ rkhs_func + dual_normalization - dual_func_psi, axis=1)
+            exponent = cvx.sum(kernel_x.T @ rkhs_func + dual_normalization - dual_func_psi, axis=1)
             if f_divergence == 'exact':
                 constraints = [exponent <= 0]
             else:
