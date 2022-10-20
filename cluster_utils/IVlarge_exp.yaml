@@ -9,8 +9,10 @@ params:
     n_runs: 1
     n_train: [20000]
     rollouts: [10]
-    method: ['DeepIV', 'NeuralVMM',
+    method: ['DeepIV', 'NeuralVMM', 'OLS', 'SMD',
              'RFKernelELNeural-log-MB', 'RFKernelELNeural-kl-MB', 'RFKernelELNeural-chi2-MB',
              'NeuralFGEL-log', 'NeuralFGEL-chi2', 'NeuralFGEL-kl']
     experiment: ['network_iv']
     exp_option: ['abs', 'sin', 'step', 'linear']
+    run_dir: ['exp_IVlarge']
+
