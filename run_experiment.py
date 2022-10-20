@@ -109,7 +109,9 @@ def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, 
         if filename is not None:
             if exp_name is None:
                 exp_name = str(experiment.__name__)
-            prefix = f"results/{exp_name}/{run_dir}/{exp_name}_method={estimation_method}_n={n_train}"
+            if run_dir != '':
+                run_dir = run_dir + '/'
+            prefix = f"results/{exp_name}/{run_dir}{exp_name}_method={estimation_method}_n={n_train}"
             os.makedirs(os.path.dirname(prefix), exist_ok=True)
             print('Filepath: ', prefix + str(filename) + ".json")
             with open(prefix + filename + ".json", "w") as fp:

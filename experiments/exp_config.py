@@ -46,14 +46,15 @@ experiment_setups = {
                         'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
                         'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
                         'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log',
-                        'KernelELKernel-chi2', 'KernelELKernel-kl', 'KernelELKernel-log'],
+                        #'KernelELKernel-chi2', 'KernelELKernel-kl', 'KernelELKernel-log'
+                        ],
             'rollouts': 50,
         },
 
-    'heteroskedastic_two':
+    'heteroskedastic_three':
         {
             'exp_class': HeteroskedasticNoiseExperiment,
-            'exp_params': {'theta': [1.4, 2.3],  # [1.7],
+            'exp_params': {'theta': [1.4, 2.3, -0.5],  # [1.7],
                            'noise': 1.0,
                            'heteroskedastic': True, },
             'n_train': [64, 128, 256, 512, 1024, 2048, 4096],
@@ -61,7 +62,8 @@ experiment_setups = {
                         'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
                         'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
                         'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log',
-                        'KernelELKernel-chi2', 'KernelELKernel-kl', 'KernelELKernel-log'],
+                        #'KernelELKernel-chi2', 'KernelELKernel-kl', 'KernelELKernel-log'
+                        ],
             'rollouts': 50,
         },
 
@@ -82,7 +84,7 @@ experiment_setups = {
             'exp_params': {'ftype': ['abs', 'step', 'sin', 'linear']},
             'n_train': [2000],
             'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM',
-                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log', 'RFKernelELNeural-MB',
                         'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
             'rollouts': 50,
         },
@@ -93,7 +95,7 @@ experiment_setups = {
             'exp_params': {'ftype': ['abs', 'step', 'sin', 'linear']},
             'n_train': [20000],
             'methods': ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
-                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log', 'RFKernelELNeural-MB',
                         'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
             'rollouts': 10,
         },
@@ -111,7 +113,7 @@ experiment_setups = {
         {
             'exp_class': HeteroskedasticIVScenario,
             'exp_params': {},
-            'n_train': [2000],
+            'n_train': [2000, 4000, 10000],
             'methods': ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
                         'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
                         'KernelELNeural-kl', 'KernelELNeural-log',
@@ -123,7 +125,7 @@ experiment_setups = {
         {
             'exp_class': SimpleIVScenario,
             'exp_params': {},
-            'n_train': [2000],
+            'n_train': [2000, 4000, 10000],
             'methods': ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
                         'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
                         'KernelELNeural-kl', 'KernelELNeural-log',

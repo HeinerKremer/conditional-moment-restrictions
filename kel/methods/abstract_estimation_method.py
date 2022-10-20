@@ -65,6 +65,9 @@ class AbstractEstimationMethod:
         elif z_val is None:
             return self._calc_val_moment_violation(x_val)
         else:
+            if z_val.shape[0] > 5000:
+                print('Validation set too large for MMR validation, using unconditonal loss instead...')
+                return self._calc_val_moment_violation(x_val)
             return self._calc_val_mmr(x_val, z_val)
 
     def _to_tensor(self, data_array):
@@ -77,14 +80,19 @@ class AbstractEstimationMethod:
         optimizer = torch.optim.LBFGS(self.model.parameters(),
                                       line_search_fn="strong_wolfe")
 
-        def closure():
-            optimizer.zero_grad()
-            psi = self.model.psi(x)
-            if mmr and z is not None:
+        if mmr and z is not None and z.shape[0] < 5000:
+            def closure():
+                optimizer.zero_grad()
+                psi = self.model.psi(x)
                 self._set_kernel_z(z=z)
                 loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z, psi) / (x[0].shape[0] ** 2)
-            else:
+                loss.backward()
+                return loss
+        else:
+            def closure():
+                optimizer.zero_grad()
+                psi = self.model.psi(x)
                 loss = (psi ** 2).mean()
-            loss.backward()
-            return loss
+                loss.backward()
+                return loss
         optimizer.step(closure)

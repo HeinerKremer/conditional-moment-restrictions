@@ -90,7 +90,7 @@ def pretrain_model_and_renormalize_moment_function(moment_function, model, train
                                  moment_function=moment_function,
                                  dim_psi=dim_psi, dim_z=dim_z)
 
-    if conditional_mr:
+    if conditional_mr and train_data['z'].shape[0] < 5000:
         estimator = KernelMMR(model=model_wrapper)
     else:
         estimator = OrdinaryLeastSquares(model=model_wrapper)
