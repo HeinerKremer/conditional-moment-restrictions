@@ -26,8 +26,8 @@ experiments = [
                          'method': experiment_setups['heteroskedastic_one']["methods"],
                          'rollouts': [50],}),
     #
-    ('heteroskedastic_three', {'n_train': experiment_setups['heteroskedastic_two']['n_train'],
-                         'method': experiment_setups['heteroskedastic_two']["methods"],
+    ('heteroskedastic_three', {'n_train': experiment_setups['heteroskedastic_three']['n_train'],
+                         'method': experiment_setups['heteroskedastic_three']["methods"],
                          'rollouts': [50], }),
 
     # ('heteroskedastic_reg_params', {'n_train': experiment_setups['heteroskedastic_reg_params']['n_train'],
