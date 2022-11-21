@@ -51,7 +51,7 @@ Below we summarize its arguments.
 
 
 ### Code example
-KEL estimators can be trained following the below syntax. The code can also be found in the notebook [example.ipynb](https://github.com/HeinerKremer/conditional-moment-restrictions/blob/main/example.ipynb).
+All estimators can be trained following the below syntax. The code can be run in the notebook [example.ipynb](https://github.com/HeinerKremer/conditional-moment-restrictions/blob/main/example.ipynb).
 
 ```python
 import torch
@@ -104,7 +104,7 @@ y_pred = trained_model(torch.Tensor(test_data['t']))
 To efficiently run experiments with parallel processing refer to [run_experiments.py](https://github.com/HeinerKremer/conditional-moment-restrictions/blob/main/run_experiment.py).
 As an example you can run:
 ```python
-python run_experiment.py --experiment heteroskedastic --n_train 256 --method RF-MMDEL-neural --rollouts 10
+python run_experiment.py --experiment heteroskedastic --n_train 256 --method RF-MMDEL --rollouts 10
 ```
 
 
