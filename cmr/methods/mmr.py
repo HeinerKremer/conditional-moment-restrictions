@@ -3,7 +3,7 @@ import torch
 from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
 
 
-class KernelMMR(AbstractEstimationMethod):
+class MMR(AbstractEstimationMethod):
     def __init__(self, model, kernel_z_kwargs=None, verbose=False, **kwargs):
         super().__init__(model=model, kernel_z_kwargs=kernel_z_kwargs, **kwargs)
         self.verbose = verbose

@@ -16,7 +16,7 @@ class MMDEL(GeneralizedEL):
     Maximum mean discrepancy empirical likelihood estimator for unconditional moment restrictions.
     """
 
-    def __init__(self, kl_reg_param, f_divergence_reg='kl', n_random_features=0,
+    def __init__(self, kl_reg_param, f_divergence_reg='kl', n_random_features=False,
                  annealing=False, kernel_x_kwargs=None, **kwargs):
         super().__init__(divergence=f_divergence_reg, **kwargs)
         self.kl_reg_param = kl_reg_param
@@ -30,7 +30,7 @@ class MMDEL(GeneralizedEL):
 
     def _set_divergence(self):
         def divergence(weights=None, cvxpy=False):
-            raise NotImplementedError('MMD divergence non-trivial to compute here')
+            raise NotImplementedError('MMD computation not implemented')
         return divergence
 
     def _set_kernel_x(self, x):

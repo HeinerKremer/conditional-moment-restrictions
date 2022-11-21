@@ -1,19 +1,18 @@
-# Kernel Empirical Likelihood Estimation
-Implementation of Kernel Empirical Likelihood Estimators 
-for conditional and unconditional moment restriction problems.
+# Estimation with Conditional Moment Restrictions
+This repository contains a number of state-of-the-art estimation tools for (conditional) moment restriction problems (e.g. instrumental variable regression).
 
 Parts of the implementation are based on the codebase for the [Variational Method of Moments](https://github.com/CausalML/VMM) estimator.
 
 ## Installation
 To install the package, create a virtual environment and run the setup file from within the folder containing this README, e.g. using the following commands:
 ```bash
-python3 -m venv kel_venv
-source kel_venv/bin/activate
+python3 -m venv cmr_venv
+source cmr_venv/bin/activate
 pip install -e .
 ```
 
-## Using KEL
-All moment restrictions estimators can be trained using the ```estimation``` function from the module [kel/estimation.py](https://github.com/HeinerKremer/Kernel-EL/blob/main/kel/estimation.py).
+## Usage
+All moment restrictions estimators can be trained using the ```estimation``` function from the module [cmr/estimation.py](https://github.com/HeinerKremer/conditional-moment-restrictions/blob/main/cmr/estimation.py).
 Below we summarize its arguments.
 
 | Argument                | Type | Description                                                   |
@@ -22,8 +21,8 @@ Below we summarize its arguments.
 | ```train_data``` | dict, {'t': t, 'y': y, 'z': z} | Training data with treatments ```'t'```, responses ```'y'``` and instruments ```'z'```. For unconditional moment restrictions specify ```'z'=None```. |
 | ```moment_function``` | func(model_pred, y) -> torch.Tensor | Moment function $\psi$, taking as input ```model(t)``` and the responses ```y``` |
 | ```estimation_method``` | str | See below for implemented estimation methods |
-| ```estimator_kwargs``` | dict | Specify estimator parameters. Default setting is contained in [kel/default_config.py](https://github.com/HeinerKremer/Kernel-EL/blob/main/kel/default_config.py)|
-| ```hyperparams``` | dict | Specify estimator hyperparameters search space as ```{key: [val1, ...,]}```. Default setting is contained in [kel/default_config.py](https://github.com/HeinerKremer/Kernel-EL/blob/main/kel/default_config.py) |
+| ```estimator_kwargs``` | dict | Specify estimator parameters. Default setting is contained in [cmr/default_config.py](https://github.com/HeinerKremer/conditional-moment-restrictions/blob/main/cmr/default_config.py)|
+| ```hyperparams``` | dict | Specify estimator hyperparameters search space as ```{key: [val1, ...,]}```. Default setting is contained in [cmr/default_config.py](https://github.com/HeinerKremer/conditional-moment-restrictions/blob/main/cmr/default_config.py) |
 | ```validation_data``` | dict, {'t': t, 'y': y, 'z': z} | Validation data. If ```None```, ```training_data``` is used for validation.|
 | ```val_loss_func``` | func(model, val_data) -> float | Custom validation loss function. If `None` uses l2 norm of moment function for unconditional MR and maximum moment restrictions (MMR) for conditional MR.|
 | ```normalize_moment_function``` | bool | Pretrains parameters and normalizes every output component of `moment_function` to variance 1. |
@@ -36,22 +35,22 @@ Below we summarize its arguments.
 | `'OLS'`| Ordinary least squares |
 | `'GMM'`| Generalized method of moments |
 | `'GEL'`| Generalized empirical likelihood |
-| `'KernelEL'`| Kernel empirical likelihood (ours) |
+| `'MMDEL'`| Maximum mean discrepancy empirical likelihood (MMD-EL) |
 | Conditional moment restrictions | |
-| `'SMD'`| Sieve minimum distance |
-| `'KernelMMR'`| Maximum moment restrictions |
-| `'KernelVMM'`| Variational method of moments with RKHS instrument function |
-| `'NeuralVMM'`| Variational method of moments with neural net instrument function |
-| `'KernelFGEL'`| Functional generalized empirical likelihood with RKHS instrument function |
-| `'NeuralFGEL'`| Functional generalized empirical likelihood with neural net instrument function |
-| `'KernelELKernel'`| Kernel empirical likelihood with RKHS instrument function (ours) |
-| `'KernelELNeural'`| Kernel empirical likelihood with neural net instrument function (ours) |
+| `'SMD'`| [Sieve minimum distance](https://onlinelibrary.wiley.com/doi/epdf/10.1111/1468-0262.00470) |
+| `'MMR'`| [Maximum moment restrictions](https://arxiv.org/abs/2010.07684) |
+| `'VMM-kernel'`| [Variational method of moments](https://arxiv.org/abs/2012.09422) with RKHS instrument function |
+| `'VMM-neural'`| [Variational method of moments](https://arxiv.org/abs/2012.09422) with neural net instrument function (i.e., [DeepGMM](https://arxiv.org/abs/1905.12495))|
+| `'FGEL-kernel'`| [Functional generalized empirical likelihood](https://proceedings.mlr.press/v162/kremer22a.html) with RKHS instrument function |
+| `'FGEL-neural'`| [Functional generalized empirical likelihood](https://proceedings.mlr.press/v162/kremer22a.html) with neural net instrument function |
+| `'MMDEL-kernel'`| MMD-EL with RKHS instrument function |
+| `'MMDEL-neural'`| MMD-EL with neural net instrument function |
 
 
 
 
 ### Code example
-KEL estimators can be trained following the below syntax. The code can also be found in the notebook [example.ipynb](https://github.com/HeinerKremer/Kernel-EL/blob/main/example.ipynb).
+KEL estimators can be trained following the below syntax. The code can also be found in the notebook [example.ipynb](https://github.com/HeinerKremer/conditional-moment-restrictions/blob/main/example.ipynb).
 
 ```python
 import torch

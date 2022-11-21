@@ -4,20 +4,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from cmr.methods.mmr import KernelMMR
+from cmr.methods.mmr import MMR
 from cmr.methods.least_squares import OrdinaryLeastSquares
 from cmr.default_config import methods
 
-mr_estimators = ['OLS', 'GMM', 'GEL', 'KernelEL']
-cmr_estimators = ['KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel',
-                  'KernelFGEL', 'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
-                  'NeuralFGEL', 'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
-                  'KernelELNeural', 'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log', 'KernelELNeural-chi2-sqrt'] + [f'KernelELNeural-kl-reg-{reg_param}' for reg_param in [0.1, 1, 10, 100, 1000]] + [f'KernelELNeural-log-reg-{reg_param}' for reg_param in [0.1, 1, 10, 100, 1000]]
+mr_estimators = ['OLS', 'GMM', 'GEL', 'MMDEL']
+cmr_estimators = [item for item in methods.keys() if item not in mr_estimators] + ['DeepIV']
 
-cmr_estimators += ['KernelELNeural-AN', 'RFKernelELNeural-MB', 'RFKernelELNeural',
-                   'RFKernelELNeural-log', 'RFKernelELNeural-kl', 'RFKernelELNeural-chi2',
-                   'RFKernelELNeural-log-MB', 'RFKernelELNeural-kl-MB', 'RFKernelELNeural-chi2-MB',
-                   'DeepIV']
 
 def estimation(model, train_data, moment_function, estimation_method,
                estimator_kwargs=None, hyperparams=None,
@@ -45,7 +38,6 @@ def estimation(model, train_data, moment_function, estimation_method,
     if hyperparams is not None:
         assert np.alltrue([isinstance(h, list) for h in list(hyperparams.values())]), '`hyperparams` arguments must be of the form {key: list}'
 
-    # Load estimator and update default estimator kwargs
     method = methods[estimation_method]
     estimator_class = method['estimator_class']
     estimator_kwargs_default = method['estimator_kwargs']
@@ -84,19 +76,20 @@ def pretrain_model_and_renormalize_moment_function(moment_function, model, train
         dim_z = train_data['z'].shape[1]
 
     # Eval moment function once on a single sample to get its dimension
-    dim_psi = moment_function(model(train_data['t'][0:1]), torch.Tensor(train_data['y'][0:1])).shape[1]
+    dim_psi = moment_function(model(torch.Tensor(train_data['t'][0:1])), torch.Tensor(train_data['y'][0:1])).shape[1]
 
     model_wrapper = ModelWrapper(model=copy.deepcopy(model),
                                  moment_function=moment_function,
                                  dim_psi=dim_psi, dim_z=dim_z)
 
     if conditional_mr and train_data['z'].shape[0] < 5000:
-        estimator = KernelMMR(model=model_wrapper)
+        estimator = MMR(model=model_wrapper)
     else:
         estimator = OrdinaryLeastSquares(model=model_wrapper)
     estimator.train(x_train=[train_data['t'], train_data['y']], z_train=train_data['z'], x_val=None, z_val=None)
     pretrained_model = estimator.model
-    normalization = torch.Tensor(np.std(moment_function(pretrained_model(train_data['t']), torch.Tensor(train_data['y'])).detach().numpy(), axis=0))
+    normalization = torch.Tensor(np.std(moment_function(pretrained_model(torch.Tensor(train_data['t'])),
+                                                        torch.Tensor(train_data['y'])).detach().numpy(), axis=0))
 
     def moment_function_normalized(model_evaluation, y):
         return moment_function(model_evaluation, y) / normalization
@@ -139,7 +132,7 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
         dim_z = z_train.shape[1]
 
     # Eval moment function once on a single sample to get its dimension
-    dim_psi = moment_function(model(x_train[0][0:1]), torch.Tensor(x_train[1][0:1])).shape[1]
+    dim_psi = moment_function(model(torch.Tensor(x_train[0][0:1])), torch.Tensor(x_train[1][0:1])).shape[1]
 
     models = []
     hparams = []

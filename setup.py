@@ -14,7 +14,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
     name='cmr',
     version='0.1.0',
-    description='Kernel Empirical Likelihood Estimation',
+    description='Estimators for conditional moment restriction problems',
     long_description=long_description,
 
     # Choose your license
@@ -32,7 +32,7 @@ setup(
         'Intended Audience :: Developers',
 
         # Pick your license as you wish (should match "license" above)
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: Apache 2.0',
         'Operating System :: OS Independent',
 
         # Specify the Python versions you support here. In particular, ensure
@@ -44,7 +44,7 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='method-of-moments, empirical-likelihood',
+    keywords='conditional-moment-restrictions, method-of-moments, empirical-likelihood',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
