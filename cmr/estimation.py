@@ -4,9 +4,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from kel.methods.kernel_mmr import KernelMMR
-from kel.methods.least_squares import OrdinaryLeastSquares
-from kel.default_config import methods
+from cmr.methods.mmr import KernelMMR
+from cmr.methods.least_squares import OrdinaryLeastSquares
+from cmr.default_config import methods
 
 mr_estimators = ['OLS', 'GMM', 'GEL', 'KernelEL']
 cmr_estimators = ['KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel',

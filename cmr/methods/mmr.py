@@ -1,6 +1,6 @@
 import torch
 
-from kel.methods.abstract_estimation_method import AbstractEstimationMethod
+from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
 
 
 class KernelMMR(AbstractEstimationMethod):

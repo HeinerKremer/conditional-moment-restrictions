@@ -1,16 +1,16 @@
-from kel.methods.kernel_vmm import KernelVMM
-from kel.methods.least_squares import OrdinaryLeastSquares
-from kel.methods.kernel_mmr import KernelMMR
-from kel.methods.gmm import GMM
-from kel.methods.neural_vmm import NeuralVMM
-from kel.methods.sieve_minimum_distance import SMDHeteroskedastic
-from kel.methods.generalized_el import GeneralizedEL
-from kel.methods.kernel_kel import KernelELKernel
-from kel.methods.neural_kel import KernelELNeural
-from kel.methods.kernel_fgel import KernelFGEL
-from kel.methods.kernel_el import KernelEL
-from kel.methods.neural_fgel import NeuralFGEL
-from kel.methods.deep_iv import DeepIV
+from cmr.methods.vmm_kernel import KernelVMM
+from cmr.methods.least_squares import OrdinaryLeastSquares
+from cmr.methods.mmr import KernelMMR
+from cmr.methods.gmm import GMM
+from cmr.methods.vmm_neural import NeuralVMM
+from cmr.methods.sieve_minimum_distance import SMDHeteroskedastic
+from cmr.methods.generalized_el import GeneralizedEL
+from cmr.methods.mmd_el_kernel import MMDELKernel
+from cmr.methods.mmd_el_neural import MMDELNeural
+from cmr.methods.fgel_kernel import KernelFGEL
+from cmr.methods.mmd_el import MMDEL
+from cmr.methods.fgel_neural import NeuralFGEL
+from cmr.methods.deep_iv import DeepIV
 
 
 methods = {
@@ -107,7 +107,7 @@ methods = {
 
     'KernelEL':
         {
-            'estimator_class': KernelEL,
+            'estimator_class': MMDEL,
             'estimator_kwargs': {
                 "dual_optim": 'oadam_gda',
                 "theta_optim": 'oadam_gda',
@@ -118,7 +118,7 @@ methods = {
 
     'KernelELKernel':
         {
-            'estimator_class': KernelELKernel,
+            'estimator_class': MMDELKernel,
             'estimator_kwargs': {
                 "dual_optim": 'oadam_gda',
                 "theta_optim": 'oadam_gda',
@@ -130,7 +130,7 @@ methods = {
         },
     'RFKernelELKernel':
         {
-            'estimator_class': KernelELKernel,
+            'estimator_class': MMDELKernel,
             'estimator_kwargs': {
                 "dual_optim": 'oadam_gda',
                 "theta_optim": 'oadam_gda',
@@ -145,7 +145,7 @@ methods = {
 
     'KernelELNeural':
         {
-            'estimator_class': KernelELNeural,
+            'estimator_class': MMDELNeural,
             'estimator_kwargs': {
                 "batch_size": 200,
                 "max_num_epochs": 20000,
@@ -159,7 +159,7 @@ methods = {
 
     'KernelELNeural-AN':
         {
-            'estimator_class': KernelELNeural,
+            'estimator_class': MMDELNeural,
             'estimator_kwargs': {
                 "f_divergence_reg": 'log',
                 "batch_size": 200,
@@ -176,7 +176,7 @@ methods = {
 
     'RFKernelELNeural':
         {
-            'estimator_class': KernelELNeural,
+            'estimator_class': MMDELNeural,
             'estimator_kwargs': {
                 "batch_training": False,
                 "batch_size": 0,
@@ -191,7 +191,7 @@ methods = {
         },
     'RFKernelELNeural-MB':
         {
-            'estimator_class': KernelELNeural,
+            'estimator_class': MMDELNeural,
             'estimator_kwargs': {
                 "batch_training": True,
                 "batch_size": 200,
@@ -237,7 +237,7 @@ for divergence in ['chi2', 'kl', 'log']:
 
 for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
     methods[f'KernelELNeural-{divergence}'] = {
-            'estimator_class': KernelELNeural,
+            'estimator_class': MMDELNeural,
             'estimator_kwargs': {
                 "f_divergence_reg": divergence,
                 "batch_training": False,
@@ -253,7 +253,7 @@ for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
 
 for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
     methods[f'RFKernelELNeural-{divergence}-MB'] = {
-            'estimator_class': KernelELNeural,
+            'estimator_class': MMDELNeural,
             'estimator_kwargs': {
                 "batch_training": True,
                 "batch_size": 256,
@@ -269,7 +269,7 @@ for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
 
 for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
     methods[f'RFKernelELNeural-{divergence}'] = {
-            'estimator_class': KernelELNeural,
+            'estimator_class': MMDELNeural,
             'estimator_kwargs': {
                 "f_divergence_reg": divergence,
                 "batch_training": False,
@@ -285,7 +285,7 @@ for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
         }
 for reg_param in [0.1, 1, 10, 100, 1000]:
     methods[f'KernelELNeural-log-reg-{reg_param}'] = {
-        'estimator_class': KernelELNeural,
+        'estimator_class': MMDELNeural,
         'estimator_kwargs': {
             "f_divergence_reg": 'log',
             "batch_size": 200,
@@ -301,7 +301,7 @@ for reg_param in [0.1, 1, 10, 100, 1000]:
 
 for reg_param in [0.1, 1, 10, 100, 1000]:
     methods[f'KernelELNeural-kl-reg-{reg_param}'] = {
-        'estimator_class': KernelELNeural,
+        'estimator_class': MMDELNeural,
         'estimator_kwargs': {
             "f_divergence_reg": 'kl',
             "batch_size": 200,
@@ -316,7 +316,7 @@ for reg_param in [0.1, 1, 10, 100, 1000]:
 
 for divergence in ['chi2', 'kl', 'log', 'chi2-sqrt']:
     methods[f'RFKernelELNeural-{divergence}-MB'] = {
-            'estimator_class': KernelELNeural,
+            'estimator_class': MMDELNeural,
             'estimator_kwargs': {
                 "f_divergence_reg": divergence,
                 "batch_training": True,

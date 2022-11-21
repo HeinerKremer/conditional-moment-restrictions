@@ -7,9 +7,9 @@ import torch
 import matplotlib.pyplot as plt
 import logging
 
-from kel.methods.abstract_estimation_method import AbstractEstimationMethod
-from kel.utils.oadam import OAdam
-from kel.utils.torch_utils import Parameter, BatchIter, OptimizationError
+from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
+from cmr.utils.oadam import OAdam
+from cmr.utils.torch_utils import Parameter, BatchIter, OptimizationError
 
 cvx_solver = cvx.MOSEK
 
@@ -423,7 +423,7 @@ class GeneralizedEL(AbstractEstimationMethod):
             matplotlib.use('Qt5Agg')
             # print rkhs lagrangian function:
             x = np.linspace(-20, 20, 500).reshape((-1, 1))
-            from kel.utils.rkhs_utils import get_rbf_kernel, get_rff
+            from cmr.utils.rkhs_utils import get_rbf_kernel, get_rff
             if self.n_rff > 0:
                 k = get_rff(x, self.n_rff, sigma=self.sigma_rff)[0]
             else:

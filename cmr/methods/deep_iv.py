@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import keras
 from econml.iv.nnet import DeepIV as deep_iv
 
-from kel.methods.abstract_estimation_method import AbstractEstimationMethod
+from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
 
 class DeepIV(AbstractEstimationMethod):
     def __init__(self, model, kernel_z_kwargs=None, val_loss_func=None, verbose=False):

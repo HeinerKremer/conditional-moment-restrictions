@@ -12,7 +12,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='kel',
+    name='cmr',
     version='0.1.0',
     description='Kernel Empirical Likelihood Estimation',
     long_description=long_description,

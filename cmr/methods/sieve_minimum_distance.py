@@ -4,9 +4,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from kel.methods.abstract_estimation_method import AbstractEstimationMethod
-from kel.utils.sieve_basis import MultiOutputPolynomialSplineBasis
-from kel.utils.torch_utils import torch_softplus, BatchIter
+from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
+from cmr.utils.sieve_basis import MultiOutputPolynomialSplineBasis
+from cmr.utils.torch_utils import torch_softplus, BatchIter
 
 
 class SMDIdentity(AbstractEstimationMethod):

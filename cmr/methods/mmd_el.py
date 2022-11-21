@@ -2,16 +2,16 @@ import cvxpy as cvx
 import numpy as np
 import torch
 
-import kel
+import cmr
 
-from kel.utils.rkhs_utils import get_rbf_kernel, get_rff, compute_cholesky_factor
-from kel.utils.torch_utils import Parameter
-from kel.methods.generalized_el import GeneralizedEL
+from cmr.utils.rkhs_utils import get_rbf_kernel, get_rff, compute_cholesky_factor
+from cmr.utils.torch_utils import Parameter
+from cmr.methods.generalized_el import GeneralizedEL
 
 cvx_solver = cvx.MOSEK
 
 
-class KernelEL(GeneralizedEL):
+class MMDEL(GeneralizedEL):
     """
     Maximum mean discrepancy empirical likelihood estimator for unconditional moment restrictions.
     """

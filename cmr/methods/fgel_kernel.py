@@ -2,8 +2,8 @@ import cvxpy as cvx
 import numpy as np
 import torch
 
-from kel.methods.generalized_el import GeneralizedEL
-from kel.utils.torch_utils import Parameter
+from cmr.methods.generalized_el import GeneralizedEL
+from cmr.utils.torch_utils import Parameter
 
 cvx_solver = cvx.MOSEK
 

@@ -131,8 +131,8 @@ dmypy.json
 .pyre/
 
 # Cluster files
-cluster/*
-!cluster/generate_submission_files.py
+cluster_utils/cluster/*
+!cluster_utils/cluster/generate_submission_files.py
 experiments/.DS_Store
 .DS_Store
 results/*

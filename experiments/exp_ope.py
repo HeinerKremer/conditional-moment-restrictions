@@ -8,7 +8,7 @@ import dill as pickle
 import argparse
 from stable_baselines3 import PPO
 from experiments.abstract_experiment import AbstractExperiment
-from kel.estimation import estimation
+from cmr.estimation import estimation
 
 
 def setup_model(env_name, algo, policy='behavioral'):

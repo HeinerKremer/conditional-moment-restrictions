@@ -8,7 +8,7 @@ from pathlib import Path
 from torchvision import datasets, transforms
 
 from experiments.abstract_experiment import AbstractExperiment
-from kel.methods.least_squares import OrdinaryLeastSquares
+from cmr.methods.least_squares import OrdinaryLeastSquares
 
 
 methods = ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural',
@@ -173,7 +173,7 @@ class NetworkIVExperiment(AbstractExperiment):
 
 
 if __name__ == '__main__':
-    from kel.estimation import estimation
+    from cmr.estimation import estimation
 
     exp = NetworkIVExperiment(ftype='abs')
     exp.prepare_dataset(n_train=10000, n_val=1000, n_test=10000)

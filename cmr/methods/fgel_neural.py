@@ -1,7 +1,7 @@
 import torch
 
-from kel.methods.generalized_el import GeneralizedEL
-from kel.utils.torch_utils import ModularMLPModel
+from cmr.methods.generalized_el import GeneralizedEL
+from cmr.utils.torch_utils import ModularMLPModel
 
 
 class NeuralFGEL(GeneralizedEL):

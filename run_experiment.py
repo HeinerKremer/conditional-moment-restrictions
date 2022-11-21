@@ -8,7 +8,7 @@ import torch
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 
-from kel.estimation import estimation
+from cmr.estimation import estimation
 from experiments.exp_config import experiment_setups
 
 

@@ -38,7 +38,7 @@ class PoissonExperiment(AbstractExperiment):
 
 
 if __name__ == '__main__':
-    from kel.estimation import estimation
+    from cmr.estimation import estimation
 
     np.random.seed(123485)
     torch.random.manual_seed(12345)

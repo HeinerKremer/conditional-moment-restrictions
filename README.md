@@ -52,10 +52,11 @@ Below we summarize its arguments.
 
 ### Code example
 KEL estimators can be trained following the below syntax. The code can also be found in the notebook [example.ipynb](https://github.com/HeinerKremer/Kernel-EL/blob/main/example.ipynb).
+
 ```python
 import torch
 import numpy as np
-from kel.estimation import estimation
+from cmr.estimation import estimation
 
 
 # Generate some data
@@ -92,7 +93,7 @@ trained_model, stats = estimation(model=model,  # Use any PyTorch model
                                   train_data=train_data,    # Format {'t': t, 'y': y, 'z': z}
                                   moment_function=moment_function,  # moment_function(model_eval, y) -> (n_sample, dim_y)
                                   estimation_method='KernelELNeural',   # Method in ['OLS', 'GMM', 'GEL', 'KernelEL', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural', 'KernelFGEL', 'NeuralFGEL']
-                                  estimator_kwargs=None,    # Non-default arguments for estimators (default at `kel.default_config.py`)
+                                  estimator_kwargs=None,    # Non-default arguments for estimators (default at `cmr.default_config.py`)
                                   hyperparams=None,     # Non-default hyperparams for estimators as {name: [val1, ..]}
                                   validation_data=None,     # Format {'t': t, 'y': y, 'z': z}
                                   val_loss_func=None,   # Custom validation loss: val_loss_func(model, validation_data) -> float

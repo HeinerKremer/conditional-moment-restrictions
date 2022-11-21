@@ -70,7 +70,7 @@ class HeteroskedasticNoiseExperiment(AbstractExperiment):
 
 
 if __name__ == '__main__':
-    from kel.estimation import estimation
+    from cmr.estimation import estimation
     np.random.seed(12345)
     torch.random.manual_seed(12345)
     exp = HeteroskedasticNoiseExperiment(theta=[1.7], noise=1, heteroskedastic=True)

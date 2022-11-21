@@ -3,7 +3,7 @@ import torch
 
 from experiments.exp_heteroskedastic import HeteroskedasticNoiseExperiment
 from experiments.exp_poisson_estimation import PoissonExperiment
-from kel.estimation import estimation
+from cmr.estimation import estimation
 
 
 def test_mr_estimator(estimation_method, n_train=200, n_runs=10, hyperparams=None):

@@ -7,8 +7,8 @@ import cvxpy as cvx
 import seaborn as sns
 
 
-from kel.methods.kernel_el import KernelEL
-from kel.utils.torch_utils import Parameter, OptimizationError
+from cmr.methods.mmd_el import MMDEL
+from cmr.utils.torch_utils import Parameter, OptimizationError
 
 
 LINE_WIDTH = 7.0
@@ -74,7 +74,7 @@ NEURIPS_RCPARAMS = {
 }
 
 
-class KernelELAnalysis(KernelEL):
+class MMDELAnalysis(MMDEL):
     def __init__(self, x, ymax=70, **kwargs):
         super().__init__(**kwargs)
         kwargs.setdefault('n_random_features', 0)
@@ -240,21 +240,21 @@ if __name__ == "__main__":
     linestyles = ['solid', 'dashed', 'solid', 'dotted', 'dashdot',]
     colors = ['tab:red', 'tab:orange', 'tab:blue', 'tab:cyan', 'tab:purple', 'tab:olive', 'tab:pink',]
 
-    from kel.default_config import methods
+    from cmr.default_config import methods
     estimator_kwargs = methods['KernelEL']['estimator_kwargs']
     model = Model()
 
     x = [torch.Tensor(np.linspace(-x_lim, x_lim, 500)).reshape((-1, 1)),
          torch.Tensor(np.linspace(-10, 10, 500)).reshape((-1, 1))]
-    estimator = KernelELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='kl', **estimator_kwargs)
+    estimator = MMDELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='kl', **estimator_kwargs)
     estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
     y_kl = estimator.eval_rkhs_func()
 
-    estimator = KernelELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
+    estimator = MMDELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
     estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='log')
     y_log = estimator.eval_rkhs_func()
 
-    estimator = KernelELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
+    estimator = MMDELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
     estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='exact')
     y_exact = estimator.eval_rkhs_func()
 

@@ -1,5 +1,5 @@
-from kel.utils.rkhs_utils import get_rbf_kernel, compute_cholesky_factor
-from kel.utils.torch_utils import np_to_tensor
+from cmr.utils.rkhs_utils import get_rbf_kernel, compute_cholesky_factor
+from cmr.utils.torch_utils import np_to_tensor
 import numpy as np
 import torch
 

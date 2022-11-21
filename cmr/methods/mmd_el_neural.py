@@ -1,13 +1,13 @@
 import cvxpy as cvx
 import torch
 
-from kel.methods.kernel_el import KernelEL
-from kel.utils.torch_utils import Parameter, ModularMLPModel
+from cmr.methods.mmd_el import MMDEL
+from cmr.utils.torch_utils import Parameter, ModularMLPModel
 
 cvx_solver = cvx.MOSEK
 
 
-class KernelELNeural(KernelEL):
+class MMDELNeural(MMDEL):
 
     def __init__(self, model, reg_param, batch_training=False, batch_size=200, dual_func_network_kwargs=None, **kwargs):
         super().__init__(model=model, theta_optim='oadam_gda', **kwargs)
