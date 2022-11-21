@@ -35,7 +35,8 @@ labels = {'SMD': 'SMD',
           'KernelELKernel': 'K-KEL',
           'KernelELNeural': 'MMD-EL',
           'KernelELNeural-log': 'KEL-log',
-          'RFKernelELNeural': 'RF-NN-KEL',
+          'RFKernelELNeural-MB': 'RF-MMD-EL',
+          'RFKernelELNeural': 'RF-MMD-EL',
           'KernelELNeural-kl': 'KEL-kl',
           'RFKernelELNeural-kl': 'RF-KEL-kl',
           'DeepIV': 'DeepIV'}
@@ -134,18 +135,13 @@ def load_and_summarize_results(filename):
     return results_summarized
 
 
-def get_result_for_best_divergence(method, n_train, test_metric, experiment=None, func=None, run_dir=''):
-    if experiment == 'NetworkIVExperiment':
-        opt = f'_{func}'
-    else:
-        opt = ''
-
+def get_result_for_best_divergence(method, n_train, test_metric, experiment=None, func='', run_dir=''):
     experiment = BASE_PATH / f'results/{experiment}/{run_dir}/{experiment}'
 
     test_metrics = []
     validation = []
     for divergence in ['chi2', 'log', 'kl']:
-        filename = f"{experiment}_method={method}-{divergence}_n={n_train}{opt}.json"
+        filename = f"{experiment}_method={method}-{divergence}_n={n_train}{func}.json"
         try:
             res = load_and_summarize_results(filename)
             test_metrics.append(res[f'{test_metric}_list'])
@@ -493,46 +489,98 @@ def generate_table(n_train, test_metric='test_risk', remove_failed=False, kl_reg
                    experiment='network_iv', run_dir=''):
     methods = ['OLS',
                # 'KernelMMR',
-               # 'DeepIV',
+               'SMD',
+               'DeepIV',
                # 'KernelVMM',
                'NeuralVMM',
                # 'KernelFGEL',
-               # 'NeuralFGEL',
+                'NeuralFGEL',
                # 'KernelELKernel',
                # 'KernelELNeural',
-               'RFKernelELNeural',
+               'RFKernelELNeural-MB',
                ]
-    funcs = ['abs', 'step', 'sin', 'linear']
+    funcs = ['_abs', '_step', '_sin', '_linear']
+
+    if run_dir != '':
+        run_dir += "/"
 
     results = {func: {model: {} for model in methods} for func in funcs}
     for func in funcs:
         for method in methods:
-            if method in ['NeuralFGEL', 'KernelFGEL']:
-                test, val = get_result_for_best_divergence(method=method,
-                                                           n_train=n_train,
-                                                           test_metric=test_metric,
-                                                           experiment=experiment,
-                                                           func=func)
-            elif method in ['KernelELKernel', 'KernelELNeural', 'RFKernelELNeural', 'KernelELNeural-log'] and kl_reg_param is not None:
-                exp_file = BASE_PATH / f"results/{experiment}"
-                exp_file = exp_file / run_dir / f"{experiment}_method={method}_n={n_train}_{func}.json"
-                res = separate_kel_by_reg_param(reg_params=[kl_reg_param], n_train=n_train, exp_file=exp_file, method=method)
-                test = res[kl_reg_param]['best_separate_results']['test_risk']
-            else:
-                filename = BASE_PATH / f"results/{experiment}" / run_dir
-                filename = filename / f"{experiment}_method={method}_n={n_train}_{func}.json"
-                res = load_and_summarize_results(filename)
-                test, val = res[test_metric+'_list'], res['val_loss_list']
-            if remove_failed:
-                test = remove_failed_runs(test, val)
+            try:
+                if method in ['NeuralFGEL', 'KernelFGEL', 'KernelELNeural']:
+                    test, val = get_result_for_best_divergence(method=method,
+                                                               n_train=n_train,
+                                                               test_metric=test_metric,
+                                                               experiment=experiment,
+                                                               func=func)
+                elif method in ['KernelELKernel', 'KernelELNeural', 'RFKernelELNeural-MB', 'KernelELNeural-log'] and kl_reg_param is not None:
+                    exp_file = f'{BASE_PATH}/results/{experiment}/{run_dir}{experiment}_method={method}_n={n_train}{func}.json'
+                    res = separate_kel_by_reg_param(reg_params=[kl_reg_param], n_train=n_train, exp_file=exp_file, method=method)
+                    test = res[kl_reg_param]['best_separate_results']['test_risk']
+                else:
+                    exp_file = f'{BASE_PATH}/results/{experiment}/{run_dir}{experiment}_method={method}_n={n_train}{func}.json'
+                    res = load_and_summarize_results(exp_file)
+                    test, val = res[test_metric+'_list'], res['val_loss_list']
+                if remove_failed:
+                    test = remove_failed_runs(test, val)
 
-            results[func][method]['mean'] = np.mean(test)
-            results[func][method]['std'] = np.std(test) / np.sqrt(len(test))
+                results[func][method]['mean'] = np.mean(test)
+                results[func][method]['std'] = np.std(test) / np.sqrt(len(test))
+            except (FileNotFoundError, ValueError) as e:
+                results[func][method]['mean'] = np.inf
+                results[func][method]['std'] = np.inf
 
     row1 = [''] + [f"{labels[model]}" for model in methods]
     table = [row1]
     for func in funcs:
-        table.append([f'{func}'] + [r"${:.2f}\pm{:.2f}$".format(results[func][model]["mean"] * 1e1, results[func][model]["std"] * 1e1) for model in
+        table.append([f'{func[1:]}'] + [r"${:.2f}\pm{:.2f}$".format(results[func][model]["mean"] * 1e1, results[func][model]["std"] * 1e1) for model in
+                      methods])
+    print(tabulate(table, tablefmt="latex_raw"))
+
+
+def generate_table_bennet(n_trains, test_metric='test_risk', experiment='benett_simple', run_dir=''):
+    methods = ['OLS',
+               # 'KernelMMR',
+               'SMD',
+               'DeepIV',
+               # 'KernelVMM',
+               'NeuralVMM',
+               # 'KernelFGEL',
+                'NeuralFGEL',
+               # 'KernelELKernel',
+               # 'KernelELNeural',
+               'RFKernelELNeural-MB',
+               ]
+
+    if run_dir != '':
+        run_dir += "/"
+
+    results = {n_train: {model: {} for model in methods} for n_train in n_trains}
+    for n_train in n_trains:
+        for method in methods:
+            try:
+                if method in ['NeuralFGEL', 'KernelFGEL', 'KernelELNeural']:
+                    test, val = get_result_for_best_divergence(method=method,
+                                                               n_train=n_train,
+                                                               test_metric=test_metric,
+                                                               experiment=experiment)
+                else:
+                    exp_file = f'{BASE_PATH}/results/{experiment}/{run_dir}{experiment}_method={method}_n={n_train}.json'
+                    res = load_and_summarize_results(exp_file)
+                    test, val = res[test_metric+'_list'], res['val_loss_list']
+
+                results[n_train][method]['mean'] = np.mean(test)
+                results[n_train][method]['std'] = np.std(test) / np.sqrt(len(test))
+            except (FileNotFoundError, ValueError) as e:
+                results[n_train][method]['mean'] = np.inf
+                results[n_train][method]['std'] = np.inf
+
+    row1 = [''] + [f"{labels[model]}" for model in methods]
+    table = [row1]
+    print(results)
+    for n_train in n_trains:
+        table.append([f'n={n_train}'] + [r"${:.2f}\pm{:.2f}$".format(results[n_train][model]["mean"], results[n_train][model]["std"]) for model in
                       methods])
     print(tabulate(table, tablefmt="latex_raw"))
 
@@ -578,9 +626,13 @@ if __name__ == "__main__":
     #                                run_dir=args.exp_name)
     #
     #
-    generate_table(n_train=50000,
+    generate_table(n_train=20000,
                    test_metric='test_risk',
-                   kl_reg_param=1.0,
                    remove_failed=False,
-                   experiment=args.experiment,
-                   run_dir=args.exp_name)
+                   kl_reg_param=1.0,
+                   experiment='network_iv_large',
+                   run_dir='')
+
+    # generate_table_bennet(n_trains=[2000, 4000, 10000],
+    #                       test_metric='test_risk',
+    #                       experiment='bennet_hetero')
