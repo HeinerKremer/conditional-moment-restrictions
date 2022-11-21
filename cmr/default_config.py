@@ -162,7 +162,7 @@ methods = {
                             }
         },
 
-    'RF-MMDEL-neural':
+    'RF-MMDEL':
         {
             'estimator_class': MMDELNeural,
             'estimator_kwargs': {

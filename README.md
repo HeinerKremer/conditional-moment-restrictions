@@ -45,6 +45,7 @@ Below we summarize its arguments.
 | `'FGEL-neural'`| [Functional generalized empirical likelihood](https://proceedings.mlr.press/v162/kremer22a.html) with neural net instrument function |
 | `'MMDEL-kernel'`| MMD-EL with RKHS instrument function |
 | `'MMDEL-neural'`| MMD-EL with neural net instrument function |
+| `'RF-MMDEL'`| Scalable version of MMDEL-neural using a random feature approximation |
 
 
 
@@ -57,7 +58,6 @@ import torch
 import numpy as np
 from cmr.estimation import estimation
 
-
 # Generate some data
 def generate_data(n_sample):
     e = np.random.normal(loc=0, scale=1.0, size=[n_sample, 1])
@@ -69,43 +69,42 @@ def generate_data(n_sample):
     y = np.abs(t) + e + delta
     return {'t': t, 'y': y, 'z': z}
 
-
 train_data = generate_data(n_sample=100)
 validation_data = generate_data(n_sample=100)
 test_data = generate_data(n_sample=10000)
 
 # Define a PyTorch model $f$ and a moment function $\psi$
 model = torch.nn.Sequential(
-    torch.nn.Linear(1, 20),
-    torch.nn.LeakyReLU(),
-    torch.nn.Linear(20, 3),
-    torch.nn.LeakyReLU(),
-    torch.nn.Linear(3, 1)
-)
+            torch.nn.Linear(1, 20),
+            torch.nn.LeakyReLU(),
+            torch.nn.Linear(20, 3),
+            torch.nn.LeakyReLU(),
+            torch.nn.Linear(3, 1)
+        )
 
-# Define moment function e.g., for IV estimation
 def moment_function(model_evaluation, y):
     return model_evaluation - y
 
-# Train the estimator
+# Train the model
 trained_model, stats = estimation(model=model,  # Use any PyTorch model
                                   train_data=train_data,    # Format {'t': t, 'y': y, 'z': z}
                                   moment_function=moment_function,  # moment_function(model_eval, y) -> (n_sample, dim_y)
-                                  estimation_method='KernelELNeural',   # Method in ['OLS', 'GMM', 'GEL', 'KernelEL', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural', 'KernelFGEL', 'NeuralFGEL']
-                                  estimator_kwargs=None,    # Non-default arguments for estimators (default at `cmr.default_config.py`)
+                                  estimation_method='MMDEL',   # Method in ['OLS', 'GMM', 'GEL', 'KernelEL', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural', 'KernelFGEL', 'NeuralFGEL']
+                                  estimator_kwargs=None,    # Non-default arguments for estimators (default at `kel.default_config.py`)
                                   hyperparams=None,     # Non-default hyperparams for estimators as {name: [val1, ..]}
                                   validation_data=None,     # Format {'t': t, 'y': y, 'z': z}
                                   val_loss_func=None,   # Custom validation loss: val_loss_func(model, validation_data) -> float
                                   verbose=True)
+
 # Make prediction
 y_pred = trained_model(torch.Tensor(test_data['t']))
 ```
 
 ## Experiments and reproducibility
-To efficiently run experiments with parallel processing refer to [run_experiments.py](https://github.com/HeinerKremer/Kernel-EL/blob/main/run_experiment.py).
+To efficiently run experiments with parallel processing refer to [run_experiments.py](https://github.com/HeinerKremer/conditional-moment-restrictions/blob/main/run_experiment.py).
 As an example you can run:
 ```python
-python run_experiment.py --experiment heteroskedastic --n_train 256 --method KernelELNeural --rollouts 10
+python run_experiment.py --experiment heteroskedastic --n_train 256 --method RF-MMDEL-neural --rollouts 10
 ```
 
 
