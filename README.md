@@ -1,5 +1,10 @@
 # Estimation with Conditional Moment Restrictions
-This repository contains a number of state-of-the-art estimation tools for (conditional) moment restriction problems (e.g. instrumental variable regression).
+This repository contains a number of state-of-the-art estimation tools for (conditional) moment restriction problems (e.g. instrumental variable regression) of the form
+    
+E[&Psi;(X,Y;&theta;) | Z] = 0, P<sub>Z</sub>-a.s.,
+
+where e.g. for IV regression &Psi;(X,Y;&theta;) = Y - f<sub>&theta;</sub>(X), and Z denotes the instruments.
+
 
 Parts of the implementation are based on the codebase for the [Variational Method of Moments](https://github.com/CausalML/VMM) estimator.
 
