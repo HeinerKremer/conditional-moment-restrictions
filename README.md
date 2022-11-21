@@ -1,10 +1,14 @@
 # Estimation with Conditional Moment Restrictions
-This repository contains a number of state-of-the-art estimation tools for (conditional) moment restriction problems (e.g. instrumental variable regression) of the form
+This repository contains a number of state-of-the-art estimation tools for (conditional) moment restriction problems of the form
+```math
+        E[\psi(X,Y;\theta)|Z] = 0 \ \  P_Z\text{-a.s.}
+```
     
-E[&Psi;(X,Y;&theta;) | Z] = 0, P<sub>Z</sub>-a.s.,
-
-where e.g. for IV regression &Psi;(X,Y;&theta;) = Y - f<sub>&theta;</sub>(X), and Z denotes the instruments.
-
+where e.g. for instrumental variable (IV) regression the moment function becomes $\psi(X,Y;\theta) = Y - f_\theta(X)$ and $Z$ denotes the instruments.
+In IV regression one is interested in inferring the functional relation $f$ between random variables $X$ and $Y$ which is obfuscated by a non-observed confounder $U$. The scenario is visualized as a causal diagram below.
+<p align="center">
+<img width="30%" src="./iv_image.jpg">
+</p>
 
 Parts of the implementation are based on the codebase for the [Variational Method of Moments](https://github.com/CausalML/VMM) estimator.
 
