@@ -30,6 +30,7 @@ if __name__ == "__main__":
          torch.Tensor(np.linspace(-10, 10, 500)).reshape((-1, 1))]
     n_reg = 15
     kl_reg_params = np.logspace(3, -2, n_reg)
+
     # y_logs = []
     # for kl_reg_param in kl_reg_params:
     #     print("KL Regparam: {}".format(kl_reg_param))
@@ -37,14 +38,25 @@ if __name__ == "__main__":
     #     estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
     #     y_logs.append(estimator.eval_rkhs_func())
 
-    estimator = KernelELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=1000, f_divergence_reg='kl',
-                                 annealing=True, **estimator_kwargs)
-    y_annealing = estimator._optimize_dual_func_gd(x_tensor=x, z_tensor=x[0], iters=100000)
+    # estimator = KernelELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=1000, f_divergence_reg='kl',
+    #                              annealing=True, **estimator_kwargs)
+    # y_annealing = estimator._optimize_dual_func_gd(x_tensor=x, z_tensor=x[0], iters=100000)
 
-    estimator = KernelELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=0.01, f_divergence_reg='kl', **estimator_kwargs)
+    estimator = KernelELAnalysis(x=x, ymax=ymax, model=model,
+                                 n_random_features=5000,
+                                 kl_reg_param=0.01,
+                                 f_divergence_reg='kl',
+                                 **estimator_kwargs)
+    estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
+    y_kl_rff = estimator.eval_rkhs_func()
+
+    estimator = KernelELAnalysis(x=x, ymax=ymax, model=model,
+                                 kl_reg_param=0.01,
+                                 f_divergence_reg='kl',
+                                 **estimator_kwargs)
     estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
     y_kl = estimator.eval_rkhs_func()
-    #
+
     estimator = KernelELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
     estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='exact')
     y_exact = estimator.eval_rkhs_func()
@@ -59,11 +71,12 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(1, figsize=(LINE_WIDTH/2, LINE_WIDTH/3.5))
     ax.plot(x[0], y_true, label=r'$\psi(x)^T h$', color=colors[0], linestyle=linestyles[0])
     ax.plot(x[0], y_kl, label=r'$\epsilon = 0.01$', color=colors[1], linestyle=linestyles[1])
+    ax.plot(x[0], y_kl_rff, label=r'RFF: $\epsilon = 0.01$', color=colors[3], linestyle=linestyles[3])
     ax.plot(x[0], y_exact, label=r'MMD only', color=colors[2], linestyle=linestyles[2])
-    for y_an, alpha in zip(y_annealing, np.logspace(-1, 0, len(y_annealing))):
-        ax.plot(x[0], y_an, color=colors[4], linestyle=linestyles[4], alpha=alpha)
-
-    ax.plot(x[0], y_an, label='annealed', color=colors[4], linestyle=linestyles[4], alpha=alpha)
+    # for y_an, alpha in zip(y_annealing, np.logspace(-1, 0, len(y_annealing))):
+    #     ax.plot(x[0], y_an, color=colors[4], linestyle=linestyles[4], alpha=alpha)
+    #
+    # ax.plot(x[0], y_an, label='annealed', color=colors[6], linestyle=linestyles[4], alpha=alpha)
 
     # for y_log, alpha, reg_param in zip(y_logs, np.linspace(0.1, 1, n_reg), kl_reg_params):
     #     ax.plot(x[0], y_log, color=colors[4], linestyle=linestyles[4], alpha=alpha)

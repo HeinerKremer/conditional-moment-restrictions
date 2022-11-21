@@ -3,15 +3,15 @@ work_dir: '/is/cluster/ynemmour/mpc_ws/Kernel-EL'
 environment: 'kel_env'
 python_script: 'run_experiment.py'
 memory: 128000
-cpu: 12
+cpu: 10
 gpu: 0
 params:
     n_runs: 1
-    n_train: [2000]
-    rollouts: [50]
-    method: ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM',
+    rollouts: [20]
+    n_train: [2000, 4000, 10000]
+    method: ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
              'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
-             'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log']
-    experiment: ['network_iv']
-    exp_option: ['abs', 'sin', 'step', 'linear']
-    run_dir: ['exp_IV']
+             'KernelELNeural-kl', 'KernelELNeural-log',
+             'RFKernelELNeural-MB']
+    experiment: ['bennet_simple']
+    run_dir: ['b_simple']

@@ -7,12 +7,11 @@ cpu: 20
 gpu: 0
 params:
     n_runs: 1
-    n_train: [64, 128, 256, 512, 1024, 2048]
     rollouts: [50]
-    method: ['KernelMMR', 'OLS', 'NeuralVMM',
-             'KernelVMM', 'KernelELKernel', 'RFKernelELKernel',
-             'RFKernelELNeural-log', 'RFKernelELNeural-kl', 'RFKernelELNeural-chi2'
-             'KernelELNeural-log', 'KernelELNeural-kl', 'KernelELNeural-chi2',
-             'NeuralFGEL-log', 'NeuralFGEL-kl', 'NeuralFGEL-chi2',
-             'KernelFGEL-kl', 'KernelFGEL-log', 'KernelFGEL-chi2']
+    n_train: [64, 128, 256, 512, 1024, 2048, 4096]
+    method: ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel',
+             'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
+             'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+             'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log']
     experiment: ['heteroskedastic']
+    run_dir: ['exp_hetero']
