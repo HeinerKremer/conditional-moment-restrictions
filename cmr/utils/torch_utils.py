@@ -1,3 +1,4 @@
+import numpy
 import numpy as np
 import torch
 import torch.nn as nn
@@ -35,6 +36,24 @@ def torch_to_float(tensor):
 
 def torch_to_np(tensor):
     return tensor.detach().cpu().numpy().astype("float64")
+
+
+def tensor_to_np(tensor_array):
+    if type(tensor_array) == list or type(tensor_array) == tuple:
+        np_list = []
+        for element in tensor_array:
+            if isinstance(element, np.ndarray) or element is None:
+                np_data = element
+            else:
+                np_data = element.detach().cpu().numpy().astype("float64")
+            np_list.append(np_data)
+        np_data = np_list
+    else:
+        if isinstance(tensor_array, np.ndarray) or tensor_array is None:
+            np_data = tensor_array
+        else:
+            np_data = tensor_array.detach().cpu().numpy().astype("float64")
+    return np_data
 
 
 def np_to_tensor(data_array):

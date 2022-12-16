@@ -19,9 +19,9 @@ class MMDELKernel(MMDEL):
         self.dual_normalization = Parameter(shape=(1, 1))
         self.all_dual_params = list(self.dual_moment_func.parameters()) + list(self.dual_normalization.parameters()) + list(self.rkhs_func.parameters())
 
-    def _init_training(self, x_tensor, z_tensor):
+    def init_estimator(self, x_tensor, z_tensor):
         self._set_kernel_z(z=z_tensor)
-        super()._init_training(x_tensor=x_tensor, z_tensor=z_tensor)
+        super().init_estimator(x_tensor=x_tensor, z_tensor=z_tensor)
 
     """------------- Objective of Kernel-EL-Kernel ------------"""
     def eval_dual_moment_func(self, z):

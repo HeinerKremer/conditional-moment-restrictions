@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from experiments.abstract_experiment import AbstractExperiment
+from cmr.utils.torch_utils import np_to_tensor
 
 
 def eval_model(t, theta, numpy=False):
@@ -19,6 +20,8 @@ class LinearModel(nn.Module):
     def __init__(self, dim_theta):
         super().__init__()
         self.theta = nn.Parameter(torch.FloatTensor([[0.5] * dim_theta]))
+        # self.dim_psi = 1
+        # self.dim_z = 1
 
     def forward(self, t):
         return eval_model(t, torch.reshape(self.theta, [1, -1]))
@@ -62,7 +65,7 @@ class HeteroskedasticNoiseExperiment(AbstractExperiment):
     def eval_risk(self, model, data):
         t_test = data['t']
         y_test = eval_model(t_test, self.theta0, numpy=True)
-        y_pred = model.forward(torch.tensor(data['t'])).detach().numpy()
+        y_pred = model.forward(np_to_tensor(data['t'])).detach().numpy()
         return float(((y_test - y_pred) ** 2).mean())
 
     def validation_loss(self, model, val_data):
@@ -79,13 +82,14 @@ if __name__ == '__main__':
     mses = []
     thetas = []
 
-    for i in range(1):
+    for i in range(5):
         exp.prepare_dataset(n_train=100, n_val=2000, n_test=20000)
         model = exp.init_model()
         trained_model, stats = estimation(model=model,
                                           train_data=exp.train_data,
                                           moment_function=exp.moment_function,
-                                          estimation_method='KernelELNeural-AN',
+                                          #estimation_method='MMR',
+                                          estimation_method='MinimumDivergence',
                                           estimator_kwargs=None, hyperparams=None,
                                           validation_data=exp.val_data, val_loss_func=exp.validation_loss,
                                           verbose=True

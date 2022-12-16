@@ -17,7 +17,7 @@ class AbstractEstimationMethod:
             kernel_z_kwargs = {}
         self.kernel_z_kwargs = kernel_z_kwargs
         self.kernel_z = None
-        self.k_cholesky = None
+        self.kernel_z_cholesky = None
         self.kernel_z_val = None
 
     def train(self, x_train, z_train, x_val, z_val, debugging=False):
@@ -34,7 +34,7 @@ class AbstractEstimationMethod:
         if self.kernel_z is None and z is not None:
             self.kernel_z, _ = get_rbf_kernel(z, z, **self.kernel_z_kwargs)
             self.kernel_z = self.kernel_z.type(torch.float32)
-            self.k_cholesky = torch.tensor(np.transpose(compute_cholesky_factor(self.kernel_z.detach().numpy())))
+            self.kernel_z_cholesky = torch.tensor(np.transpose(compute_cholesky_factor(self.kernel_z.detach().numpy())))
         if z_val is not None:
             self.kernel_z_val, _ = get_rbf_kernel(z_val, z_val, **self.kernel_z_kwargs)
 

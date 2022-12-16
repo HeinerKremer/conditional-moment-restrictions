@@ -54,6 +54,8 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.theta_optim_args = theta_optim_args
         self.theta_optimizer = None
 
+        self.is_init = False
+
         self.max_num_epochs = max_num_epochs if not self.theta_optim_type == 'lbfgs' else 3
         self.eval_freq = eval_freq
         self.max_no_improve = max_no_improve
@@ -63,6 +65,22 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.annealing = False
         self.batch_size = None
         self.verbose = verbose
+
+    def init_estimator(self, x_tensor, z_tensor):
+        self._init_dual_params()
+        self._set_optimizers()
+        if self.pretrain:
+            self._pretrain_theta(x=x_tensor, z=z_tensor)
+        self.is_init = True
+
+    """------------- Objective of standard finite dimensional GEL ------------"""
+    def eval_dual_moment_func(self, z):
+        return self.dual_moment_func.params
+
+    def objective(self, x, z, *args, **kwargs):
+        dual_func_psi = torch.einsum('ij, ij -> i', self.model.psi(x), self.eval_dual_moment_func(z))
+        objective = - torch.mean(self.conj_divergence(dual_func_psi))
+        return objective, -objective + self.reg_param * torch.norm(self.eval_dual_moment_func(z))
 
     def _init_dual_params(self):
         self.dual_moment_func = Parameter(shape=(1, self.dim_psi))
@@ -182,21 +200,6 @@ class GeneralizedEL(AbstractEstimationMethod):
     def _set_optimizers(self):
         self._set_dual_optimizer()
         self._set_theta_optimizer()
-
-    def _init_training(self, x_tensor, z_tensor):
-        self._init_dual_params()
-        self._set_optimizers()
-        if self.pretrain:
-            self._pretrain_theta(x=x_tensor, z=z_tensor)
-
-    """------------- Objective of standard finite dimensional GEL ------------"""
-    def eval_dual_moment_func(self, z):
-        return self.dual_moment_func.params
-
-    def objective(self, x, z, *args, **kwargs):
-        dual_func_psi = torch.einsum('ij, ij -> i', self.model.psi(x), self.eval_dual_moment_func(z))
-        objective = - torch.mean(self.conj_divergence(dual_func_psi))
-        return objective, -objective + self.reg_param * torch.norm(self.eval_dual_moment_func(z))
 
     """--------------------- Optimization methods for theta ---------------------"""
     def _optimize_step_theta(self, x_tensor, z_tensor):
@@ -347,7 +350,7 @@ class GeneralizedEL(AbstractEstimationMethod):
         else:
             eval_freq_epochs = self.eval_freq
 
-        self._init_training(x_tensor, z_tensor)
+        self.init_estimator(x_tensor, z_tensor)
         val_losses = []
 
         min_val_loss = float("inf")
