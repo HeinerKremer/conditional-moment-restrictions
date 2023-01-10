@@ -37,7 +37,7 @@ class GMM(AbstractEstimationMethod):
                                           line_search_fn="strong_wolfe")
             def closure():
                 optimizer.zero_grad()
-                psi = self.model.psi(x_tensor)
+                psi = self.moment_function(x_tensor)
                 print(psi.shape)
                 loss = torch.einsum('ik, kr, jr -> ', psi, weighting_matrix, psi) / x[0].shape[0]**2
                 loss.backward()
@@ -50,7 +50,7 @@ class GMM(AbstractEstimationMethod):
 
     def _get_inverse_covariance_matrix(self, x_tensor, alpha):
         n = x_tensor[0].shape[0]
-        psi = self.model.psi(x_tensor).detach().cpu().numpy()
+        psi = self.moment_function(x_tensor).detach().cpu().numpy()
         q = (psi.T  @ psi) / n  # dim_psi x dim_psi matrix
         l = scipy.sparse.identity(n=self.dim_psi)
         q += alpha * l

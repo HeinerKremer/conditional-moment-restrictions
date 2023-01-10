@@ -23,13 +23,14 @@ class GeneralizedEL(AbstractEstimationMethod):
     quantities (and if desired a cvxpy optimization method for the optimization over the dual functions).
     """
 
-    def __init__(self, model, reg_param=0,
+    def __init__(self, model, moment_function, reg_param=0,
                  max_num_epochs=50000, eval_freq=2000, max_no_improve=3, burn_in_cycles=5,
                  theta_optim=None, theta_optim_args=None, pretrain=True,
                  dual_optim=None, dual_optim_args=None, inneriters=None,
                  divergence=None, kernel_z_kwargs=None, val_loss_func=None,
                  verbose=False):
-        super().__init__(model=model, kernel_z_kwargs=kernel_z_kwargs, val_loss_func=val_loss_func)
+        super().__init__(model=model, moment_function=moment_function, kernel_z_kwargs=kernel_z_kwargs,
+                         val_loss_func=val_loss_func)
 
         if theta_optim_args is None:
             theta_optim_args = {"lr": 5e-4}
@@ -67,20 +68,11 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.verbose = verbose
 
     def init_estimator(self, x_tensor, z_tensor):
+        super().init_estimator(x_tensor, z_tensor)
         self._init_dual_params()
         self._set_optimizers()
         if self.pretrain:
             self._pretrain_theta(x=x_tensor, z=z_tensor)
-        self.is_init = True
-
-    """------------- Objective of standard finite dimensional GEL ------------"""
-    def eval_dual_moment_func(self, z):
-        return self.dual_moment_func.params
-
-    def objective(self, x, z, *args, **kwargs):
-        dual_func_psi = torch.einsum('ij, ij -> i', self.model.psi(x), self.eval_dual_moment_func(z))
-        objective = - torch.mean(self.conj_divergence(dual_func_psi))
-        return objective, -objective + self.reg_param * torch.norm(self.eval_dual_moment_func(z))
 
     def _init_dual_params(self):
         self.dual_moment_func = Parameter(shape=(1, self.dim_psi))
@@ -90,6 +82,18 @@ class GeneralizedEL(AbstractEstimationMethod):
         isnan = bool(sum([np.sum(np.isnan(p.detach().cpu().numpy())) for p in self.all_dual_params]))
         isinf = bool(sum([np.sum(np.isinf(p.detach().cpu().numpy())) for p in self.all_dual_params]))
         return (not isnan) and (not isinf)
+
+    """------------- Objective of standard finite dimensional GEL ------------"""
+    def _eval_dual_moment_func(self, z):
+        return self.dual_moment_func.params
+
+    def _objective(self, x, z, *args, **kwargs):
+        self.check_init()
+        dual_func_psi = torch.einsum('ij, ij -> i', self.moment_function(x), self._eval_dual_moment_func(z))
+        objective = - torch.mean(self.conj_divergence(dual_func_psi))
+        return objective, -objective + self.reg_param * torch.norm(self._eval_dual_moment_func(z))
+
+    """-----------------------------------------------------------------------"""
 
     def _set_divergence(self):
         if self.divergence_type == 'log':
@@ -290,7 +294,7 @@ class GeneralizedEL(AbstractEstimationMethod):
             n_sample = x[0].shape[0]
 
             dual_func = cvx.Variable(shape=(1, self.dim_psi))   # (1, k)
-            psi = self.model.psi(x).detach().numpy()   # (n_sample, k)
+            psi = self.moment_function(x).detach().numpy()   # (n_sample, k)
             dual_func_psi = psi @ cvx.transpose(dual_func)    # (n_sample, 1)
 
             objective = - 1/n_sample * cvx.sum(self.conj_divergence(dual_func_psi, cvxpy=True))
@@ -350,7 +354,7 @@ class GeneralizedEL(AbstractEstimationMethod):
         else:
             eval_freq_epochs = self.eval_freq
 
-        self.init_estimator(x_tensor, z_tensor)
+        # self.init_estimator(x_tensor, z_tensor)
         val_losses = []
 
         min_val_loss = float("inf")
@@ -369,8 +373,9 @@ class GeneralizedEL(AbstractEstimationMethod):
                     x_tensor[1].to(device)]
         x_val_tensor = [x_val_tensor[0].to(device),
                         x_val_tensor[1].to(device)]
-        z_tensor = z_tensor.to(device)
-        z_val_tensor = z_val_tensor.to(device)
+        if z_tensor is not None:
+            z_tensor = z_tensor.to(device)
+            z_val_tensor = z_val_tensor.to(device)
         # use list with dual parameters etc
         for ele in self.all_dual_params:
             ele.to(device)

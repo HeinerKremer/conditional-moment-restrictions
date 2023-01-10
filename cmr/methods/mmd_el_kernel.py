@@ -24,11 +24,11 @@ class MMDELKernel(MMDEL):
         super().init_estimator(x_tensor=x_tensor, z_tensor=z_tensor)
 
     """------------- Objective of Kernel-EL-Kernel ------------"""
-    def eval_dual_moment_func(self, z):
+    def _eval_dual_moment_func(self, z):
         return torch.einsum('ij, ik -> kj', self.dual_moment_func.params, self.kernel_z)
 
-    def objective(self, x, z, *args, **kwargs):
-        objective, _ = super().objective(x, z, *args, **kwargs)
+    def _objective(self, x, z, *args, **kwargs):
+        objective, _ = super()._objective(x, z, *args, **kwargs)
         regularizer = self.reg_param/2 * torch.einsum('ir, ij, jr ->', self.dual_moment_func.params,
                                                       self.kernel_z, self.dual_moment_func.params)
         return objective, -objective + regularizer
@@ -36,4 +36,4 @@ class MMDELKernel(MMDEL):
 
 if __name__ == '__main__':
     from experiments.tests import test_cmr_estimator
-    test_cmr_estimator(estimation_method='KernelELKernel', n_runs=1, n_train=1000, hyperparams=None)
+    test_cmr_estimator(estimation_method='MMDEL-kernel', n_runs=1, n_train=1000, hyperparams=None)

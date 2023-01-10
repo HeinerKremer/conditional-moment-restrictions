@@ -20,7 +20,7 @@ class MMR(AbstractEstimationMethod):
 
         def closure():
             optimizer.zero_grad()
-            psi = self.model.psi(x_tensor)
+            psi = self.moment_function(x_tensor)
             loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z, psi) / (n_sample ** 2)
             loss.backward()
             return loss
@@ -33,4 +33,4 @@ class MMR(AbstractEstimationMethod):
 
 if __name__ == '__main__':
     from experiments.tests import test_cmr_estimator
-    test_cmr_estimator(estimation_method='KernelMMR', n_runs=2)
+    test_cmr_estimator(estimation_method='MMR', n_runs=2)

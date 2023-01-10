@@ -58,7 +58,7 @@ class MMDEL(GeneralizedEL):
         super().init_estimator(x_tensor=x_tensor, z_tensor=z_tensor)
 
     """------------- Objective of MMD-GEL ------------"""
-    def objective(self, x, z, *args, **kwargs):
+    def _objective(self, x, z, *args, **kwargs):
         if self.batch_training:
             kx = self.kernel_x[:, self.batch_idx]
         else:
@@ -70,13 +70,15 @@ class MMDEL(GeneralizedEL):
             rkhs_norm_sq = torch.einsum('i, i ->', self.rkhs_func.params[:, 0], self.rkhs_func.params[:, 0])
         else:
             raise ValueError("Number of random features cannot be smaller than 0!")
-        exponent = (rkhs_func + self.dual_normalization.params - torch.sum(self.eval_dual_moment_func(z) * self.model.psi(x), axis=1, keepdim=True))
+        exponent = (rkhs_func + self.dual_normalization.params
+                    - torch.sum(self._eval_dual_moment_func(z) * self.moment_function(x), dim=1, keepdim=True))
         objective = (torch.mean(rkhs_func) + self.dual_normalization.params - 1 / 2 * rkhs_norm_sq
                      - self.kl_reg_param * torch.mean(self.conj_divergence(1 / self.kl_reg_param * exponent)))
         return objective, -objective
 
     """--------------------- Optimization methods for dual_func ---------------------"""
     def _optimize_dual_func_cvxpy(self, x_tensor, z_tensor):
+        self.check_init()
         with torch.no_grad():
             x = [xi.numpy() for xi in x_tensor]
             n_sample = x[0].shape[0]
@@ -86,7 +88,7 @@ class MMDEL(GeneralizedEL):
             rkhs_func = cvx.Variable(shape=(n_sample, 1))
 
             kernel_x = self.kernel_x.detach().numpy()
-            psi = self.model.psi(x).detach().numpy()   # (n_sample, k)
+            psi = self.moment_function(x).detach().numpy()   # (n_sample, k)
 
             dual_func_psi = psi @ cvx.transpose(dual_func)    # (n_sample, 1)
             expected_rkhs_func = 1/n_sample * cvx.sum(kernel_x @ rkhs_func)
@@ -115,4 +117,4 @@ class MMDEL(GeneralizedEL):
 
 if __name__ == '__main__':
     from experiments.tests import test_mr_estimator
-    test_mr_estimator(estimation_method='KernelEL', n_runs=5, n_train=2000, hyperparams=None)
+    test_mr_estimator(estimation_method='MMDEL', n_runs=2, n_train=2000, hyperparams=None)

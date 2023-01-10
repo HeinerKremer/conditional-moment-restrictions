@@ -43,7 +43,7 @@ class KernelVMM(AbstractEstimationMethod):
 
             def closure():
                 optimizer.zero_grad()
-                psi_x = self.model.psi(x_tensor).transpose(1, 0).flatten()
+                psi_x = self.moment_function(x_tensor).transpose(1, 0).flatten()
                 m_rho_x = torch.matmul(m, psi_x).detach()
                 loss = 2.0 * torch.matmul(m_rho_x, psi_x)
                 loss.backward()
@@ -57,7 +57,7 @@ class KernelVMM(AbstractEstimationMethod):
     def _calc_m_matrix(self, x_tensor, alpha):
         n = self.kernel_z.shape[0]
         k_z_m = np.stack([self.kernel_z for _ in range(self.dim_psi)], axis=0)
-        psi_m = self.model.psi(x_tensor).detach().cpu().numpy()
+        psi_m = self.moment_function(x_tensor).detach().cpu().numpy()
         q = (k_z_m * psi_m.T.reshape(self.dim_psi, 1, n)).reshape(self.dim_psi * n, n)
         del psi_m
 
@@ -73,4 +73,4 @@ class KernelVMM(AbstractEstimationMethod):
 
 if __name__ == '__main__':
     from experiments.tests import test_cmr_estimator
-    test_cmr_estimator(estimation_method='KernelVMM', n_runs=2)
+    test_cmr_estimator(estimation_method='VMM-kernel', n_runs=2)

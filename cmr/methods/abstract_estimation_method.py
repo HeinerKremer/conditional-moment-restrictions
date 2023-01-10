@@ -1,16 +1,23 @@
+import functools
+
 from cmr.utils.rkhs_utils import get_rbf_kernel, compute_cholesky_factor
 from cmr.utils.torch_utils import np_to_tensor
 import numpy as np
 import torch
+import torch.nn as nn
 
 
 class AbstractEstimationMethod:
-    def __init__(self, model, kernel_z_kwargs=None, val_loss_func=None):
-        self.model = model
-        self.dim_psi = self.model.dim_psi
-        self.dim_z = self.model.dim_z
+    def __init__(self, model, moment_function, kernel_z_kwargs=None, val_loss_func=None):
+        self.model = ModelWrapper(model)
+        self.moment_function = self._wrap_moment_function(moment_function)
         self.is_trained = False
         self.val_loss_func = val_loss_func
+
+        # Set by `set_data_dependent_attributes`
+        self._dim_psi = None
+        self._dim_z = None
+        self._is_init = False
 
         # For validation purposes by default all methods for CMR use the kernel MMR loss and therefore require the kernel Gram matrices
         if kernel_z_kwargs is None:
@@ -20,7 +27,54 @@ class AbstractEstimationMethod:
         self.kernel_z_cholesky = None
         self.kernel_z_val = None
 
+    @property
+    def dim_psi(self):
+        if self._dim_psi is None:
+            raise AttributeError('Data dependent attributes have not been set. '
+                                 'First use method `init_estimator(x, z)`')
+        return self._dim_psi
+
+    @property
+    def dim_z(self):
+        # `dim_z` is allowed to be `None` for unconditional moment restrictions
+        return self._dim_z
+
+    def _wrap_moment_function(self, moment_function):
+        def eval_moment_function(x):
+            t, y = torch.Tensor(x[0]), torch.Tensor(x[1])
+            return moment_function(self.model(t), y)
+        return eval_moment_function
+
+    def init_estimator(self, x, z):
+        self._init_data_dependent_attributes(x, z)
+        self._is_init = True
+
+    def check_init(self):
+        if not self._is_init:
+            raise AttributeError('Called method requires running method `init_estimator(x,z)` first.')
+
+    def objective(self, x, z, *args, **kwargs):
+        self.check_init()
+        return self._objective(x, z, *args, **kwargs)
+
+    def _objective(self, x, z, *args, **kwargs):
+        raise NotImplementedError('Method `objective` needs to be implemented in child class.')
+
+    def _init_data_dependent_attributes(self, x, z):
+        if not self._is_init:
+            if z is None:
+                self._dim_z = None
+            else:
+                self._dim_z = z.shape[1]
+
+            # Eval moment function once on a single sample to get its dimension
+            #prediction = self.model(torch.Tensor(x[0][0:1]))
+            single_sample = [torch.Tensor(x[0][0:1]), torch.Tensor(x[1][0:1])]
+            self._dim_psi = self.moment_function(single_sample).shape[1]
+
     def train(self, x_train, z_train, x_val, z_val, debugging=False):
+        if not self._is_init:
+            self.init_estimator(x_train, z_train)
         self._train_internal(x_train, z_train, x_val, z_val, debugging=debugging)
         self.model.to('cpu')
         self.is_trained = True
@@ -45,14 +99,14 @@ class AbstractEstimationMethod:
             z_val = self._to_tensor(z_val)
         n = z_val.shape[0]
         self._set_kernel_z(z_val=z_val)
-        psi = self.model.psi(x_val)
+        psi = self.moment_function(x_val)
         loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z_val, psi) / (n ** 2)
         return float(loss.detach().numpy())
 
     def _calc_val_moment_violation(self, x_val):
         if not isinstance(x_val, torch.Tensor):
             x_val = self._to_tensor(x_val)
-        psi = self.model.psi(x_val)
+        psi = self.moment_function(x_val)
         mse_moment_violation = torch.sum(torch.square(psi)) / psi.shape[0]
         return float(mse_moment_violation.detach().cpu().numpy())
 
@@ -83,7 +137,7 @@ class AbstractEstimationMethod:
         if mmr and z is not None and z.shape[0] < 5000:
             def closure():
                 optimizer.zero_grad()
-                psi = self.model.psi(x)
+                psi = self.moment_function(x)
                 self._set_kernel_z(z=z)
                 loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z, psi) / (x[0].shape[0] ** 2)
                 loss.backward()
@@ -91,8 +145,36 @@ class AbstractEstimationMethod:
         else:
             def closure():
                 optimizer.zero_grad()
-                psi = self.model.psi(x)
+                psi = self.moment_function(x)
                 loss = (psi ** 2).mean()
                 loss.backward()
                 return loss
         optimizer.step(closure)
+
+
+class ModelWrapper(nn.Module):
+    def __init__(self, model):
+        nn.Module.__init__(self)
+        self.model = model
+
+    def forward(self, t):
+        return self.model(t)
+
+    def get_parameters(self):
+        try:
+            return self.model.get_parameters()
+        except AttributeError:
+            param_tensor = list(self.model.parameters())
+            return [p.detach().cpu().numpy() for p in param_tensor]
+
+    def is_finite(self):
+        params = self.get_parameters()
+        isnan = bool(sum([np.sum(np.isnan(p)) for p in params]))
+        isinf = bool(sum([np.sum(np.isinf(p)) for p in params]))
+        return (not isnan) and (not isinf)
+
+    def initialize(self):
+        try:
+            self.model.initialize()
+        except AttributeError:
+            pass

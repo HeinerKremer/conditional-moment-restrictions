@@ -3,8 +3,8 @@ import torch
 
 
 class OrdinaryLeastSquares(AbstractEstimationMethod):
-    def __init__(self, model, **kwargs):
-        super().__init__(model, **kwargs)
+    def __init__(self, model, moment_function, **kwargs):
+        super().__init__(model=model, moment_function=moment_function, **kwargs)
 
     def _train_internal(self, x, z, x_val, z_val, debugging):
         x_tensor = self._to_tensor(x)
@@ -15,7 +15,7 @@ class OrdinaryLeastSquares(AbstractEstimationMethod):
 
         def closure():
             optimizer.zero_grad()
-            psi = self.model.psi(x_tensor)
+            psi = self.moment_function(x_tensor)
             loss = torch.einsum('ir, ir -> ', psi, psi) / n_sample
             loss.backward()
             return loss

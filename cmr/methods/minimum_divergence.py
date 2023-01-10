@@ -15,8 +15,8 @@ class MinimumDivergence(GeneralizedEL):
         self._set_kernel_z(z=z_tensor)
         super().init_estimator(x_tensor=x_tensor, z_tensor=z_tensor)
 
-    def objective(self, x, z, *args, **kwargs):
-        weighted_psi = self.dual_moment_func.params * self.model.psi(x)
+    def _objective(self, x, z, *args, **kwargs):
+        weighted_psi = self.dual_moment_func.params * self.moment_function(x)
         mmr_objective = torch.sum(weighted_psi.T @ self.kernel_z @ weighted_psi)
         objective = torch.mean(self.divergence(self.dual_moment_func.params)) + self.reg_param * mmr_objective
         return mmr_objective, objective
@@ -32,7 +32,7 @@ class MinimumDivergence(GeneralizedEL):
             n_sample = x[0].shape[0]
 
             weights = cvx.Variable(shape=(n_sample, 1))   # (1, k)
-            psi = self.model.psi(x).detach().numpy()   # (n_sample, dim_psi)
+            psi = self.moment_function(x).detach().numpy()   # (n_sample, dim_psi)
             weighted_psi = cvx.multiply(weights, psi)   # (n_sample, dim_psi)
 
             objective = 1/n_sample * cvx.sum(self.divergence(weights, cvxpy=True)) \

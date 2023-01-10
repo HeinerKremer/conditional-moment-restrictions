@@ -70,22 +70,12 @@ def estimation(model, train_data, moment_function, estimation_method,
 
 def pretrain_model_and_renormalize_moment_function(moment_function, model, train_data, conditional_mr):
     """Pretrains model and normalizes entries of moment function to variance 1"""
-    if train_data['z'] is None:
-        dim_z = None
-    else:
-        dim_z = train_data['z'].shape[1]
-
-    # Eval moment function once on a single sample to get its dimension
-    dim_psi = moment_function(model(torch.Tensor(train_data['t'][0:1])), torch.Tensor(train_data['y'][0:1])).shape[1]
-
-    model_wrapper = ModelWrapper(model=copy.deepcopy(model),
-                                 moment_function=moment_function,
-                                 dim_psi=dim_psi, dim_z=dim_z)
+    model_copy = copy.deepcopy(model)
 
     if conditional_mr and train_data['z'].shape[0] < 5000:
-        estimator = MMR(model=model_wrapper)
+        estimator = MMR(model=model_copy, moment_function=moment_function)
     else:
-        estimator = OrdinaryLeastSquares(model=model_wrapper)
+        estimator = OrdinaryLeastSquares(model=model_copy, moment_function=moment_function)
     estimator.train(x_train=[train_data['t'], train_data['y']], z_train=train_data['z'], x_val=None, z_val=None)
     pretrained_model = estimator.model
     normalization = torch.Tensor(np.std(moment_function(pretrained_model(torch.Tensor(train_data['t'])),
@@ -126,32 +116,24 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
         def val_loss_func(model, validation_data):
             return None
 
-    if z_train is None:
-        dim_z = None
-    else:
-        dim_z = z_train.shape[1]
-
-    # Eval moment function once on a single sample to get its dimension
-    dim_psi = moment_function(model(torch.Tensor(x_train[0][0:1])), torch.Tensor(x_train[1][0:1])).shape[1]
-
     models = []
     hparams = []
     validation_loss = []
 
     for hyper in iterate_argument_combinations(hyperparams):
-        model_wrapper = ModelWrapper(model=copy.deepcopy(model),
-                                     moment_function=moment_function,
-                                     dim_psi=dim_psi, dim_z=dim_z)
+        model_copy = copy.deepcopy(model)
+
         if verbose:
             print('Running hyperparams: ', f'{hyper}')
-        estimator = estimator_class(model=model_wrapper, val_loss_func=val_loss_func, **hyper, **estimator_kwargs)
+        estimator = estimator_class(model=model_copy, moment_function=moment_function,
+                                    val_loss_func=val_loss_func, **hyper, **estimator_kwargs)
         estimator.train(x_train, z_train, x_val, z_val)
 
-        val_loss = val_loss_func(model_wrapper, validation_data)
+        val_loss = val_loss_func(model_copy, validation_data)
         if val_loss is None:
             val_loss = estimator.calc_validation_metric(x_val, z_val)
 
-        models.append(model_wrapper.cpu())
+        models.append(model_copy.cpu())
         hparams.append(hyper)
         validation_loss.append(val_loss)
 

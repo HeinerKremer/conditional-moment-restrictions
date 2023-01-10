@@ -10,9 +10,9 @@ class NeuralVMM(NeuralFGEL):
         super().__init__(divergence='off', **kwargs)
         self.kernel_lambda = kernel_lambda
 
-    def objective(self, x, z, *args):
+    def _objective(self, x, z, *args):
         f_of_z = self.dual_moment_func(z)
-        m_vector = (self.model.psi(x) * f_of_z).sum(1)
+        m_vector = (self.moment_function(x) * f_of_z).sum(1)
         moment = m_vector.mean()
         ow_reg = 0.25 * (m_vector ** 2).mean()
         if self.kernel_lambda > 0:
@@ -34,4 +34,4 @@ class NeuralVMM(NeuralFGEL):
 
 if __name__ == "__main__":
     from experiments.tests import test_cmr_estimator
-    test_cmr_estimator(estimation_method='NeuralVMM', n_runs=2)
+    test_cmr_estimator(estimation_method='VMM-neural', n_runs=2)

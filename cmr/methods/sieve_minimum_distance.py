@@ -11,10 +11,16 @@ from cmr.utils.torch_utils import torch_softplus, BatchIter
 
 class SMDIdentity(AbstractEstimationMethod):
     # Implements SMD algorithm using LBFGS optimizer and identity omega
-    def __init__(self, model, num_knots=5, polyn_degree=2, **kwargs):
-        super().__init__(model=model, **kwargs)
-        self.basis = MultiOutputPolynomialSplineBasis(z_dim=self.model.dim_z, num_out=self.dim_psi,
-                                                      num_knots=num_knots, degree=polyn_degree)
+    def __init__(self, model, moment_function, num_knots=5, polyn_degree=2, **kwargs):
+        super().__init__(model=model, moment_function=moment_function, **kwargs)
+        self.num_knots = num_knots
+        self.polyn_degree = polyn_degree
+        self.basis = None
+
+    def init_estimator(self, x, z):
+        super().init_estimator(x, z)
+        self.basis = MultiOutputPolynomialSplineBasis(z_dim=self.dim_z, num_out=self.dim_psi,
+                                                      num_knots=self.num_knots, degree=self.polyn_degree)
 
     def _train_internal(self, x, z, x_val, z_val, debugging):
         self.basis.setup(z)
@@ -53,7 +59,7 @@ class SMDIdentity(AbstractEstimationMethod):
         # define loss and optimize
         def closure():
             optimizer.zero_grad()
-            psi = self.model.psi(x_tensor).view(n, self.dim_psi, 1)
+            psi = self.moment_function(x_tensor).view(n, self.dim_psi, 1)
             psi_f_z = torch.matmul(f_z_torch, psi).mean(0).squeeze(-1)
             loss = torch.matmul(w, psi_f_z).matmul(psi_f_z)
             loss.backward()
@@ -78,7 +84,7 @@ class SMDHomoskedastic(SMDIdentity):
             if iter_i == 0:
                 var_inv = np.ones(self.dim_psi)
             else:
-                psi = self.model.psi(x_tensor).detach().numpy()
+                psi = self.moment_function(x_tensor).detach().numpy()
                 psi_residual = psi - psi.mean(0, keepdims=True)
                 var_inv = (psi_residual ** 2).mean(0) ** -1
             omega_inv = var_inv.reshape(1, self.dim_psi).repeat(n, 0)
@@ -109,12 +115,15 @@ class FlexibleVarNetwork(nn.Module):
 
 
 class SMDHeteroskedastic(SMDIdentity):
-    def __init__(self, model, num_knots=5, polyn_degree=2, num_iter=2, **kwargs):
+    def __init__(self, model, moment_function, num_knots=5, polyn_degree=2, num_iter=2, **kwargs):
+        super().__init__(model=model, moment_function=moment_function,
+                         num_knots=num_knots, polyn_degree=polyn_degree, **kwargs)
         self.num_iter = num_iter
-        self.var_network = FlexibleVarNetwork(model.dim_z, model.dim_psi)
+        self.var_network = None
 
-        SMDIdentity.__init__(self, model=model,
-                             num_knots=num_knots, polyn_degree=polyn_degree, **kwargs)
+    def init_estimator(self, x, z):
+        super().init_estimator(x, z)
+        self.var_network = FlexibleVarNetwork(self.dim_z, self.dim_psi)
 
     def _train_internal(self, x, z, x_val, z_val, debugging):
         self.basis.setup(z)
@@ -127,12 +136,12 @@ class SMDHeteroskedastic(SMDIdentity):
             if iter_i == 0:
                 omega_inv = np.ones((1, self.dim_psi)).repeat(n, 0)
             else:
-                psi = self.model.psi(x_tensor)
+                psi = self.moment_function(x_tensor)
                 targets = ((psi - psi.mean(0, keepdim=True)) ** 2).detach()
                 if z_val is not None:
                     z_val_torch = self._to_tensor(z_val)
                     x_val_torch = self._to_tensor(x_val)
-                    psi_dev = self.model.psi(x_val_torch)
+                    psi_dev = self.moment_function(x_val_torch)
                     targets_dev = ((psi_dev - psi_dev.mean(0, keepdim=True)) ** 2).detach()
                 else:
                     z_val_torch = None
