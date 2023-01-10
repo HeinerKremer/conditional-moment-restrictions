@@ -8,3 +8,5 @@ for estimator in mr_estimators:
 for estimator in (mr_estimators + cmr_estimators):
     print(f'Testing CMR {estimator} ...')
     test_cmr_estimator(estimator, n_train=10, n_runs=1)
+
+print('All tests successful.')

@@ -159,6 +159,8 @@ class ModelWrapper(nn.Module):
         self.model = model
 
     def forward(self, t):
+        if not isinstance(t, torch.Tensor):
+            t = torch.Tensor(t)
         return self.model(t)
 
     def get_parameters(self):

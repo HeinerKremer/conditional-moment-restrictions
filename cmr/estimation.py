@@ -143,41 +143,6 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
                               'best_index': int(best_val)}
 
 
-class ModelWrapper(nn.Module):
-    def __init__(self, model, moment_function, dim_psi, dim_z):
-        nn.Module.__init__(self)
-        self.model = model
-        self.moment_function = moment_function
-        self.dim_psi = dim_psi
-        self.dim_z = dim_z
-
-    def forward(self, t):
-        return self.model(t)
-
-    def psi(self, data):
-        t, y = torch.Tensor(data[0]), torch.Tensor(data[1])
-        return self.moment_function(self.model(t), y)
-
-    def get_parameters(self):
-        try:
-            return self.model.get_parameters()
-        except AttributeError:
-            param_tensor = list(self.model.parameters())
-            return [p.detach().cpu().numpy() for p in param_tensor]
-
-    def is_finite(self):
-        params = self.get_parameters()
-        isnan = bool(sum([np.sum(np.isnan(p)) for p in params]))
-        isinf = bool(sum([np.sum(np.isinf(p)) for p in params]))
-        return (not isnan) and (not isinf)
-
-    def initialize(self):
-        try:
-            self.model.initialize()
-        except AttributeError:
-            pass
-
-
 if __name__ == "__main__":
     def generate_data(n_sample):
         e = np.random.normal(loc=0, scale=1.0, size=[n_sample, 1])
@@ -193,34 +158,21 @@ if __name__ == "__main__":
     validation_data = generate_data(n_sample=100)
     test_data = generate_data(n_sample=10000)
 
-
-    class NetworkModel(nn.Module):
-        def __init__(self):
-            nn.Module.__init__(self)
-            self._model = torch.nn.Sequential(
-                torch.nn.Linear(1, 20),
-                torch.nn.LeakyReLU(),
-                torch.nn.Linear(20, 3),
-                torch.nn.LeakyReLU(),
-                torch.nn.Linear(3, 1)
-            )
-
-        def forward(self, t):
-            if not isinstance(t, torch.Tensor):
-                t = torch.tensor(t, dtype=torch.float32)
-            return self._model(t)
-
+    model = torch.nn.Sequential(
+        torch.nn.Linear(1, 20),
+        torch.nn.LeakyReLU(),
+        torch.nn.Linear(20, 3),
+        torch.nn.LeakyReLU(),
+        torch.nn.Linear(3, 1)
+    )
 
     def moment_function(model_evaluation, y):
         return model_evaluation - y
 
-
-    model = NetworkModel()
-
     trained_model, stats = estimation(model=model,
                                       train_data=train_data,
                                       moment_function=moment_function,
-                                      estimation_method='KernelFGEL',
+                                      estimation_method='FGEL-kernel',
                                       estimator_kwargs=None, hyperparams=None,
                                       validation_data=None, val_loss_func=None,
                                       verbose=True)
