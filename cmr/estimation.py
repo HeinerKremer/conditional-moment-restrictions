@@ -121,19 +121,17 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
     validation_loss = []
 
     for hyper in iterate_argument_combinations(hyperparams):
-        model_copy = copy.deepcopy(model)
-
         if verbose:
             print('Running hyperparams: ', f'{hyper}')
-        estimator = estimator_class(model=model_copy, moment_function=moment_function,
+        estimator = estimator_class(model=copy.deepcopy(model), moment_function=moment_function,
                                     val_loss_func=val_loss_func, **hyper, **estimator_kwargs)
         estimator.train(x_train, z_train, x_val, z_val)
 
-        val_loss = val_loss_func(model_copy, validation_data)
+        val_loss = val_loss_func(estimator.model, validation_data)
         if val_loss is None:
             val_loss = estimator.calc_validation_metric(x_val, z_val)
 
-        models.append(model_copy.cpu())
+        models.append(estimator.model.cpu())
         hparams.append(hyper)
         validation_loss.append(val_loss)
 
