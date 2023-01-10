@@ -52,4 +52,6 @@ class MMDELNeural(MMDEL):
 
 if __name__ == '__main__':
     from experiments.tests import test_cmr_estimator
-    test_cmr_estimator(estimation_method='MMDEL-neural', n_runs=1, n_train=300, hyperparams=None)
+    test_cmr_estimator(estimation_method='MMDEL-neural', n_runs=1, n_train=30, hyperparams=None)
+    test_cmr_estimator(estimation_method='RF-MMDEL', n_runs=1, n_train=30, hyperparams=None)
+

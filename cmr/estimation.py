@@ -9,7 +9,7 @@ from cmr.methods.least_squares import OrdinaryLeastSquares
 from cmr.default_config import methods
 
 mr_estimators = ['OLS', 'GMM', 'GEL', 'MMDEL']
-cmr_estimators = [item for item in methods.keys() if item not in mr_estimators] + ['DeepIV']
+cmr_estimators = [item for item in methods.keys() if item not in mr_estimators]   # + ['DeepIV']
 
 
 def estimation(model, train_data, moment_function, estimation_method,

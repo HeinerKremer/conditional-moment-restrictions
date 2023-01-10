@@ -5,7 +5,7 @@ import torch
 import cmr
 
 from cmr.utils.rkhs_utils import get_rbf_kernel, get_rff, compute_cholesky_factor
-from cmr.utils.torch_utils import Parameter
+from cmr.utils.torch_utils import Parameter, np_to_tensor
 from cmr.methods.generalized_el import GeneralizedEL
 
 cvx_solver = cvx.MOSEK
@@ -42,7 +42,7 @@ class MMDEL(GeneralizedEL):
                 k_cholesky = torch.tensor(np.transpose(compute_cholesky_factor(self.kernel_x.detach().numpy())))
                 self.kernel_x_cholesky = k_cholesky
             elif self.n_rff > 0:
-                self.kernel_x, self.sigma_rff = get_rff(torch.hstack(x), n_rff=self.n_rff, **self.kernel_x_kwargs)
+                self.kernel_x, self.sigma_rff = get_rff(torch.hstack(np_to_tensor(x)), n_rff=self.n_rff, **self.kernel_x_kwargs)
                 self.kernel_x = self.kernel_x.type(torch.float32)
             else:
                 raise ValueError("Number of random features must be larger than 0!")

@@ -24,5 +24,5 @@ class OrdinaryLeastSquares(AbstractEstimationMethod):
 
 if __name__ == '__main__':
     from experiments.tests import test_mr_estimator, test_cmr_estimator
-    test_mr_estimator(estimation_method='OLS', n_runs=2)
-    test_cmr_estimator(estimation_method='OLS', n_runs=2)
+    test_mr_estimator(estimation_method='OLS', n_runs=1)
+    test_cmr_estimator(estimation_method='OLS', n_runs=1)

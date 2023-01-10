@@ -40,9 +40,10 @@ class AbstractEstimationMethod:
         return self._dim_z
 
     def _wrap_moment_function(self, moment_function):
+        model = self.model
         def eval_moment_function(x):
             t, y = torch.Tensor(x[0]), torch.Tensor(x[1])
-            return moment_function(self.model(t), y)
+            return moment_function(model(t), y)
         return eval_moment_function
 
     def init_estimator(self, x, z):
