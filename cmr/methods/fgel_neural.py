@@ -32,7 +32,7 @@ class NeuralFGEL(GeneralizedEL):
     def _eval_dual_moment_func(self, z):
         return self.dual_moment_func(z)
 
-    def _objective(self, x, z, *args):
+    def _objective(self, x, z, *args, **kwargs):
         objective, _ = super()._objective(x, z, *args)
         if self.l2_lambda > 0:
             l_reg = self.l2_lambda * torch.mean(self.dual_moment_func(z) ** 2)

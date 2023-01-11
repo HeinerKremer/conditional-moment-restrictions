@@ -10,7 +10,7 @@ class NeuralVMM(NeuralFGEL):
         super().__init__(divergence='off', **kwargs)
         self.kernel_lambda = kernel_lambda
 
-    def _objective(self, x, z, *args):
+    def _objective(self, x, z, *args, **kwargs):
         f_of_z = self.dual_moment_func(z)
         m_vector = (self.moment_function(x) * f_of_z).sum(1)
         moment = m_vector.mean()

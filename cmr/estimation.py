@@ -112,10 +112,6 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
         x_val = x_train
         z_val = z_train
 
-    if val_loss_func is None:
-        def val_loss_func(model, validation_data):
-            return None
-
     models = []
     hparams = []
     validation_loss = []
@@ -127,9 +123,7 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
                                     val_loss_func=val_loss_func, **hyper, **estimator_kwargs)
         estimator.train(x_train, z_train, x_val, z_val)
 
-        val_loss = val_loss_func(estimator.model, validation_data)
-        if val_loss is None:
-            val_loss = estimator.calc_validation_metric(x_val, z_val)
+        val_loss = estimator.calc_validation_metric(x_val, z_val)
 
         models.append(estimator.model.cpu())
         hparams.append(hyper)

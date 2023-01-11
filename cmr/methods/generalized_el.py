@@ -55,8 +55,6 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.theta_optim_args = theta_optim_args
         self.theta_optimizer = None
 
-        self.is_init = False
-
         self.max_num_epochs = max_num_epochs if not self.theta_optim_type == 'lbfgs' else 3
         self.eval_freq = eval_freq
         self.max_no_improve = max_no_improve
@@ -219,10 +217,10 @@ class GeneralizedEL(AbstractEstimationMethod):
             logging.warning('OptimizationError: Primal variables are NaN or inf. Returning untrained model ...')
             return False
 
-    def _gradient_step_theta(self, x_tensor, z_tensor, inneriters=100):
-        self.optimize_dual_func(x_tensor, z_tensor, iters=inneriters)
+    def _gradient_step_theta(self, x_tensor, z_tensor):
+        self.optimize_dual_func(x_tensor, z_tensor)
         self.theta_optimizer.zero_grad()
-        obj, _ = self.objective(x_tensor, z_tensor)
+        obj, _ = self.objective(x_tensor, z_tensor, which_obj='theta')
         obj.backward()
         self.theta_optimizer.step()
         if not self.model.is_finite():
@@ -239,7 +237,7 @@ class GeneralizedEL(AbstractEstimationMethod):
             self.optimize_dual_func(x_tensor, z_tensor)
             if torch.is_grad_enabled():
                 self.theta_optimizer.zero_grad()
-            obj, _ = self.objective(x_tensor, z_tensor)
+            obj, _ = self.objective(x_tensor, z_tensor, which_obj='theta')
             losses.append(obj)
             if obj.requires_grad:
                 obj.backward()
@@ -252,7 +250,7 @@ class GeneralizedEL(AbstractEstimationMethod):
         return [float(loss.detach().numpy()) for loss in losses]
 
     def _gradient_descent_ascent_step(self, x_tensor, z_tensor):
-        theta_obj, dual_func_obj = self.objective(x_tensor, z_tensor)
+        theta_obj, dual_func_obj = self.objective(x_tensor, z_tensor, which_obj='both')
         # update theta
         self.theta_optimizer.zero_grad()
         theta_obj.backward(retain_graph=True)
@@ -269,7 +267,7 @@ class GeneralizedEL(AbstractEstimationMethod):
         return float(- dual_func_obj.detach().cpu().numpy())
 
     """--------------------- Optimization methods for dual_func ---------------------"""
-    def optimize_dual_func(self, x_tensor, z_tensor, iters=5000):
+    def optimize_dual_func(self, x_tensor, z_tensor):
         with torch.no_grad():
             state_dict = copy.deepcopy(self.dual_moment_func.state_dict())
         try:
@@ -278,7 +276,7 @@ class GeneralizedEL(AbstractEstimationMethod):
             elif self.dual_optim_type == 'lbfgs':
                 return self._optimize_dual_func_lbfgs(x_tensor, z_tensor)
             elif self.dual_optim_type == 'adam' or self.dual_optim_type == 'oadam':
-                return self._optimize_dual_func_gd(x_tensor, z_tensor, iters=iters)
+                return self._optimize_dual_func_gd(x_tensor, z_tensor)
             else:
                 raise NotImplementedError
         except OptimizationError:
@@ -313,7 +311,7 @@ class GeneralizedEL(AbstractEstimationMethod):
         def closure():
             if torch.is_grad_enabled():
                 self.dual_func_optimizer.zero_grad()
-            _, loss_dual_func = self.objective(x_tensor, z_tensor)
+            _, loss_dual_func = self.objective(x_tensor, z_tensor, which_obj='dual')
             if loss_dual_func.requires_grad:
                 loss_dual_func.backward()
             if not self.are_dual_params_finite():
@@ -324,10 +322,10 @@ class GeneralizedEL(AbstractEstimationMethod):
             self.dual_func_optimizer.step(closure)
         return
 
-    def _optimize_dual_func_gd(self, x_tensor, z_tensor, iters):
-        for i in range(iters):
+    def _optimize_dual_func_gd(self, x_tensor, z_tensor):
+        for i in range(self.inneriters):
             self.dual_func_optimizer.zero_grad()
-            _, loss_dual_func = self.objective(x_tensor, z_tensor)
+            _, loss_dual_func = self.objective(x_tensor, z_tensor, which_obj='dual')
             loss_dual_func.backward()
             self.dual_func_optimizer.step()
             if not self.are_dual_params_finite():
@@ -391,7 +389,7 @@ class GeneralizedEL(AbstractEstimationMethod):
 
         for epoch_i in range(self.max_num_epochs):
             self.model.train()
-            self.dual_moment_func.train()
+            # self.dual_moment_func.train()
             if self.annealing and epoch_i % 2 == 0:
                 # self.kl_reg_param = kl_reg_param * np.exp(-0.15 * epoch_i)
                 self.kl_reg_param = self.kl_reg_param * 0.99

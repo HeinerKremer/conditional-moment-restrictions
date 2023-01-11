@@ -12,7 +12,8 @@ class AbstractEstimationMethod:
         self.model = ModelWrapper(model)
         self.moment_function = self._wrap_moment_function(moment_function)
         self.is_trained = False
-        self.val_loss_func = val_loss_func
+        self._custom_val_loss_func = val_loss_func
+        self._val_loss_func = None   # To be set in _set_val_loss_func
 
         # Set by `set_data_dependent_attributes`
         self._dim_psi = None
@@ -54,9 +55,10 @@ class AbstractEstimationMethod:
         if not self._is_init:
             raise AttributeError('Called method requires running method `init_estimator(x,z)` first.')
 
-    def objective(self, x, z, *args, **kwargs):
+    def objective(self, x, z, which_obj='both', *args, **kwargs):
         self.check_init()
-        return self._objective(x, z, *args, **kwargs)
+        assert which_obj in ['both', 'theta', 'dual']
+        return self._objective(x=x, z=z, which_obj=which_obj, *args, **kwargs)
 
     def _objective(self, x, z, *args, **kwargs):
         raise NotImplementedError('Method `objective` needs to be implemented in child class.')
@@ -69,7 +71,6 @@ class AbstractEstimationMethod:
                 self._dim_z = z.shape[1]
 
             # Eval moment function once on a single sample to get its dimension
-            #prediction = self.model(torch.Tensor(x[0][0:1]))
             single_sample = [torch.Tensor(x[0][0:1]), torch.Tensor(x[1][0:1])]
             self._dim_psi = self.moment_function(single_sample).shape[1]
 
@@ -104,7 +105,7 @@ class AbstractEstimationMethod:
         loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z_val, psi) / (n ** 2)
         return float(loss.detach().numpy())
 
-    def _calc_val_moment_violation(self, x_val):
+    def _calc_val_moment_violation(self, x_val, z_val=None):
         if not isinstance(x_val, torch.Tensor):
             x_val = self._to_tensor(x_val)
         psi = self.moment_function(x_val)
@@ -112,20 +113,30 @@ class AbstractEstimationMethod:
         return float(mse_moment_violation.detach().cpu().numpy())
 
     def calc_validation_metric(self, x_val, z_val):
-        val_data = {'t': x_val[0], 'y': x_val[1], 'z': z_val}
-        val_loss = self.val_loss_func(self.model, val_data)
+        if not self._val_loss_func:
+            self._val_loss_func = self._get_val_loss_func(z_val)
+        return self._val_loss_func(x_val, z_val)
 
-        if val_loss is not None:
-            return val_loss
-        elif z_val is None:
-            return self._calc_val_moment_violation(x_val)
+    def _get_val_loss_func(self, z_val):
+        if self._custom_val_loss_func:
+            model = self.model
+
+            def func(x, z):
+                val_data = {'t': x[0], 'y': x[1], 'z': z}
+                return self._custom_val_loss_func(model, val_data)
+
+            return func
         else:
-            if z_val.shape[0] > 5000:
-                print('Validation set too large for MMR validation, using unconditonal loss instead...')
-                return self._calc_val_moment_violation(x_val)
-            return self._calc_val_mmr(x_val, z_val)
+            if z_val is None:
+                return self._calc_val_moment_violation
+            else:
+                if z_val.shape[0] > 5000:
+                    print('Validation set too large for MMR validation, using unconditonal loss instead...')
+                    return self._calc_val_moment_violation
+                return self._calc_val_mmr
 
-    def _to_tensor(self, data_array):
+    @staticmethod
+    def _to_tensor(data_array):
         return np_to_tensor(data_array)
 
     def _train_internal(self, x, z, x_val, z_val, debugging):

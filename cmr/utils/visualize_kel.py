@@ -104,7 +104,7 @@ class MMDELAnalysis(MMDEL):
         self.dual_normalization = Parameter(shape=(1, 1))
         self.all_dual_params = list(self.dual_normalization.parameters()) + list(self.rkhs_func.parameters())
 
-    def objective(self, x, z, *args, **kwargs):
+    def _objective(self, x, z, *args, **kwargs):
         rkhs_func = torch.einsum('ij, ik -> kj', self.rkhs_func.params, self.kernel_x)
         expected_rkhs_func = torch.mean(rkhs_func)
         # rkhs_func = self.kernel_x @ self.rkhs_func.params
