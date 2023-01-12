@@ -70,12 +70,10 @@ def estimation(model, train_data, moment_function, estimation_method,
 
 def pretrain_model_and_renormalize_moment_function(moment_function, model, train_data, conditional_mr):
     """Pretrains model and normalizes entries of moment function to variance 1"""
-    model_copy = copy.deepcopy(model)
-
     if conditional_mr and train_data['z'].shape[0] < 5000:
-        estimator = MMR(model=model_copy, moment_function=moment_function)
+        estimator = MMR(model=copy.deepcopy(model), moment_function=moment_function)
     else:
-        estimator = OrdinaryLeastSquares(model=model_copy, moment_function=moment_function)
+        estimator = OrdinaryLeastSquares(model=copy.deepcopy(model), moment_function=moment_function)
     estimator.train(x_train=[train_data['t'], train_data['y']], z_train=train_data['z'], x_val=None, z_val=None)
     pretrained_model = estimator.model
     normalization = torch.Tensor(np.std(moment_function(pretrained_model(torch.Tensor(train_data['t'])),

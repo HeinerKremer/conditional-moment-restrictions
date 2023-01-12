@@ -38,7 +38,7 @@ class HeteroskedasticNoiseExperiment(AbstractExperiment):
         self.heteroskedastic = heteroskedastic
         super().__init__(dim_psi=1, dim_theta=self.dim_theta, dim_z=self.dim_theta)
 
-    def init_model(self):
+    def get_model(self):
         return LinearModel(dim_theta=self.dim_theta)
 
     @staticmethod
@@ -84,7 +84,7 @@ if __name__ == '__main__':
 
     for i in range(5):
         exp.prepare_dataset(n_train=100, n_val=2000, n_test=20000)
-        model = exp.init_model()
+        model = exp.get_model()
         trained_model, stats = estimation(model=model,
                                           train_data=exp.train_data,
                                           moment_function=exp.moment_function,

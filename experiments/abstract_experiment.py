@@ -28,5 +28,5 @@ class AbstractExperiment:
     def eval_risk(self, model, data):
         return 0
 
-    def init_model(self):
+    def get_model(self):
         raise NotImplementedError

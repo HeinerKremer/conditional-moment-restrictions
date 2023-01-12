@@ -51,7 +51,7 @@ class NetworkIVExperiment(AbstractExperiment):
         self.func = self.set_function()
         self.mnist_type = MNIST_type
 
-    def init_model(self):
+    def get_model(self):
         return NetworkModel()
 
     @staticmethod
@@ -177,7 +177,7 @@ if __name__ == '__main__':
 
     exp = NetworkIVExperiment(ftype='abs')
     exp.prepare_dataset(n_train=10000, n_val=1000, n_test=10000)
-    model = exp.init_model()
+    model = exp.get_model()
 
     trained_model, stats = estimation(model=model,
                                       train_data=exp.train_data,

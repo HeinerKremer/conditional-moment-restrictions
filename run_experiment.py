@@ -23,7 +23,7 @@ def run_experiment(experiment, exp_params, n_train, estimation_method, estimator
 
     exp = experiment(**exp_params)
     exp.prepare_dataset(n_train=n_train, n_val=n_train, n_test=20000)
-    model = exp.init_model()
+    model = exp.get_model()
 
     trained_model, full_results = estimation(model=model,
                                              train_data=exp.train_data,

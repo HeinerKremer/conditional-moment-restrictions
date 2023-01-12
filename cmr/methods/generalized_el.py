@@ -323,13 +323,24 @@ class GeneralizedEL(AbstractEstimationMethod):
         return
 
     def _optimize_dual_func_gd(self, x_tensor, z_tensor):
+        losses = []
+        loss_dual_func = None
         for i in range(self.inneriters):
             self.dual_func_optimizer.zero_grad()
             _, loss_dual_func = self.objective(x_tensor, z_tensor, which_obj='dual')
+            losses.append(float(loss_dual_func.detach().numpy()))
             loss_dual_func.backward()
             self.dual_func_optimizer.step()
             if not self.are_dual_params_finite():
                 raise OptimizationError('Dual variables are NaN or inf.')
+        if self.counter % (self.max_num_epochs/10) == 0:
+            plt.plot(losses)
+            plt.title(f'Particle loss, iter={self.counter}')
+            plt.show()
+            print(float(self.x[1][0].detach().numpy()), float(self.x0[1][0].detach().numpy()))
+            print('y L2-dist: ', float((torch.norm(self.x[1] - self.x0[1])**2).detach().numpy()))
+            print('x L2-dist: ', float((torch.norm(self.x[0] - self.x0[0])**2).detach().numpy()))
+        self.counter += 1
         return loss_dual_func
 
     """---------------------------------------------------------------------------------------------------------"""
@@ -352,7 +363,7 @@ class GeneralizedEL(AbstractEstimationMethod):
         else:
             eval_freq_epochs = self.eval_freq
 
-        # self.init_estimator(x_tensor, z_tensor)
+        train_losses = []
         val_losses = []
 
         min_val_loss = float("inf")
@@ -367,10 +378,10 @@ class GeneralizedEL(AbstractEstimationMethod):
         else:
             device = 'cpu'
         self.model.to(device)
-        x_tensor = [x_tensor[0].to(device),
-                    x_tensor[1].to(device)]
-        x_val_tensor = [x_val_tensor[0].to(device),
-                        x_val_tensor[1].to(device)]
+
+        x_tensor = [x_tensor[0].to(device), x_tensor[1].to(device)]
+        x_val_tensor = [x_val_tensor[0].to(device), x_val_tensor[1].to(device)]
+
         if z_tensor is not None:
             z_tensor = z_tensor.to(device)
             z_val_tensor = z_val_tensor.to(device)
@@ -406,6 +417,8 @@ class GeneralizedEL(AbstractEstimationMethod):
             if not obj:
                 break
 
+            train_losses.append(obj)
+
             if epoch_i % eval_freq_epochs == 0:
                 cycle_num += 1
                 val_loss = self.calc_validation_metric(x_val_tensor,
@@ -422,6 +435,11 @@ class GeneralizedEL(AbstractEstimationMethod):
                     num_no_improve += 1
                 if num_no_improve == self.max_no_improve:
                     break
+
+        plt.plot(train_losses)
+        plt.title('Theta loss')
+        plt.show()
+
         if self.verbose:
             print("time taken:", time.time() - time_0)
         if debugging:

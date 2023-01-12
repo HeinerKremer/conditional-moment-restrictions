@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     exp = HeteroskedasticNoiseExperiment(theta=[1.4], noise=2.0, heteroskedastic=True)
     exp.prepare_dataset(n_train=100, n_val=100, n_test=20000)
-    model = ModelWrapper(model=exp.init_model(), moment_function=exp.moment_function, dim_psi=1, dim_z=1)
+    model = ModelWrapper(model=exp.get_model(), moment_function=exp.moment_function, dim_psi=1, dim_z=1)
 
     x_train = [torch.Tensor(exp.train_data['t']), torch.Tensor(exp.train_data['y'])]
     z_train = torch.Tensor(exp.train_data['z'])
