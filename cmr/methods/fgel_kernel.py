@@ -41,7 +41,7 @@ class KernelFGEL(GeneralizedEL):
     #     # print(self.dual_normalization.params.detach().numpy(), (- objective + regularizer).detach().numpy())
     #     return objective, - objective + regularizer - self.dual_normalization.params
 
-    def _optimize_dual_func_cvxpy(self, x_tensor, z_tensor):
+    def _optimize_dual_params_cvxpy(self, x_tensor, z_tensor):
         """CVXPY dual_func optimization for kernelized objective"""
         n_sample = z_tensor.shape[0]
         self._set_kernel_z(z_tensor)

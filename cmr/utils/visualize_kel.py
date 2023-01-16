@@ -120,7 +120,7 @@ class MMDELAnalysis(MMDEL):
                      - self.kl_reg_param * torch.mean(self.f_divergence(1 / self.kl_reg_param * exponent)))
         return objective, -objective
 
-    def _optimize_dual_func_lbfgs(self, x_tensor, z_tensor):
+    def _optimize_dual_params_lbfgs(self, x_tensor, z_tensor):
         self.dual_func_optimizer = torch.optim.LBFGS(params=self.all_dual_params)
 
         def closure():
@@ -137,7 +137,7 @@ class MMDELAnalysis(MMDEL):
             self.dual_func_optimizer.step(closure)
         return [self.eval_rkhs_func()]
 
-    def _optimize_dual_func_gd(self, x_tensor, z_tensor, iters):
+    def _optimize_dual_params_gd(self, x_tensor, z_tensor, iters):
         self.dual_func_optimizer = torch.optim.Adam(params=self.all_dual_params,
                                                     lr=1e-3)
         rkhs_fun = []
@@ -162,7 +162,7 @@ class MMDELAnalysis(MMDEL):
         plt.show()
         return rkhs_fun
 
-    def _optimize_dual_func_cvxpy(self, x_tensor, z_tensor, f_divergence):
+    def _optimize_dual_params_cvxpy(self, x_tensor, z_tensor, f_divergence):
         with torch.no_grad():
             if f_divergence == 'kl':
                 def div(t):
@@ -247,15 +247,15 @@ if __name__ == "__main__":
     x = [torch.Tensor(np.linspace(-x_lim, x_lim, 500)).reshape((-1, 1)),
          torch.Tensor(np.linspace(-10, 10, 500)).reshape((-1, 1))]
     estimator = MMDELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='kl', **estimator_kwargs)
-    estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
+    estimator._optimize_dual_params_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
     y_kl = estimator.eval_rkhs_func()
 
     estimator = MMDELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
-    estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='log')
+    estimator._optimize_dual_params_cvxpy(x_tensor=x, z_tensor=x, f_divergence='log')
     y_log = estimator.eval_rkhs_func()
 
     estimator = MMDELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
-    estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='exact')
+    estimator._optimize_dual_params_cvxpy(x_tensor=x, z_tensor=x, f_divergence='exact')
     y_exact = estimator.eval_rkhs_func()
 
     y_true = estimator.eval_psi_h(x)

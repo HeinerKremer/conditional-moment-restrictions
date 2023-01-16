@@ -29,7 +29,7 @@ def plot_minorizing():
     x = [torch.Tensor(np.linspace(-x_lim, x_lim, 500)).reshape((-1, 1)),
          torch.Tensor(np.linspace(-10, 10, 500)).reshape((-1, 1))]
     estimator = MMDELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
-    estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='exact')
+    estimator._optimize_dual_params_cvxpy(x_tensor=x, z_tensor=x, f_divergence='exact')
     y_exact = estimator.eval_rkhs_func()
 
     y_true = estimator.eval_psi_h(x)

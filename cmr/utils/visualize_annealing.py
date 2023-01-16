@@ -47,18 +47,18 @@ if __name__ == "__main__":
                               kl_reg_param=0.01,
                               f_divergence_reg='kl',
                               **estimator_kwargs)
-    estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
+    estimator._optimize_dual_params_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
     y_kl_rff = estimator.eval_rkhs_func()
 
     estimator = MMDELAnalysis(x=x, ymax=ymax, model=model,
                               kl_reg_param=0.01,
                               f_divergence_reg='kl',
                               **estimator_kwargs)
-    estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
+    estimator._optimize_dual_params_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
     y_kl = estimator.eval_rkhs_func()
 
     estimator = MMDELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
-    estimator._optimize_dual_func_cvxpy(x_tensor=x, z_tensor=x, f_divergence='exact')
+    estimator._optimize_dual_params_cvxpy(x_tensor=x, z_tensor=x, f_divergence='exact')
     y_exact = estimator.eval_rkhs_func()
 
     y_true = estimator.eval_psi_h(x)

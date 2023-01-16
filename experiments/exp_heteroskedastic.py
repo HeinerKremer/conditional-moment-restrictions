@@ -62,6 +62,9 @@ class HeteroskedasticNoiseExperiment(AbstractExperiment):
     def get_true_parameters(self):
         return np.array(self.theta0)
 
+    def eval_true_model(self, t):
+        return eval_model(t, self.theta0)
+
     def eval_risk(self, model, data):
         t_test = data['t']
         y_test = eval_model(t_test, self.theta0, numpy=True)

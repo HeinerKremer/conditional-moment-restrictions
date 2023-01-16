@@ -77,7 +77,7 @@ class MMDEL(GeneralizedEL):
         return objective, -objective
 
     """--------------------- Optimization methods for dual_func ---------------------"""
-    def _optimize_dual_func_cvxpy(self, x_tensor, z_tensor):
+    def _optimize_dual_params_cvxpy(self, x_tensor, z_tensor):
         self.check_init()
         with torch.no_grad():
             x = [xi.numpy() for xi in x_tensor]

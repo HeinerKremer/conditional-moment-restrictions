@@ -19,7 +19,7 @@ class GeneralizedEL(AbstractEstimationMethod):
     The standard f-divergence based generalized empirical likelihood estimator of Owen and Qin and Lawless for
     unconditional moment restrictions. This is the base class that all GEL-based estimators inherit from.
     Optimization procedures and general functionalities should be implemented here. The child classes should usually only
-    override the `objective`, `_init_dual_func`, `_init_training` methods and include methods for computing specific
+    override the `_objective`, `_init_dual_func`, `_init_training` methods and include methods for computing specific
     quantities (and if desired a cvxpy optimization method for the optimization over the dual functions).
     """
 
@@ -47,8 +47,8 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.all_dual_params = None     # List of parameters of all dual variables
         self.dual_moment_func = None
         self.dual_optim_type = dual_optim
-        self.dual_func_optim_args = dual_optim_args
-        self.dual_func_optimizer = None
+        self.dual_optim_args = dual_optim_args
+        self.dual_optimizer = None
         self.inneriters = inneriters
 
         self.theta_optim_type = theta_optim
@@ -64,6 +64,8 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.annealing = False
         self.batch_size = None
         self.verbose = verbose
+
+        self.counter = 0
 
     def init_estimator(self, x_tensor, z_tensor):
         super().init_estimator(x_tensor, z_tensor)
@@ -187,17 +189,20 @@ class GeneralizedEL(AbstractEstimationMethod):
 
         # Inner optimization settings (dual_func)
         if self.dual_optim_type == 'adam':
-            self.dual_func_optimizer = torch.optim.Adam(params=self.all_dual_params,
-                                                        lr=self.dual_func_optim_args["lr"], betas=(0.5, 0.9))
+            self.dual_optimizer = torch.optim.Adam(params=self.all_dual_params,
+                                                   lr=self.dual_optim_args["lr"], betas=(0.5, 0.9))
         elif self.dual_optim_type in ['oadam', 'oadam_gda']:
-            self.dual_func_optimizer = OAdam(params=self.all_dual_params,
-                                             lr=self.dual_func_optim_args["lr"], betas=(0.5, 0.9))
+            self.dual_optimizer = OAdam(params=self.all_dual_params,
+                                        lr=self.dual_optim_args["lr"], betas=(0.5, 0.9))
+        elif self.dual_optim_type == 'sgd':
+            self.dual_optimizer = torch.optim.SGD(params=self.all_dual_params,
+                                                  lr=self.dual_optim_args['lr'])
         elif self.dual_optim_type == 'lbfgs':
-            self.dual_func_optimizer = torch.optim.LBFGS(self.all_dual_params,
-                                                             max_iter=500,
-                                                             line_search_fn="strong_wolfe")
+            self.dual_optimizer = torch.optim.LBFGS(self.all_dual_params,
+                                                    max_iter=500,
+                                                    line_search_fn="strong_wolfe")
         else:
-            self.dual_func_optimizer = None
+            self.dual_optimizer = None
 
     def _set_optimizers(self):
         self._set_dual_optimizer()
@@ -218,7 +223,7 @@ class GeneralizedEL(AbstractEstimationMethod):
             return False
 
     def _gradient_step_theta(self, x_tensor, z_tensor):
-        self.optimize_dual_func(x_tensor, z_tensor)
+        self.optimize_dual_params(x_tensor, z_tensor)
         self.theta_optimizer.zero_grad()
         obj, _ = self.objective(x_tensor, z_tensor, which_obj='theta')
         obj.backward()
@@ -234,7 +239,7 @@ class GeneralizedEL(AbstractEstimationMethod):
             raise OptimizationError('Primal or dual variables are NaN or inf.')
 
         def closure():
-            self.optimize_dual_func(x_tensor, z_tensor)
+            self.optimize_dual_params(x_tensor, z_tensor)
             if torch.is_grad_enabled():
                 self.theta_optimizer.zero_grad()
             obj, _ = self.objective(x_tensor, z_tensor, which_obj='theta')
@@ -250,33 +255,33 @@ class GeneralizedEL(AbstractEstimationMethod):
         return [float(loss.detach().numpy()) for loss in losses]
 
     def _gradient_descent_ascent_step(self, x_tensor, z_tensor):
-        theta_obj, dual_func_obj = self.objective(x_tensor, z_tensor, which_obj='both')
+        theta_obj, dual_obj = self.objective(x_tensor, z_tensor, which_obj='both')
         # update theta
         self.theta_optimizer.zero_grad()
         theta_obj.backward(retain_graph=True)
         self.theta_optimizer.step()
 
         # update dual function
-        self.dual_func_optimizer.zero_grad()
-        dual_func_obj.backward()
-        self.dual_func_optimizer.step()
+        self.dual_optimizer.zero_grad()
+        dual_obj.backward()
+        self.dual_optimizer.step()
         if not self.model.is_finite():
             raise OptimizationError('Primal variables are NaN or inf.')
         if not self.are_dual_params_finite():
             raise OptimizationError('Dual variables are NaN or inf.')
-        return float(- dual_func_obj.detach().cpu().numpy())
+        return float(- dual_obj.detach().cpu().numpy())
 
     """--------------------- Optimization methods for dual_func ---------------------"""
-    def optimize_dual_func(self, x_tensor, z_tensor):
+    def optimize_dual_params(self, x_tensor, z_tensor):
         with torch.no_grad():
             state_dict = copy.deepcopy(self.dual_moment_func.state_dict())
         try:
             if self.dual_optim_type == 'cvxpy':
-                return self._optimize_dual_func_cvxpy(x_tensor, z_tensor)
+                return self._optimize_dual_params_cvxpy(x_tensor, z_tensor)
             elif self.dual_optim_type == 'lbfgs':
-                return self._optimize_dual_func_lbfgs(x_tensor, z_tensor)
-            elif self.dual_optim_type == 'adam' or self.dual_optim_type == 'oadam':
-                return self._optimize_dual_func_gd(x_tensor, z_tensor)
+                return self._optimize_dual_params_lbfgs(x_tensor, z_tensor)
+            elif self.dual_optim_type in ['adam', 'oadam', 'sgd']:
+                return self._optimize_dual_params_gd(x_tensor, z_tensor)
             else:
                 raise NotImplementedError
         except OptimizationError:
@@ -286,7 +291,7 @@ class GeneralizedEL(AbstractEstimationMethod):
                 self.dual_moment_func.load_state_dict(state_dict)
                 self._set_dual_optimizer()
 
-    def _optimize_dual_func_cvxpy(self, x_tensor, z_tensor):
+    def _optimize_dual_params_cvxpy(self, x_tensor, z_tensor):
         with torch.no_grad():
             x = [xi.numpy() for xi in x_tensor]
             n_sample = x[0].shape[0]
@@ -307,10 +312,10 @@ class GeneralizedEL(AbstractEstimationMethod):
                 raise OptimizationError('Dual variables are NaN or inf.')
         return
 
-    def _optimize_dual_func_lbfgs(self, x_tensor, z_tensor):
+    def _optimize_dual_params_lbfgs(self, x_tensor, z_tensor):
         def closure():
             if torch.is_grad_enabled():
-                self.dual_func_optimizer.zero_grad()
+                self.dual_optimizer.zero_grad()
             _, loss_dual_func = self.objective(x_tensor, z_tensor, which_obj='dual')
             if loss_dual_func.requires_grad:
                 loss_dual_func.backward()
@@ -319,28 +324,28 @@ class GeneralizedEL(AbstractEstimationMethod):
             return loss_dual_func
 
         for _ in range(2):
-            self.dual_func_optimizer.step(closure)
+            self.dual_optimizer.step(closure)
         return
 
-    def _optimize_dual_func_gd(self, x_tensor, z_tensor):
+    def _optimize_dual_params_gd(self, x_tensor, z_tensor):
         losses = []
         loss_dual_func = None
         for i in range(self.inneriters):
-            self.dual_func_optimizer.zero_grad()
+            self.dual_optimizer.zero_grad()
             _, loss_dual_func = self.objective(x_tensor, z_tensor, which_obj='dual')
             losses.append(float(loss_dual_func.detach().numpy()))
             loss_dual_func.backward()
-            self.dual_func_optimizer.step()
+            self.dual_optimizer.step()
             if not self.are_dual_params_finite():
                 raise OptimizationError('Dual variables are NaN or inf.')
-        if self.counter % (self.max_num_epochs/10) == 0:
-            plt.plot(losses)
-            plt.title(f'Particle loss, iter={self.counter}')
-            plt.show()
-            print(float(self.x[1][0].detach().numpy()), float(self.x0[1][0].detach().numpy()))
-            print('y L2-dist: ', float((torch.norm(self.x[1] - self.x0[1])**2).detach().numpy()))
-            print('x L2-dist: ', float((torch.norm(self.x[0] - self.x0[0])**2).detach().numpy()))
-        self.counter += 1
+        # if self.counter % (self.max_num_epochs/10) == 0:
+        #     plt.plot(losses)
+        #     plt.title(f'Particle loss, iter={self.counter}')
+        #     plt.show()
+        #     print(float(self.x[1][0].detach().numpy()), float(self.x0[1][0].detach().numpy()))
+        #     print('y L2-dist: ', float((torch.norm(self.x[1] - self.x0[1])**2).detach().numpy()))
+        #     print('x L2-dist: ', float((torch.norm(self.x[0] - self.x0[0])**2).detach().numpy()))
+        # self.counter += 1
         return loss_dual_func
 
     """---------------------------------------------------------------------------------------------------------"""
@@ -436,9 +441,9 @@ class GeneralizedEL(AbstractEstimationMethod):
                 if num_no_improve == self.max_no_improve:
                     break
 
-        plt.plot(train_losses)
-        plt.title('Theta loss')
-        plt.show()
+        # plt.plot(train_losses)
+        # plt.title('Theta loss')
+        # plt.show()
 
         if self.verbose:
             print("time taken:", time.time() - time_0)

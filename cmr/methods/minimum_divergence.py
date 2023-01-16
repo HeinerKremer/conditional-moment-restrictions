@@ -2,6 +2,9 @@ import torch
 import numpy as np
 import cvxpy as cvx
 
+from cmr.estimation import estimation
+from experiments.exp_heteroskedastic import HeteroskedasticNoiseExperiment
+
 from cmr.methods.generalized_el import GeneralizedEL
 from fgel.utils.torch_utils import Parameter
 
@@ -26,7 +29,7 @@ class MinimumDivergence(GeneralizedEL):
         self.dual_moment_func = Parameter(shape=(self.kernel_z.shape[0], 1))
         self.all_dual_params = list(self.dual_moment_func.parameters())
 
-    def _optimize_dual_func_cvxpy(self, x_tensor, z_tensor):
+    def _optimize_dual_params_cvxpy(self, x_tensor, z_tensor):
         with torch.no_grad():
             x = [xi.numpy() for xi in x_tensor]
             n_sample = x[0].shape[0]
@@ -48,50 +51,58 @@ class MinimumDivergence(GeneralizedEL):
         return
 
 
-if __name__ == "__main__":
-    from cmr.default_config import methods
-    from experiments.exp_heteroskedastic import HeteroskedasticNoiseExperiment
-    from cmr.estimation import ModelWrapper
-    import matplotlib.pyplot as plt
+if __name__ == '__main__':
+    # np.random.seed(123456)
+    # torch.random.manual_seed(123456)
 
-    np.random.seed(12345)
-    torch.random.manual_seed(12345)
+    n_train = 200
 
-    exp = HeteroskedasticNoiseExperiment(theta=[1.4], noise=2.0, heteroskedastic=True)
-    exp.prepare_dataset(n_train=100, n_val=100, n_test=20000)
-    model = ModelWrapper(model=exp.get_model(), moment_function=exp.moment_function, dim_psi=1, dim_z=1)
+    estimator_kwargs = {
+        "theta_optim": 'oadam',
+        "dual_optim": 'lbfgs',
+        "theta_optim_args": {"lr": 1e-3},
+        "dual_optim_args": {"lr": 5e-5},
+        "burn_in_cycles": 5,
+        "eval_freq": 100,
+        "max_no_improve": 3,
+        "inneriters": 100,
+        "max_num_epochs": 1000,
+        "pretrain": True,
+        "divergence": 'chi2',
+    }
 
-    x_train = [torch.Tensor(exp.train_data['t']), torch.Tensor(exp.train_data['y'])]
-    z_train = torch.Tensor(exp.train_data['z'])
+    exp = HeteroskedasticNoiseExperiment(theta=[1.4], noise=.5, heteroskedastic=True)
 
-    config = methods['MinimumDivergence']
-    estimator = MinimumDivergence(model=model, divergence='log', reg_param=10, val_loss_func=exp.validation_loss,
-                                  **config['estimator_kwargs'])
-    estimator.init_estimator(x_train, z_train)
-    print(estimator.dual_moment_func.get_parameters())
+    thetas = []
+    mses = []
+    thetas_mmr = []
+    mses_mmr = []
+    for _ in range(20):
+        exp.prepare_dataset(n_train=n_train, n_val=n_train, n_test=20000)
+        x_train = [exp.train_data['t'], exp.train_data['y']]
+        x_val = [exp.val_data['t'], exp.val_data['y']]
 
-    print(estimator.objective(x_train, z_train))
+        estimator = MinimumDivergence(model=exp.get_model(), moment_function=exp.moment_function, reg_param=100, **estimator_kwargs)
 
-    plt.scatter(exp.train_data['t'], np.squeeze(estimator.dual_moment_func.get_parameters()))
-    plt.title('Initialization')
-    plt.show()
+        estimator.train(x_train=x_train, z_train=exp.train_data['z'],
+                        x_val=x_val, z_val=exp.val_data['z'])
 
-    print('Init ', tensor_to_np(estimator.objective(x_train, z_train)))
+        trained_model = estimator.model
+        thetas.append(float(np.squeeze(trained_model.get_parameters())))
+        mses.append(np.sum(np.square(np.squeeze(trained_model.get_parameters()) - exp.theta0)))
 
+        # MMR baseline
+        trained_model, stats = estimation(model=exp.get_model(),
+                                          train_data=exp.train_data,
+                                          moment_function=exp.moment_function,
+                                          estimation_method='MMR',
+                                          validation_data=exp.val_data, val_loss_func=exp.validation_loss)
 
-    estimator.optimize_dual_func(x_train, z_train)
-    plt.scatter(exp.train_data['t'], np.squeeze(estimator.dual_moment_func.get_parameters()))
-    plt.title('Before training')
-    plt.show()
+        thetas_mmr.append(float(np.squeeze(trained_model.get_parameters())))
+        mses_mmr.append(np.sum(np.square(np.squeeze(trained_model.get_parameters()) - exp.theta0)))
 
-    print('Before ', tensor_to_np(estimator.objective(x_train, z_train)))
-
-
-    estimator.train(x_train, z_train, x_train, z_train)
-    plt.scatter(exp.train_data['t'], np.squeeze(estimator.dual_moment_func.get_parameters()))
-    plt.title('After training')
-    plt.show()
-    print(np.squeeze(model.get_parameters()))
-
-    print('After ', tensor_to_np(estimator.objective(x_train, z_train)))
-
+    print(f'True parameter: {np.squeeze(exp.theta0)},\n'
+          f'Parameter estimates: {thetas} \n'
+          f'MMR Parameter estimates: {thetas_mmr} \n'
+          fr'MSE: {np.mean(mses)} $\pm$ {np.std(mses)}''\n'
+          fr'MMR MSE: {np.mean(mses_mmr)} $\pm$ {np.std(mses_mmr)}')

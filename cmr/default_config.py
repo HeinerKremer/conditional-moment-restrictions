@@ -1,4 +1,4 @@
-from cmr.methods.minimum_divergence import MinimumDivergence
+# from cmr.methods.minimum_divergence import MinimumDivergence
 from cmr.methods.vmm_kernel import KernelVMM
 from cmr.methods.least_squares import OrdinaryLeastSquares
 from cmr.methods.mmr import MMR
@@ -197,21 +197,21 @@ methods = {
                             }
         },
 
-    f'MinimumDivergence':
-        {
-            'estimator_class': MinimumDivergence,
-            'estimator_kwargs': {
-                "theta_optim": 'lbfgs',
-                "dual_optim": 'adam',
-                "theta_optim_args": {"lr": 5e-4},
-                "dual_optim_args": {"lr": 5 * 5e-4},
-                "inneriters": 1000,
-                "eval_freq": 100,
-                "max_num_epochs": 20000, },
-            'hyperparams': {'reg_param': [1e8],
-                            "divergence": ['chi2'],
-                            }
-        },
+    # f'MinimumDivergence':
+    #     {
+    #         'estimator_class': MinimumDivergence,
+    #         'estimator_kwargs': {
+    #             "theta_optim": 'lbfgs',
+    #             "dual_optim": 'adam',
+    #             "theta_optim_args": {"lr": 5e-4},
+    #             "dual_optim_args": {"lr": 5 * 5e-4},
+    #             "inneriters": 1000,
+    #             "eval_freq": 100,
+    #             "max_num_epochs": 20000, },
+    #         'hyperparams': {'reg_param': [1e8],
+    #                         "divergence": ['chi2'],
+    #                         }
+    #     },
 }
 
 
