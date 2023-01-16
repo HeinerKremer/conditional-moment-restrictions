@@ -49,7 +49,10 @@ class GradientFlowDRO(GeneralizedEL):
             raise NotImplementedError
 
     def _objective(self, x, z, *args, **kwargs):
-        loss = torch.norm(self.moment_function(self.x))**2          # Least squares objective
+        """
+        Least squares objective with 2-norm penalty on particles
+        """
+        loss = torch.norm(self.moment_function(self.x))**2
         reg = torch.norm(torch.cat(self.x) - torch.cat(self.x0))**2
         return loss, -loss + self.reg_param * reg
 
@@ -88,7 +91,7 @@ if __name__ == '__main__':
 
     n_train = 500
     n_run = 10
-    reg_param = 0 #[1e-6, 1e-4, 1e-2, 1, 1e2, 1e4, 1e6]
+    reg_param = 1e1   #[1e-6, 1e-4, 1e-2, 1, 1e2, 1e4, 1e6]
 
     estimator_kwargs = {
         "theta_optim": 'lbfgs',
@@ -96,7 +99,7 @@ if __name__ == '__main__':
         "theta_optim_args": {"lr": 1e-3},
         "dual_optim_args": {"lr": 1e-4}, #5e-5},
         "inneriters": 1,    # 1 SGD step after each theta optimization
-        "max_num_epochs": 100,  # Number of optimizations until convergence of theta
+        "max_num_epochs": 10,  # Number of optimizations until convergence of theta
         "pretrain": False,  # Pretrain using MMR objective
         "move_variable": 'x',   # in ['t', 'y', 'x']
     }
