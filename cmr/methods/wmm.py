@@ -87,9 +87,9 @@ if __name__ == '__main__':
     np.random.seed(123456)
     torch.random.manual_seed(123456)
 
-    n_train = 250
-    n_run = 10
-    load = True
+    n_train = 32
+    n_run = 2
+    load = False
 
     estimator_kwargs_wmm = {
         "theta_optim": 'adam',
