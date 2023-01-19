@@ -57,6 +57,8 @@ def tensor_to_np(tensor_array):
 
 
 def np_to_tensor(data_array):
+    if data_array is None:
+        return None
     if type(data_array) == list:
         tensor_list = []
         for element in data_array:

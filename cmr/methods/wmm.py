@@ -174,8 +174,7 @@ if __name__ == '__main__':
 
                 estimator = WMM(model=exp.get_model(), moment_function=exp.moment_function, tau=tau, **estimator_kwargs_wmm)
 
-                estimator.train(x_train=x_train, z_train=exp.train_data['z'],
-                                x_val=x_val, z_val=exp.val_data['z'])
+                estimator.train(train_data=exp.train_data, val_data=exp.val_data)
 
                 t0 = np.squeeze(estimator.x0[0].detach().numpy())[:5]
                 y0 = np.squeeze(estimator.x0[1].detach().numpy())[:5]

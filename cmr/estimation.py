@@ -74,7 +74,7 @@ def pretrain_model_and_renormalize_moment_function(moment_function, model, train
         estimator = MMR(model=copy.deepcopy(model), moment_function=moment_function)
     else:
         estimator = OrdinaryLeastSquares(model=copy.deepcopy(model), moment_function=moment_function)
-    estimator.train(x_train=[train_data['t'], train_data['y']], z_train=train_data['z'], x_val=None, z_val=None)
+    estimator.train(train_data=train_data)
     pretrained_model = estimator.model
     normalization = torch.Tensor(np.std(moment_function(pretrained_model(torch.Tensor(train_data['t'])),
                                                         torch.Tensor(train_data['y'])).detach().numpy(), axis=0))
@@ -100,15 +100,12 @@ def iterate_argument_combinations(argument_dict):
 
 def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwargs, hyperparams,
                          train_data, validation_data=None, val_loss_func=None, verbose=True):
-    x_train = [train_data['t'], train_data['y']]
-    z_train = train_data['z']
-
     if validation_data is not None:
         x_val = [validation_data['t'], validation_data['y']]
         z_val = validation_data['z']
     else:
-        x_val = x_train
-        z_val = z_train
+        x_val = [train_data['t'], train_data['y']]
+        z_val = train_data['z']
 
     models = []
     hparams = []
@@ -119,7 +116,7 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
             print('Running hyperparams: ', f'{hyper}')
         estimator = estimator_class(model=copy.deepcopy(model), moment_function=moment_function,
                                     val_loss_func=val_loss_func, **hyper, **estimator_kwargs)
-        estimator.train(x_train, z_train, x_val, z_val)
+        estimator.train(train_data, validation_data)
 
         val_loss = estimator.calc_validation_metric(x_val, z_val)
 

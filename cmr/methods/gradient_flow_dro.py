@@ -124,8 +124,7 @@ if __name__ == '__main__':
         estimator = GradientFlowDRO(model=exp.get_model(), moment_function=exp.moment_function, t_max=t_max, reg_param=reg_param,
                                     **estimator_kwargs, verbose=2)
 
-        estimator.train(x_train=x_train, z_train=exp.train_data['z'],
-                        x_val=x_val, z_val=exp.val_data['z'])
+        estimator.train(train_data=exp.train_data, val_data=exp.val_data)
 
         print('t0 ', np.squeeze(estimator.x_original[0].detach().numpy())[:5])
         print('t_shifted ', np.squeeze(estimator.x[0].detach().numpy())[:5])

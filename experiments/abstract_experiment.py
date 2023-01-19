@@ -17,7 +17,7 @@ class AbstractExperiment:
          parameters and the model we want to train is non-parametric or a NN"""
         return None
 
-    def generate_data(self, num_data):
+    def generate_data(self, num_data, **kwargs):
         raise NotImplementedError
 
     def prepare_dataset(self, n_train, n_val=None, n_test=None):

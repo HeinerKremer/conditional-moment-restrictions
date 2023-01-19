@@ -84,8 +84,7 @@ if __name__ == '__main__':
 
         estimator = MinimumDivergence(model=exp.get_model(), moment_function=exp.moment_function, reg_param=100, **estimator_kwargs)
 
-        estimator.train(x_train=x_train, z_train=exp.train_data['z'],
-                        x_val=x_val, z_val=exp.val_data['z'])
+        estimator.train(train_data=exp.train_data, val_data=exp.val_data)
 
         trained_model = estimator.model
         thetas.append(float(np.squeeze(trained_model.get_parameters())))

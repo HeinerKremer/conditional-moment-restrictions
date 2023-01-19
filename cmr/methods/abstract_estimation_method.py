@@ -74,7 +74,17 @@ class AbstractEstimationMethod:
             single_sample = [torch.Tensor(x[0][0:1]), torch.Tensor(x[1][0:1])]
             self._dim_psi = self.moment_function(single_sample).shape[1]
 
-    def train(self, x_train, z_train, x_val, z_val, debugging=False):
+    def train(self, train_data, val_data=None, debugging=False):
+        x_train = [train_data['t'], train_data['y']]
+        z_train = train_data['z']
+
+        if val_data is None:
+            x_val = x_train
+            z_val = z_train
+        else:
+            x_val = [val_data['t'], val_data['y']]
+            z_val = val_data['z']
+
         if not self._is_init:
             self.init_estimator(x_train, z_train)
         self._train_internal(x_train, z_train, x_val, z_val, debugging=debugging)
