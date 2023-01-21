@@ -19,23 +19,22 @@ def torch_to_np(tensor):
 
 
 # Create particle object network
-class Particles(nn.Module):
-    def __init__(self, n_sample=None, dim=1, init_value=None):
+class ParameterVector(nn.Module):
+    def __init__(self, dim_x=None, dim_y=1, init_value=None):
         super().__init__()
-        self.n_sample = n_sample
-        self.shape = (n_sample, dim)
+        self.dim_x = dim_x
+        self.shape = (dim_x, dim_y)
         self.init_val = init_value
         self.params = None
         self.init_params()
 
     def forward(self, data=None):
-        # TODO(yasine): Add moment function here
-        return
+        return self.params
 
     def init_params(self):
         if self.init_val is None:
-            assert self.n_sample is not None
-            self.init_val = torch.tensor(1 / self.n_sample * np.ones(self.shape),
+            assert self.dim_x is not None
+            self.init_val = torch.tensor(1 / self.dim_x * np.ones(self.shape),
                                          dtype=torch.float32)
         else:
             # TODO(yassine) assert correct shape and dtype if already torch tensor
@@ -134,6 +133,10 @@ class LinearModel(nn.Module):
             nn.init.normal_(self.theta)
         else:
             self.theta = nn.Parameter(params[0])
+
+    def get_parameters(self):
+        return self.theta.clone().detach()
+
 
 
 class HeteroskedasticNoiseExperiment(AbstractExperiment):
@@ -437,7 +440,7 @@ def run_exp(exp, n_runs, args):
         loss_dict = {}
         for tau in hyperparam['tau']:
             print('Tau variable: {}'.format(tau))
-            p = Particles(n_data, dim=dim, init_value=init_val)
+            p = ParameterVector(dim_x=n_data, dim_y=dim, init_value=init_val)
             if args.pretrain:
                 params = [p.clone().detach() for p in m1.parameters()]
             else:
