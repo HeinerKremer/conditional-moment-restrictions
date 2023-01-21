@@ -6,7 +6,7 @@ from cmr.estimation import estimation
 from experiments.exp_heteroskedastic import HeteroskedasticNoiseExperiment
 
 from cmr.methods.generalized_el import GeneralizedEL
-from fgel.utils.torch_utils import Parameter
+from cmr.utils.torch_utils import Parameter
 
 from cmr.utils.torch_utils import OptimizationError, tensor_to_np
 
