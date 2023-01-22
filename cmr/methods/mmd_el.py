@@ -16,8 +16,8 @@ class MMDEL(GeneralizedEL):
     Maximum mean discrepancy empirical likelihood estimator for unconditional moment restrictions.
     """
 
-    def __init__(self, kl_reg_param, f_divergence_reg='kl', n_random_features=False,
-                 annealing=False, kernel_x_kwargs=None, **kwargs):
+    def __init__(self, kl_reg_param, f_divergence_reg='kl', n_random_features=False, z_dependency=False,
+                 annealing=False, sampling='kde', n_samples=1000, kernel_x_kwargs=None, **kwargs):
         super().__init__(divergence=f_divergence_reg, **kwargs)
         self.kl_reg_param = kl_reg_param
         self.annealing = annealing
@@ -27,22 +27,37 @@ class MMDEL(GeneralizedEL):
         self.kernel_x_kwargs = kernel_x_kwargs
         self.n_rff = n_random_features
         self.kernel_x = None
+        self.z_dependency = z_dependency
+        self.sampling = sampling  # Possible to choose from ['empirical', 'kde', 'lebesque']
+        self.n_samples = n_samples
+        self.k_samples = None
+        self.x_samples = None
+        self.z_samples = None
 
     def _set_divergence(self):
         def divergence(weights=None, cvxpy=False):
             raise NotImplementedError('MMD computation not implemented')
         return divergence
 
-    def _set_kernel_x(self, x):
+    def _set_kernel_x(self, x, z):
         if self.kernel_x is None and x is not None:
             if self.n_rff == 0:
                 kt, self.sigma_t = get_rbf_kernel(x[0], x[0], **self.kernel_x_kwargs)
                 ky, self.sigma_y = get_rbf_kernel(x[1], x[1], **self.kernel_x_kwargs)
-                self.kernel_x = (kt.type(torch.float32) * ky.type(torch.float32))
+                if self.z_dependency:
+                    kz, self.sigma_z = get_rbf_kernel(z, z, **self.kernel_z_kwargs)
+                else:
+                    kz = torch.ones(ky.shape)
+                    self.sigma_z = 0
+                self.kernel_x = (kt.type(torch.float32) * ky.type(torch.float32) * kz.type(torch.float32))
                 k_cholesky = torch.tensor(np.transpose(compute_cholesky_factor(self.kernel_x.detach().numpy())))
                 self.kernel_x_cholesky = k_cholesky
             elif self.n_rff > 0:
-                self.kernel_x, self.sigma_rff = get_rff(torch.hstack(np_to_tensor(x)), n_rff=self.n_rff, **self.kernel_x_kwargs)
+                xz = np_to_tensor(x)
+                if self.z_dependency:
+                    xz.extend(np_to_tensor([z]))
+                xz = torch.hstack(xz)
+                self.kernel_x, self.sigma_rff = get_rff(xz, n_rff=self.n_rff, **self.kernel_x_kwargs)
                 self.kernel_x = self.kernel_x.type(torch.float32)
             else:
                 raise ValueError("Number of random features must be larger than 0!")
@@ -54,8 +69,90 @@ class MMDEL(GeneralizedEL):
         self.all_dual_params = list(self.dual_moment_func.parameters()) + list(self.dual_normalization.parameters()) + list(self.rkhs_func.parameters())
 
     def init_estimator(self, x_tensor, z_tensor):
-        self._set_kernel_x(x_tensor)
+        self._set_kernel_x(x_tensor, z_tensor)
+        self._set_exponent_samples(x_tensor, z_tensor)
         super().init_estimator(x_tensor=x_tensor, z_tensor=z_tensor)
+
+    def _set_exponent_samples(self, x, z):
+        if self.sampling == 'empirical':
+            self.k_samples = self.kernel_x
+            self.x_samples = np_to_tensor(x)
+            self.z_samples = np_to_tensor(z)
+        elif self.sampling == 'lebesque':
+            # Define support of uniform distribution to be something around the empirical samples
+            xz = np_to_tensor(x)
+            xz.extend(np_to_tensor([z]))
+            xz = torch.hstack(xz)
+            l, _ = torch.min(xz, dim=0)
+            u, _ = torch.max(xz, dim=0)
+            b = u - l
+            xz_samples = torch.rand(self.n_samples, xz.shape[1])
+            support = 1
+            xz_samples *= support * b
+            xz_samples += l - (support - 1) * b/2
+            # Add empirical samples
+            xx = np_to_tensor(x)
+            zz = np_to_tensor(z)
+            self.x_samples = [torch.vstack((xz_samples[:, :x[0].shape[1]], xx[0])),
+                              torch.vstack((xz_samples[:, x[0].shape[1]:-z.shape[1]], xx[1]))]
+            self.z_samples = torch.vstack((xz_samples[:, -z.shape[1]:], zz))
+            kt, _ = get_rbf_kernel(x[0], self.x_samples[0].numpy(), sigma=self.sigma_t)
+            ky, _ = get_rbf_kernel(x[1], self.x_samples[1].numpy(), sigma=self.sigma_y)
+            if self.z_dependency:
+                kz, _ = get_rbf_kernel(z, self.z_samples.numpy(), sigma=self.sigma_z)
+            else:
+                kz = torch.ones(kt.shape)
+            self.k_samples = (kt.type(torch.float32) * ky.type(torch.float32) * kz.type(torch.float32))
+        elif self.sampling == 'kde':
+            from sklearn.neighbors import KernelDensity
+            from scipy.stats import gaussian_kde
+
+            class GaussianKde(gaussian_kde):
+                """
+                Drop-in replacement for gaussian_kde that adds the class attribute EPSILON
+                to the covmat eigenvalues, to prevent exceptions due to numerical error.
+                """
+
+                EPSILON = 1e-10  # adjust this at will
+
+                def _compute_covariance(self):
+                    """Computes the covariance matrix for each Gaussian kernel using
+                    covariance_factor().
+                    """
+                    self.factor = self.covariance_factor()
+                    # Cache covariance and inverse covariance of the data
+                    if not hasattr(self, '_data_inv_cov'):
+                        self._data_covariance = np.atleast_2d(np.cov(self.dataset, rowvar=1,
+                                                                     bias=False,
+                                                                     aweights=self.weights))
+                        # we're going the easy way here
+                        self._data_covariance += self.EPSILON * np.eye(
+                            len(self._data_covariance))
+                        self._data_inv_cov = np.linalg.inv(self._data_covariance)
+
+                    self.covariance = self._data_covariance * self.factor ** 2
+                    self.inv_cov = self._data_inv_cov / self.factor ** 2
+                    L = np.linalg.cholesky(self.covariance * 2 * np.pi)
+                    self._norm_factor = 2 * np.log(np.diag(L)).sum()  # needed for scipy 1.5.2
+                    self.log_det = 2 * np.log(np.diag(L)).sum()  # changed var name on 1.6.2
+            xz = np.hstack((*x, z))
+            # TODO: Add a pricipled way to select kernel bandwidth. Scipy implementation uses a 'Scott' variant
+            # kde = KernelDensity(bandwidth=max(self.sigma_z, self.sigma_y, self.sigma_t)).fit(xz)
+            kde = GaussianKde(xz.T)
+            xz_samples = kde.resample(self.n_samples).T
+            xz_samples = torch.from_numpy(xz_samples).type(torch.float32)
+            xx = np_to_tensor(x)
+            zz = np_to_tensor(z)
+            self.x_samples = [torch.vstack((xz_samples[:, :x[0].shape[1]], xx[0])),
+                              torch.vstack((xz_samples[:, x[0].shape[1]:-z.shape[1]], xx[1]))]
+            self.z_samples = torch.vstack((xz_samples[:, -z.shape[1]:], zz))
+            kt, _ = get_rbf_kernel(x[0], self.x_samples[0].numpy(), sigma=self.sigma_t)
+            ky, _ = get_rbf_kernel(x[1], self.x_samples[1].numpy(), sigma=self.sigma_y)
+            if self.z_dependency:
+                kz, _ = get_rbf_kernel(z, self.z_samples.numpy(), sigma=self.sigma_z)
+            else:
+                kz = torch.ones(ky.shape)
+            self.k_samples = (kt.type(torch.float32) * ky.type(torch.float32) * kz.type(torch.float32))
 
     """------------- Objective of MMD-GEL ------------"""
     def _objective(self, x, z, *args, **kwargs):
@@ -70,8 +167,12 @@ class MMDEL(GeneralizedEL):
             rkhs_norm_sq = torch.einsum('i, i ->', self.rkhs_func.params[:, 0], self.rkhs_func.params[:, 0])
         else:
             raise ValueError("Number of random features cannot be smaller than 0!")
-        exponent = (rkhs_func + self.dual_normalization.params
-                    - torch.sum(self._eval_dual_moment_func(z) * self.moment_function(x), dim=1, keepdim=True))
+        # TODO: Add new rkhs_func for the exponent since it also needs to be evaluated at the sample locations.
+        rkhs_func_samples = torch.einsum('ij,ik->kj', self.rkhs_func.params, self.k_samples)
+
+        exponent = (rkhs_func_samples + self.dual_normalization.params
+                    - torch.sum(self._eval_dual_moment_func(self.z_samples) * self.moment_function(self.x_samples),
+                                dim=1, keepdim=True))
         objective = (torch.mean(rkhs_func) + self.dual_normalization.params - 1 / 2 * rkhs_norm_sq
                      - self.kl_reg_param * torch.mean(self.conj_divergence(1 / self.kl_reg_param * exponent)))
         return objective, -objective

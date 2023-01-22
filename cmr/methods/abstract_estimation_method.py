@@ -125,7 +125,16 @@ class AbstractEstimationMethod:
     def calc_validation_metric(self, x_val, z_val):
         if not self._val_loss_func:
             self._val_loss_func = self._get_val_loss_func(z_val)
-        return self._val_loss_func(x_val, z_val)
+        if z_val.shape[0] > 2500:
+            val_loss_list = []
+            for i in range(0, z_val.shape[0], 2500):
+                val_loss = self._val_loss_func([x_val[0][i:i + 2500, :],
+                                                x_val[1][i:i + 2500, :]],
+                                               z_val[i:i + 2500, :])
+                val_loss_list.append(val_loss)
+            return np.mean(val_loss_list)
+        else:
+            return self._val_loss_func(x_val, z_val)
 
     def _get_val_loss_func(self, z_val):
         if self._custom_val_loss_func:
@@ -140,9 +149,6 @@ class AbstractEstimationMethod:
             if z_val is None:
                 return self._calc_val_moment_violation
             else:
-                if z_val.shape[0] > 5000:
-                    print('Validation set too large for MMR validation, using unconditonal loss instead...')
-                    return self._calc_val_moment_violation
                 return self._calc_val_mmr
 
     @staticmethod

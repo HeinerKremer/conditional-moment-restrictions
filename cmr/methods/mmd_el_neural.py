@@ -34,8 +34,8 @@ class MMDELNeural(MMDEL):
             dual_func_network_kwargs_default.update(dual_func_network_kwargs)
         return dual_func_network_kwargs_default
 
-    def calc_validation_metric(self, x_val, z_val):
-        return self._calc_val_moment_violation(x_val)
+    # def calc_validation_metric(self, x_val, z_val):
+    #     return self._calc_val_moment_violation(x_val)
 
     """------------- Objective of Kernel-EL-Neural ------------"""
     def _eval_dual_moment_func(self, z):
@@ -44,7 +44,7 @@ class MMDELNeural(MMDEL):
     def _objective(self, x, z, *args, **kwargs):
         objective, _ = super()._objective(x, z, *args, **kwargs)
         if self.l2_lambda > 0:
-            regularizer = self.l2_lambda * torch.mean(self._eval_dual_moment_func(z) ** 2)
+            regularizer = self.l2_lambda * torch.mean(self._eval_dual_moment_func(self.z_samples) ** 2)
         else:
             regularizer = 0
         return objective, -objective + regularizer
