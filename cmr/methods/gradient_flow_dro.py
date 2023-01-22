@@ -6,7 +6,6 @@ import torch
 from matplotlib import pyplot as plt
 
 from cmr.estimation import estimation
-from experiments.exp_heteroskedastic import HeteroskedasticNoiseExperiment
 
 from cmr.methods.generalized_el import GeneralizedEL
 from cmr.utils.torch_utils import OptimizationError, np_to_tensor
@@ -21,7 +20,6 @@ class GradientFlowDRO(GeneralizedEL):
         self.x_original = None                                     # Original particle positions
         self.max_num_epochs = kwargs['max_num_epochs']      # Override parent class default of 3 iters for LBFGS
         self.t_max = t_max                                  # Maximal time
-        # self.dual_optim_args = {"lr": self.t_max/self.max_num_epochs}
 
     def init_estimator(self, x_tensor, z_tensor):
         self.x_previous = np_to_tensor(x_tensor)
@@ -33,120 +31,146 @@ class GradientFlowDRO(GeneralizedEL):
         Determine which variables should be moved. Variables are x=(t,y) as in \psi(x;\theta) = y - f(t;\theta).
         """
         if self.move_variable == 'y':
+            self.t = copy.deepcopy(self.x_original[0].detach())
             self.y = torch.nn.Parameter(copy.deepcopy(self.x_original[1].detach()), requires_grad=True)
-            self.x = [self.x_original[0], self.y]
             self.all_dual_params = [self.y]
         elif self.move_variable == 't':
             self.t = torch.nn.Parameter(copy.deepcopy(self.x_original[0].detach()), requires_grad=True)
-            self.x = [self.t, self.x_original[1]]
+            self.y = copy.deepcopy(self.x_original[1].detach())
             self.all_dual_params = [self.t]
         elif self.move_variable == 'x':
             self.t = torch.nn.Parameter(copy.deepcopy(self.x_original[0].detach()), requires_grad=True)
             self.y = torch.nn.Parameter(copy.deepcopy(self.x_original[1].detach()), requires_grad=True)
-            self.x = [self.t, self.y]
             self.all_dual_params = [self.t, self.y]
         else:
             raise NotImplementedError
+        self.x = [self.t, self.y]
 
     def _reset_particles(self):
-        self.x_previous = [copy.deepcopy(self.x_original[0].detach()), copy.deepcopy(self.x_original[1].detach())]
-        self.x = [copy.deepcopy(self.x_original[0].detach()), copy.deepcopy(self.x_original[1].detach())]
+        with torch.no_grad():
+            self.x_previous = [copy.deepcopy(self.x_original[0].detach()), copy.deepcopy(self.x_original[1].detach())]
+            self.t.copy_(copy.deepcopy(self.x_original[0].detach()))
+            self.y.copy_(copy.deepcopy(self.x_original[1].detach()))
+
+    def print_var(self, var, maxind=3):
+        return np.squeeze(var[:maxind].detach().numpy())
 
     def _optimize_dual_params_gd(self, x_tensor, z_tensor):
-        """Runs `self.inneriter` proximal GD steps on particle objective"""
+        """Implicit GD optimization of particles. Runs t_max steps with `self.inneriter` iterations each."""
         losses = []
-        dual_obj = None
         self._reset_particles()
 
-        for i in range(self.inneriters):
-            self.dual_optimizer.zero_grad()
-            _, dual_obj = self.objective(x_tensor, z_tensor, which_obj='dual')
-            losses.append(float(dual_obj.detach().numpy()))
-            dual_obj.backward()
-            self.dual_optimizer.step()
-            if not self.are_dual_params_finite():
-                raise OptimizationError('Dual variables are NaN or inf.')
+        assert np.allclose(self.print_var(self.x[0]), self.print_var(self.x_previous[0]))
+        assert np.allclose(self.print_var(self.x[0]), self.print_var(self.x_original[0]))
+        print('Reset: ', self.print_var(self.x[0]), self.print_var(self.x_previous[0]), self.print_var(self.x_original[0]))
+        # For each of the `self.t_max` proximal steps use `self.inneriters` iterations
+        for _ in range(self.t_max):
+            losses.append(super()._optimize_dual_params_gd(x_tensor, z_tensor))
+            print('After one opt: ', self.print_var(self.x[0]), self.print_var(self.x_previous[0]),
+                  self.print_var(self.x_original[0]))
             with torch.no_grad():
                 self.x_previous = [copy.deepcopy(self.x[0].detach()), copy.deepcopy(self.x[1].detach())]
-        return dual_obj
+        return losses
 
     def _objective(self, x, z, *args, **kwargs):
         """
         Least squares objective with 2-norm penalty on particles
         """
+        # print(np.squeeze(self.x[0].detach().numpy()[:5]))
+        # print(np.squeeze(self.x_previous[0].detach().numpy()[:5]))
+        # print()
+
         loss = 1/len(self.x[0]) * torch.norm(self.moment_function(self.x))**2
         reg = torch.norm(torch.cat(self.x) - torch.cat(self.x_previous))**2
         return loss, -loss + self.reg_param * reg
 
 
 if __name__ == '__main__':
+    from experiments.exp_uncertain_lsq import UncertainLSQ
+
     np.random.seed(123456)
     torch.random.manual_seed(123456)
 
-    # Experiment parameters
-    n_train = 500   # Training samples
-    n_run = 1      # Number of rollouts
+    t_maxes = [2]# [0, 1, 5, 10, 50]
+    n_runs = 1
+    n_train = 100
+    load = False
 
-    # GF-DRO parameters
-    move_variable = 'x'     # in ['t', 'y', 'x']; x = [t, y]
-    # reg_param = 1/(2 * t_max / iters)         # loss = LS + reg_param * (x - x^k)^2
-    t_max = 100  # End time of gradient flow; step sizes set as tau = t_max/iters
-    # particle_lr = 5e-3
+    exp = UncertainLSQ()
 
-    iters = 1000
-    tau = t_max / iters
-    reg_param = 1/(2 * tau)
+    if not load:
+        gf_res = {tmax: [] for tmax in t_maxes}
+        ols_res = []
 
-    estimator_kwargs = {
-        "theta_optim": 'sgd',
-        "dual_optim": 'sgd',
-        "theta_optim_args": {"lr": 1e-3},
-        "dual_optim_args": {"lr": tau},
-        "inneriters": t_max,        # t_max GD steps after each theta optimization
-        "max_num_epochs": iters,    # Number of optimizations until convergence of theta
-        "pretrain": False,          # Pretrain using MMR objective
-        "move_variable": move_variable,   # in ['t', 'y', 'x']
-    }
+        for _ in range(n_runs):
+            exp.prepare_dataset(n_train=n_train, n_test=0, n_val=0)
 
-    exp = HeteroskedasticNoiseExperiment(theta=[1.4], noise=.5, heteroskedastic=True)
+            for t_max in t_maxes:
+                iters = 1000
+                inneriters = 10
 
-    thetas_gfdro = []
-    mses_gfdro = []
+                estimator_kwargs = {
+                    "theta_optim": 'sgd',
+                    "dual_optim": 'sgd',
+                    "theta_optim_args": {"lr": 1e-3},
+                    "dual_optim_args": {"lr": t_max / inneriters},  # t_max/num_steps},
+                    "inneriters": inneriters,  # t_max GD steps after each theta optimization
+                    "max_num_epochs": iters,  # Number of optimizations until convergence of theta
+                    "pretrain": False,  # Pretrain using MMR objective
+                    "move_variable": 't',
+                    "reg_param": 1 / (2 * t_max / inneriters) if t_max > 0 and inneriters > 0 else 0,
+                }
 
-    thetas_ols = []
-    mses_ols = []
+                gf_estimator = GradientFlowDRO(model=exp.get_model(), moment_function=exp.moment_function, t_max=t_max,
+                                               **estimator_kwargs)
+                gf_estimator.train(train_data=exp.train_data)
 
-    for _ in range(n_run):
-        exp.prepare_dataset(n_train=n_train, n_val=n_train, n_test=20000)
-        x_train = [exp.train_data['t'], exp.train_data['y']]
-        x_val = [exp.val_data['t'], exp.val_data['y']]
+                gf_risk = exp.eval_test_data(gf_estimator.model, 10000)
+                gf_res[t_max].append(gf_risk)
 
-        estimator = GradientFlowDRO(model=exp.get_model(), moment_function=exp.moment_function, t_max=t_max, reg_param=reg_param,
-                                    **estimator_kwargs, verbose=2)
+                print(t_max, gf_risk)
+                print('t0 ', np.squeeze(gf_estimator.x_original[0].detach().numpy())[:5])
+                print('t_shifted ', np.squeeze(gf_estimator.x[0].detach().numpy())[:5])
+                print()
 
-        estimator.train(train_data=exp.train_data, val_data=exp.val_data)
+            trained_model, stats = estimation(model=exp.get_model(),
+                                              train_data=exp.train_data,
+                                              moment_function=exp.moment_function,
+                                              estimation_method='OLS',
+                                              verbose=True)
+            ols_risk = exp.eval_test_data(trained_model, 10000)
+            ols_res.append(ols_risk)
+            print('OLS', ols_risk)
 
-        print('t0 ', np.squeeze(estimator.x_original[0].detach().numpy())[:5])
-        print('t_shifted ', np.squeeze(estimator.x[0].detach().numpy())[:5])
-        print('y0 ', np.squeeze(estimator.x_original[1].detach().numpy())[:5])
-        print('y_shifted ', np.squeeze(estimator.x[1].detach().numpy())[:5])
+        gf_mean = {key: np.mean(np.asarray(val), axis=0) for key, val in gf_res.items()}
+        gf_std = {key: np.std(np.asarray(val), axis=0) for key, val in gf_res.items()}
+        ols_mean = np.mean(np.asarray(ols_res), axis=0)
+        ols_std = np.std(np.asarray(ols_res), axis=0)
 
-        thetas_gfdro.append(float(np.squeeze(estimator.model.get_parameters())))
-        mses_gfdro.append(np.sum(np.square(np.squeeze(estimator.model.get_parameters()) - exp.theta0)))
+        res = {'gf': {'mean': gf_mean, 'std': gf_std},
+               'ols': {'mean': ols_mean, 'std': ols_std}}
 
-        # OLS baseline
-        trained_model, stats = estimation(model=exp.get_model(),
-                                          train_data=exp.train_data,
-                                          moment_function=exp.moment_function,
-                                          estimation_method='OLS',
-                                          validation_data=exp.val_data, val_loss_func=exp.validation_loss)
+        with open(f"ulsq_n_train={n_train}_n_run={n_runs}", "wb") as fp:
+            pickle.dump(res, fp)
+    else:
+        with open(f"ulsq_n_train={n_train}_n_run={n_runs}", "rb") as fp:
+            res = pickle.load(fp)
 
-        thetas_ols.append(float(np.squeeze(trained_model.get_parameters())))
-        mses_ols.append(np.sum(np.square(np.squeeze(trained_model.get_parameters()) - exp.theta0)))
+    fig, ax = plt.subplots(1, 1)
+    # ax.plot(exp.test_supports, res['ols']['mean'], label='OLS')
+    # ax.fill_between(exp.test_supports,
+    #                 res['ols']['mean'] - res['ols']['std'],
+    #                 res['ols']['mean'] + res['ols']['std'],
+    #                 alpha=0.2, color='purple')
+    for t_max in res['gf']['mean'].keys():
+        ax.plot(exp.test_supports, res['gf']['mean'][t_max], label=fr"$T = {t_max}$")
+        ax.fill_between(exp.test_supports,
+                        res['gf']['mean'][t_max] - res['gf']['std'][t_max],
+                        res['gf']['mean'][t_max] + res['gf']['std'][t_max],
+                        alpha=0.2)
+    ax.set_xlabel('Support')
+    ax.set_ylabel(r'$\|A(t)\theta - b \|$')
+    plt.legend()
+    plt.show()
 
-    print(f'True parameter: {np.squeeze(exp.theta0)},\n'
-          f'GF-DRO Parameter estimates: {thetas_gfdro} \n'
-          f'OLS Parameter estimates: {thetas_ols} \n'
-          fr'GF-DRO MSE: {np.mean(mses_gfdro)} $\pm$ {np.std(mses_gfdro)}''\n'
-          fr'OLS MSE: {np.mean(mses_ols)} $\pm$ {np.std(mses_ols)}''\n'
-          )
+    print(res['gf']['mean'][50])
