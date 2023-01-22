@@ -34,9 +34,6 @@ class MMDELNeural(MMDEL):
             dual_func_network_kwargs_default.update(dual_func_network_kwargs)
         return dual_func_network_kwargs_default
 
-    # def calc_validation_metric(self, x_val, z_val):
-    #     return self._calc_val_moment_violation(x_val)
-
     """------------- Objective of Kernel-EL-Neural ------------"""
     def _eval_dual_moment_func(self, z):
         return self.dual_moment_func(z)

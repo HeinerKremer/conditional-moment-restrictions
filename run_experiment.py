@@ -29,8 +29,10 @@ def run_experiment(experiment, exp_params, n_train, estimation_method, estimator
                                              train_data=exp.train_data,
                                              moment_function=exp.moment_function,
                                              estimation_method=estimation_method,
-                                             estimator_kwargs=estimator_kwargs, hyperparams=hyperparams,
-                                             validation_data=exp.val_data, val_loss_func=exp.validation_loss,
+                                             estimator_kwargs=estimator_kwargs,
+                                             hyperparams=hyperparams,
+                                             validation_data=exp.val_data,
+                                             val_loss_func=exp.validation_loss if hasattr(exp, 'validation_loss') else None,
                                              verbose=True)
 
     test_risks = []
@@ -135,13 +137,13 @@ def summarize_results(result_list):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--run_parallel', action='store_true')
-    parser.add_argument('--overwrite', action='store_true')
+    parser.add_argument('--overwrite', default=False, action='store_true')
     parser.add_argument('--experiment', type=str, default='heteroskedastic')
-    parser.add_argument('--exp_option', default=None)
-    parser.add_argument('--n_train', type=int, default=100)
-    parser.add_argument('--method', type=str, default='KernelELNeural')
+    parser.add_argument('--exp_option', default=None)  # TODO: Try to fix this since it should be a dict
+    parser.add_argument('--n_train', type=int, default=120)
+    parser.add_argument('--method', type=str, default='MMDEL-neural')
     parser.add_argument('--method_option', default=None)
-    parser.add_argument('--rollouts', type=int, default=2)
+    parser.add_argument('--rollouts', type=int, default=10)
     parser.add_argument('--run_dir', type=str, default='')
 
     args = parser.parse_args()

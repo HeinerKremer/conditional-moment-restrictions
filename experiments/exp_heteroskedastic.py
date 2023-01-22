@@ -36,7 +36,6 @@ class HeteroskedasticNoiseExperiment(AbstractExperiment):
         self.dim_theta = np.shape(self.theta0)[1]
         self.noise = noise
         self.heteroskedastic = heteroskedastic
-        super().__init__(dim_psi=1, dim_theta=self.dim_theta, dim_z=self.dim_theta)
 
     def get_model(self):
         return LinearModel(dim_theta=self.dim_theta)

@@ -10,7 +10,6 @@ class AbstractExperiment:
         self.val_data = None
         self.test_data = None
 
-        self.validation_loss = None
 
     def get_true_parameters(self):
         """If method not specified with signature `get_true_parameters(self) -> np.array` then assume there are no true

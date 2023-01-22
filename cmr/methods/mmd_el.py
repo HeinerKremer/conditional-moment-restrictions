@@ -17,7 +17,7 @@ class MMDEL(GeneralizedEL):
     """
 
     def __init__(self, kl_reg_param, f_divergence_reg='kl', n_random_features=False, z_dependency=False,
-                 annealing=False, sampling='kde', n_samples=1000, kernel_x_kwargs=None, **kwargs):
+                 annealing=False, sampling='empirical', n_samples=1000, kernel_x_kwargs=None, **kwargs):
         super().__init__(divergence=f_divergence_reg, **kwargs)
         self.kl_reg_param = kl_reg_param
         self.annealing = annealing
