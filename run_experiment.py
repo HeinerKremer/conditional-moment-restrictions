@@ -107,7 +107,9 @@ def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, 
                 results.append(stats)
 
         results_summarized = summarize_results(results)
-        result_dict = {"results_summarized": results_summarized, "results": results}
+        result_dict = {"results_summarized": results_summarized,
+                       "results": results,
+                       "estimator_kwargs": estimator_kwargs}
         if filename is not None:
             if exp_name is None:
                 exp_name = str(experiment.__name__)
@@ -140,11 +142,16 @@ if __name__ == "__main__":
     parser.add_argument('--overwrite', default=False, action='store_true')
     parser.add_argument('--experiment', type=str, default='heteroskedastic')
     parser.add_argument('--exp_option', default=None)  # TODO: Try to fix this since it should be a dict
-    parser.add_argument('--n_train', type=int, default=120)
+    parser.add_argument('--n_train', type=int, default=128)
     parser.add_argument('--method', type=str, default='MMDEL-neural')
     parser.add_argument('--method_option', default=None)
-    parser.add_argument('--rollouts', type=int, default=10)
+    parser.add_argument('--rollouts', type=int, default=1)
     parser.add_argument('--run_dir', type=str, default='')
+    parser.add_argument('--sampling', type=str, default='empirical')
+    parser.add_argument('--n_samples', type=int, default=500)
+    parser.add_argument('--f_div', type=str, default='kl')
+    parser.add_argument('--z_dependency', default=False, action=argparse.BooleanOptionalAction)
+    parser.add_argument('--annealing', default=False, action=argparse.BooleanOptionalAction)
 
     args = parser.parse_args()
 
@@ -155,10 +162,21 @@ if __name__ == "__main__":
         filename = '_' + args.exp_option
     else:
         filename = ''
+    if "MMD" in args.method:
+        estimator_kwargs = {
+            'sampling': args.sampling,
+            'n_samples': args.n_samples,
+            'z_dependency': args.z_dependency,
+            'annealing': args.annealing,
+            'f_divergence_reg': args.f_div
+        }
+    else:
+        estimator_kwargs = {}
     results = run_experiment_repeated(experiment=exp_info['exp_class'],
                                       exp_params=exp_info['exp_params'],
                                       n_train=args.n_train,
                                       estimation_method=args.method,
+                                      estimator_kwargs=estimator_kwargs,
                                       repititions=args.rollouts,
                                       parallel=args.run_parallel,
                                       filename=filename,

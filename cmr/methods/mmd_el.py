@@ -17,7 +17,7 @@ class MMDEL(GeneralizedEL):
     """
 
     def __init__(self, kl_reg_param, f_divergence_reg='kl', n_random_features=False, z_dependency=False,
-                 annealing=False, sampling='empirical', n_samples=1000, kernel_x_kwargs=None, **kwargs):
+                 annealing=False, sampling='empirical', n_samples=500, kernel_x_kwargs=None, **kwargs):
         super().__init__(divergence=f_divergence_reg, **kwargs)
         self.kl_reg_param = kl_reg_param
         self.annealing = annealing
@@ -104,42 +104,13 @@ class MMDEL(GeneralizedEL):
                 kz = torch.ones(kt.shape)
             self.k_samples = (kt.type(torch.float32) * ky.type(torch.float32) * kz.type(torch.float32))
         elif self.sampling == 'kde':
-            from sklearn.neighbors import KernelDensity
-            from scipy.stats import gaussian_kde
-
-            class GaussianKde(gaussian_kde):
-                """
-                Drop-in replacement for gaussian_kde that adds the class attribute EPSILON
-                to the covmat eigenvalues, to prevent exceptions due to numerical error.
-                """
-
-                EPSILON = 1e-10  # adjust this at will
-
-                def _compute_covariance(self):
-                    """Computes the covariance matrix for each Gaussian kernel using
-                    covariance_factor().
-                    """
-                    self.factor = self.covariance_factor()
-                    # Cache covariance and inverse covariance of the data
-                    if not hasattr(self, '_data_inv_cov'):
-                        self._data_covariance = np.atleast_2d(np.cov(self.dataset, rowvar=1,
-                                                                     bias=False,
-                                                                     aweights=self.weights))
-                        # we're going the easy way here
-                        self._data_covariance += self.EPSILON * np.eye(
-                            len(self._data_covariance))
-                        self._data_inv_cov = np.linalg.inv(self._data_covariance)
-
-                    self.covariance = self._data_covariance * self.factor ** 2
-                    self.inv_cov = self._data_inv_cov / self.factor ** 2
-                    L = np.linalg.cholesky(self.covariance * 2 * np.pi)
-                    self._norm_factor = 2 * np.log(np.diag(L)).sum()  # needed for scipy 1.5.2
-                    self.log_det = 2 * np.log(np.diag(L)).sum()  # changed var name on 1.6.2
             xz = np.hstack((*x, z))
-            # TODO: Add a pricipled way to select kernel bandwidth. Scipy implementation uses a 'Scott' variant
-            # kde = KernelDensity(bandwidth=max(self.sigma_z, self.sigma_y, self.sigma_t)).fit(xz)
-            kde = GaussianKde(xz.T)
-            xz_samples = kde.resample(self.n_samples).T
+            # TODO: Add a pricipled way to select kernel bandwidth.
+            # from sklearn.neighbors import KernelDensity
+            # kde = KernelDensity(bandwidth=0.1).fit(xz)
+            from cmr.utils.kde import GaussianKde
+            kde = GaussianKde(xz, bw_method=0.1)
+            xz_samples = kde.sample(self.n_samples)
             xz_samples = torch.from_numpy(xz_samples).type(torch.float32)
             xx = np_to_tensor(x)
             zz = np_to_tensor(z)
@@ -167,7 +138,6 @@ class MMDEL(GeneralizedEL):
             rkhs_norm_sq = torch.einsum('i, i ->', self.rkhs_func.params[:, 0], self.rkhs_func.params[:, 0])
         else:
             raise ValueError("Number of random features cannot be smaller than 0!")
-        # TODO: Add new rkhs_func for the exponent since it also needs to be evaluated at the sample locations.
         rkhs_func_samples = torch.einsum('ij,ik->kj', self.rkhs_func.params, self.k_samples)
 
         exponent = (rkhs_func_samples + self.dual_normalization.params
