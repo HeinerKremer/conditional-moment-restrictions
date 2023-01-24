@@ -40,12 +40,28 @@ class MMDEL(GeneralizedEL):
         return divergence
 
     def _set_kernel_x(self, x, z):
+        """
+        Compute the kernel matrix for the data samples and possibly additional samples.
+
+        Parameters
+        ----------
+        x: list of two tensors
+            Data samples of treatment and effect
+        z: tensor
+            Data samples of instruments
+        """
         if self.kernel_x is None and x is not None:
             if self.n_rff == 0:
-                kt, self.sigma_t = get_rbf_kernel(x[0], x[0], **self.kernel_x_kwargs)
-                ky, self.sigma_y = get_rbf_kernel(x[1], x[1], **self.kernel_x_kwargs)
+                kt, self.sigma_t = get_rbf_kernel(self.x_samples[0].numpy(),
+                                                  self.x_samples[0].numpy(),
+                                                  **self.kernel_x_kwargs)
+                ky, self.sigma_y = get_rbf_kernel(self.x_samples[1].numpy(),
+                                                  self.x_samples[1].numpy(),
+                                                  **self.kernel_x_kwargs)
                 if self.z_dependency:
-                    kz, self.sigma_z = get_rbf_kernel(z, z, **self.kernel_z_kwargs)
+                    kz, self.sigma_z = get_rbf_kernel(self.z_samples.numpy(),
+                                                      self.z_samples.numpy(),
+                                                      **self.kernel_z_kwargs)
                 else:
                     kz = torch.ones(ky.shape)
                     self.sigma_z = 0
@@ -53,9 +69,9 @@ class MMDEL(GeneralizedEL):
                 k_cholesky = torch.tensor(np.transpose(compute_cholesky_factor(self.kernel_x.detach().numpy())))
                 self.kernel_x_cholesky = k_cholesky
             elif self.n_rff > 0:
-                xz = np_to_tensor(x)
+                xz = np_to_tensor(self.x_samples)
                 if self.z_dependency:
-                    xz.extend(np_to_tensor([z]))
+                    xz.extend(np_to_tensor([self.z_samples]))
                 xz = torch.hstack(xz)
                 self.kernel_x, self.sigma_rff = get_rff(xz, n_rff=self.n_rff, **self.kernel_x_kwargs)
                 self.kernel_x = self.kernel_x.type(torch.float32)
@@ -69,11 +85,25 @@ class MMDEL(GeneralizedEL):
         self.all_dual_params = list(self.dual_moment_func.parameters()) + list(self.dual_normalization.parameters()) + list(self.rkhs_func.parameters())
 
     def init_estimator(self, x_tensor, z_tensor):
+        self._get_samples(x_tensor, z_tensor)
         self._set_kernel_x(x_tensor, z_tensor)
-        self._set_exponent_samples(x_tensor, z_tensor)
         super().init_estimator(x_tensor=x_tensor, z_tensor=z_tensor)
 
-    def _set_exponent_samples(self, x, z):
+    def _get_samples(self, x, z):
+        """
+        Collect additional reference measure samples in MMD regularization.
+
+        We follow the convention that we concatenate the original data samples before the
+        reference measure samples, i.e., [x_train, x_ref]. Important afterwards for the objective
+        when we need to slice the kernel matrix.
+
+        Parameters
+        ----------
+        x: list of two tensors
+            Data samples of treatment and effect
+        z: tensor
+            Data samples of instruments
+        """
         if self.sampling == 'empirical':
             self.k_samples = self.kernel_x
             self.x_samples = np_to_tensor(x)
@@ -93,52 +123,38 @@ class MMDEL(GeneralizedEL):
             # Add empirical samples
             xx = np_to_tensor(x)
             zz = np_to_tensor(z)
-            self.x_samples = [torch.vstack((xz_samples[:, :x[0].shape[1]], xx[0])),
-                              torch.vstack((xz_samples[:, x[0].shape[1]:-z.shape[1]], xx[1]))]
-            self.z_samples = torch.vstack((xz_samples[:, -z.shape[1]:], zz))
-            kt, _ = get_rbf_kernel(x[0], self.x_samples[0].numpy(), sigma=self.sigma_t)
-            ky, _ = get_rbf_kernel(x[1], self.x_samples[1].numpy(), sigma=self.sigma_y)
-            if self.z_dependency:
-                kz, _ = get_rbf_kernel(z, self.z_samples.numpy(), sigma=self.sigma_z)
-            else:
-                kz = torch.ones(kt.shape)
-            self.k_samples = (kt.type(torch.float32) * ky.type(torch.float32) * kz.type(torch.float32))
+            self.x_samples = [torch.vstack((xx[0], xz_samples[:, :x[0].shape[1]])),
+                              torch.vstack((xx[1], xz_samples[:, x[0].shape[1]:-z.shape[1]]))]
+            self.z_samples = torch.vstack((zz, xz_samples[:, -z.shape[1]:]))
         elif self.sampling == 'kde':
             xz = np.hstack((*x, z))
             # TODO: Add a pricipled way to select kernel bandwidth.
-            # from sklearn.neighbors import KernelDensity
-            # kde = KernelDensity(bandwidth=0.1).fit(xz)
-            from cmr.utils.kde import GaussianKde
-            kde = GaussianKde(xz, bw_method=0.1)
+            from sklearn.neighbors import KernelDensity
+            kde = KernelDensity(bandwidth=0.1).fit(xz)
+            # from cmr.utils.kde import GaussianKde
+            # kde = GaussianKde(xz, bw_method=0.1)
             xz_samples = kde.sample(self.n_samples)
             xz_samples = torch.from_numpy(xz_samples).type(torch.float32)
             xx = np_to_tensor(x)
             zz = np_to_tensor(z)
-            self.x_samples = [torch.vstack((xz_samples[:, :x[0].shape[1]], xx[0])),
-                              torch.vstack((xz_samples[:, x[0].shape[1]:-z.shape[1]], xx[1]))]
-            self.z_samples = torch.vstack((xz_samples[:, -z.shape[1]:], zz))
-            kt, _ = get_rbf_kernel(x[0], self.x_samples[0].numpy(), sigma=self.sigma_t)
-            ky, _ = get_rbf_kernel(x[1], self.x_samples[1].numpy(), sigma=self.sigma_y)
-            if self.z_dependency:
-                kz, _ = get_rbf_kernel(z, self.z_samples.numpy(), sigma=self.sigma_z)
-            else:
-                kz = torch.ones(ky.shape)
-            self.k_samples = (kt.type(torch.float32) * ky.type(torch.float32) * kz.type(torch.float32))
+            self.x_samples = [torch.vstack((xx[0], xz_samples[:, :x[0].shape[1]])),
+                              torch.vstack((xx[1], xz_samples[:, x[0].shape[1]:-z.shape[1]]))]
+            self.z_samples = torch.vstack((zz, xz_samples[:, -z.shape[1]:]))
 
     """------------- Objective of MMD-GEL ------------"""
     def _objective(self, x, z, *args, **kwargs):
         if self.batch_training:
             kx = self.kernel_x[:, self.batch_idx]
         else:
-            kx = self.kernel_x
+            kx = self.kernel_x[:, :-self.n_samples]
         rkhs_func = torch.einsum('ij, ik -> kj', self.rkhs_func.params, kx)
         if self.n_rff == 0:
-            rkhs_norm_sq = torch.einsum('ir, ij, jr ->', self.rkhs_func.params, kx, self.rkhs_func.params)
+            rkhs_norm_sq = torch.einsum('ir, ij, jr ->', self.rkhs_func.params, self.kernel_x, self.rkhs_func.params)
         elif self.n_rff > 0:
             rkhs_norm_sq = torch.einsum('i, i ->', self.rkhs_func.params[:, 0], self.rkhs_func.params[:, 0])
         else:
             raise ValueError("Number of random features cannot be smaller than 0!")
-        rkhs_func_samples = torch.einsum('ij,ik->kj', self.rkhs_func.params, self.k_samples)
+        rkhs_func_samples = torch.einsum('ij,ik->kj', self.rkhs_func.params, self.kernel_x)
 
         exponent = (rkhs_func_samples + self.dual_normalization.params
                     - torch.sum(self._eval_dual_moment_func(self.z_samples) * self.moment_function(self.x_samples),
