@@ -168,9 +168,7 @@ if __name__ == "__main__":
             'n_samples': args.n_samples,
             'bw': args.bw,
             'z_dependency': args.z_dependency,
-            'annealing': args.annealing,
             'f_divergence_reg': args.f_div,
-            'n_random_features': args.nrff
         }
     else:
         estimator_kwargs = {}
