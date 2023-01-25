@@ -151,10 +151,7 @@ if __name__ == "__main__":
     parser.add_argument('--bw', type=float, default=0.1)
     parser.add_argument('--n_samples', type=int, default=0)
     parser.add_argument('--f_div', type=str, default='kl')
-    parser.add_argument('--nrff', type=int, default=0)
     parser.add_argument('--z_dependency', default=False, action=argparse.BooleanOptionalAction)
-    parser.add_argument('--annealing', default=False, action=argparse.BooleanOptionalAction)
-    parser.add_argument('--batch_training', default=False, action=argparse.BooleanOptionalAction)
 
     args = parser.parse_args()
 
