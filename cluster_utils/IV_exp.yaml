@@ -9,9 +9,14 @@ params:
     n_runs: 1
     n_train: [2000]
     rollouts: [50]
-    method: ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM',
-             'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
-             'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log']
     experiment: ['network_iv']
     exp_option: ['abs', 'sin', 'step', 'linear']
     run_dir: ['exp_IV']
+    method: ['MMDEL-neural']
+    nrff: [0, 5000]
+    sampling: ['kde']
+    bw: [0.1, 0.5, 1]
+    n_samples: [5000]
+    z_dependency: [False]
+    annealing: [False]
+    f_div: ['kl', 'log']

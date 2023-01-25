@@ -9,9 +9,13 @@ params:
     n_runs: 1
     rollouts: [20]
     n_train: [2000, 4000, 10000]
-    method: ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
-             'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
-             'KernelELNeural-kl', 'KernelELNeural-log',
-             'RFKernelELNeural-MB']
     experiment: ['bennet_hetero']
     run_dir: ['b_hetero']
+    method: ['MMDEL-neural']
+    nrff: [0, 5000]
+    sampling: ['kde']
+    bw: [0.1, 0.5, 1]
+    n_samples: [5000]
+    z_dependency: [False]
+    annealing: [False]
+    f_div: ['kl', 'log']
