@@ -131,6 +131,7 @@ class MMDEL(GeneralizedEL):
             self.z_samples = torch.vstack((zz, xz_samples[:, -z.shape[1]:]))
         elif self.sampling == 'kde':
             xz = np.hstack((*x, z))
+            # xz = np.hstack(x)
             # TODO: Add a pricipled way to select kernel bandwidth.
             from sklearn.neighbors import KernelDensity
             kde = KernelDensity(bandwidth=self.bw).fit(xz)
@@ -140,7 +141,9 @@ class MMDEL(GeneralizedEL):
             xz_samples = torch.from_numpy(xz_samples).type(torch.float32)
             xx = np_to_tensor(x)
             zz = np_to_tensor(z)
-            # zz = xx[0].clone()
+            # self.x_samples = [torch.vstack((xx[0], xz_samples[:, :x[0].shape[1]])),
+            #                   torch.vstack((xx[1], xz_samples[:, x[0].shape[1]:]))]
+            # self.z_samples = torch.vstack((zz, xz_samples[:, :x[0].shape[1]]))
             self.x_samples = [torch.vstack((xx[0], xz_samples[:, :x[0].shape[1]])),
                               torch.vstack((xx[1], xz_samples[:, x[0].shape[1]:-z.shape[1]]))]
             self.z_samples = torch.vstack((zz, xz_samples[:, -z.shape[1]:]))
@@ -150,7 +153,10 @@ class MMDEL(GeneralizedEL):
         if self.batch_training:
             kx = self.kernel_x[:, self.batch_idx]
         else:
-            kx = self.kernel_x[:, :-self.n_samples]
+            if self.sampling in ['lebesque', 'kde'] and self.n_samples > 0:
+                kx = self.kernel_x[:, :-self.n_samples]
+            else:
+                kx = self.kernel_x
         rkhs_func = torch.einsum('ij, ik -> kj', self.rkhs_func.params, kx)
         if self.n_rff == 0:
             rkhs_norm_sq = torch.einsum('ir, ij, jr ->', self.rkhs_func.params, self.kernel_x, self.rkhs_func.params)

@@ -115,7 +115,7 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
         if verbose:
             print('Running hyperparams: ', f'{hyper}')
         estimator = estimator_class(model=copy.deepcopy(model), moment_function=moment_function,
-                                    val_loss_func=val_loss_func, **hyper, **estimator_kwargs)
+                                    val_loss_func=val_loss_func, verbose=verbose, **hyper, **estimator_kwargs)
         estimator.train(train_data, validation_data)
 
         val_loss = estimator.calc_validation_metric(x_val, z_val)

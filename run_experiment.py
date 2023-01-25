@@ -140,18 +140,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--run_parallel', action='store_true')
     parser.add_argument('--overwrite', default=True, action='store_true')
-    parser.add_argument('--experiment', type=str, default='heteroskedastic')
-    parser.add_argument('--exp_option', default=None)  # TODO: Try to fix this since it should be a dict
-    parser.add_argument('--n_train', type=int, default=120)
+    parser.add_argument('--experiment', type=str, default='network_iv')
+    parser.add_argument('--exp_option', default='sin')  # TODO: Try to fix this since it should be a dict
+    parser.add_argument('--n_train', type=int, default=1000)
     parser.add_argument('--method', type=str, default='MMDEL-neural')
     parser.add_argument('--method_option', default=None)
-    parser.add_argument('--rollouts', type=int, default=1)
+    parser.add_argument('--rollouts', type=int, default=10)
     parser.add_argument('--run_dir', type=str, default='')
-    parser.add_argument('--sampling', type=str, default='kde')
+    parser.add_argument('--sampling', type=str, default='empirical')
     parser.add_argument('--bw', type=float, default=0.1)
-    parser.add_argument('--n_samples', type=int, default=500)
+    parser.add_argument('--n_samples', type=int, default=0)
     parser.add_argument('--f_div', type=str, default='kl')
-    parser.add_argument('--nrff', type=int, default=5000)
+    parser.add_argument('--nrff', type=int, default=0)
     parser.add_argument('--z_dependency', default=False, action=argparse.BooleanOptionalAction)
     parser.add_argument('--annealing', default=False, action=argparse.BooleanOptionalAction)
     parser.add_argument('--batch_training', default=False, action=argparse.BooleanOptionalAction)
@@ -173,7 +173,7 @@ if __name__ == "__main__":
             'z_dependency': args.z_dependency,
             'annealing': args.annealing,
             'f_divergence_reg': args.f_div,
-            'n_random_features': args.nrff,
+            'n_random_features': args.nrff
         }
     else:
         estimator_kwargs = {}
