@@ -62,6 +62,7 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.pretrain = pretrain
         self.batch_training = False
         self.annealing = False
+        self.sampling = 'empirical'
         self.batch_size = None
         self.verbose = verbose
 
@@ -381,6 +382,10 @@ class GeneralizedEL(AbstractEstimationMethod):
         if self.batch_training:
             n = x_train[0].shape[0]
             batch_iter = BatchIter(num=n, batch_size=self.batch_size)
+            if self.sampling in ['kde', 'lebesque']:
+                n_exp = self.x_samples[0].shape[0] - n
+                splits = np.ceil(n / self.batch_size).astype(int)
+                exp_batch_iter = BatchIter(num=n_exp, batch_size=np.ceil(n_exp/splits).astype(int))
             batches_per_epoch = np.ceil(n / self.batch_size)
             eval_freq_epochs = np.ceil(self.eval_freq / batches_per_epoch)
         else:
@@ -428,8 +433,18 @@ class GeneralizedEL(AbstractEstimationMethod):
                 # self.kl_reg_param = kl_reg_param * np.exp(-0.15 * epoch_i)
                 self.kl_reg_param = self.kl_reg_param * 0.99
             if self.batch_training:
-                for batch_idx in batch_iter:
+                if self.sampling in ['kde', 'lebesque']:
+                    iterator = zip(batch_iter, exp_batch_iter)
+                else:
+                    iterator = batch_iter
+                for indexes in iterator:
+                    if self.sampling in ['kde', 'lebesque']:
+                        batch_idx, exp_idx = indexes
+                    else:
+                        batch_idx = indexes
+                        exp_idx = []
                     self.batch_idx = batch_idx
+                    self.exp_idx = [ele + n for ele in exp_idx]
                     x_batch = [x_tensor[0][batch_idx], x_tensor[1][batch_idx]]
                     z_batch = z_tensor[batch_idx] if z_tensor is not None else None
                     obj = self._optimize_step_theta(x_batch, z_batch)

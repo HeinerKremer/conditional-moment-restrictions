@@ -151,7 +151,8 @@ class MMDEL(GeneralizedEL):
     """------------- Objective of MMD-GEL ------------"""
     def _objective(self, x, z, *args, **kwargs):
         if self.batch_training:
-            kx = self.kernel_x[:, self.batch_idx]
+            mb_idx = self.batch_idx + self.exp_idx
+            kx = self.kernel_x[:, mb_idx]
         else:
             if self.sampling in ['lebesque', 'kde'] and self.n_samples > 0:
                 kx = self.kernel_x[:, :-self.n_samples]
