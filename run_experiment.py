@@ -147,10 +147,11 @@ if __name__ == "__main__":
     parser.add_argument('--method_option', default=None)
     parser.add_argument('--rollouts', type=int, default=1)
     parser.add_argument('--run_dir', type=str, default='')
-    parser.add_argument('--sampling', type=str, default='lebesque')
-    parser.add_argument('--n_samples', type=int, default=1000)
-    parser.add_argument('--f_div', type=str, default='log')
-    parser.add_argument('--nrff', type=int, default=0)
+    parser.add_argument('--sampling', type=str, default='kde')
+    parser.add_argument('--bw', type=float, default=0.1)
+    parser.add_argument('--n_samples', type=int, default=500)
+    parser.add_argument('--f_div', type=str, default='kl')
+    parser.add_argument('--nrff', type=int, default=5000)
     parser.add_argument('--z_dependency', default=False, action=argparse.BooleanOptionalAction)
     parser.add_argument('--annealing', default=False, action=argparse.BooleanOptionalAction)
     parser.add_argument('--batch_training', default=False, action=argparse.BooleanOptionalAction)
@@ -168,11 +169,11 @@ if __name__ == "__main__":
         estimator_kwargs = {
             'sampling': args.sampling,
             'n_samples': args.n_samples,
+            'bw': args.bw,
             'z_dependency': args.z_dependency,
             'annealing': args.annealing,
             'f_divergence_reg': args.f_div,
             'n_random_features': args.nrff,
-            'batch_training': args.batch_training
         }
     else:
         estimator_kwargs = {}

@@ -17,7 +17,8 @@ class MMDEL(GeneralizedEL):
     """
 
     def __init__(self, kl_reg_param, f_divergence_reg='kl', n_random_features=False, z_dependency=False,
-                 annealing=False, sampling='empirical', n_samples=500, kernel_x_kwargs=None, **kwargs):
+                 annealing=False, sampling='empirical', n_samples=500, kernel_x_kwargs=None,
+                 bw=None, **kwargs):
         super().__init__(divergence=f_divergence_reg, **kwargs)
         self.kl_reg_param = kl_reg_param
         self.annealing = annealing
@@ -29,6 +30,7 @@ class MMDEL(GeneralizedEL):
         self.kernel_x = None
         self.z_dependency = z_dependency
         self.sampling = sampling  # Possible to choose from ['empirical', 'kde', 'lebesque']
+        self.bw = bw  # only used for the KDE scheme
         self.n_samples = n_samples
         self.k_samples = None
         self.x_samples = None
@@ -123,6 +125,7 @@ class MMDEL(GeneralizedEL):
             # Add empirical samples
             xx = np_to_tensor(x)
             zz = np_to_tensor(z)
+            # zz = xx[0].clone()
             self.x_samples = [torch.vstack((xx[0], xz_samples[:, :x[0].shape[1]])),
                               torch.vstack((xx[1], xz_samples[:, x[0].shape[1]:-z.shape[1]]))]
             self.z_samples = torch.vstack((zz, xz_samples[:, -z.shape[1]:]))
@@ -130,13 +133,14 @@ class MMDEL(GeneralizedEL):
             xz = np.hstack((*x, z))
             # TODO: Add a pricipled way to select kernel bandwidth.
             from sklearn.neighbors import KernelDensity
-            kde = KernelDensity(bandwidth=0.1).fit(xz)
+            kde = KernelDensity(bandwidth=self.bw).fit(xz)
             # from cmr.utils.kde import GaussianKde
-            # kde = GaussianKde(xz, bw_method=0.1)
+            # kde = GaussianKde(xz, bw_method='scott')
             xz_samples = kde.sample(self.n_samples)
             xz_samples = torch.from_numpy(xz_samples).type(torch.float32)
             xx = np_to_tensor(x)
             zz = np_to_tensor(z)
+            # zz = xx[0].clone()
             self.x_samples = [torch.vstack((xx[0], xz_samples[:, :x[0].shape[1]])),
                               torch.vstack((xx[1], xz_samples[:, x[0].shape[1]:-z.shape[1]]))]
             self.z_samples = torch.vstack((zz, xz_samples[:, -z.shape[1]:]))
