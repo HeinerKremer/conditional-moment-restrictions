@@ -8,6 +8,7 @@ from cmr.methods.sieve_minimum_distance import SMDHeteroskedastic
 from cmr.methods.generalized_el import GeneralizedEL
 from cmr.methods.mmd_el_kernel import MMDELKernel
 from cmr.methods.mmd_el_neural import MMDELNeural
+from cmr.methods.mmd_el_wasserstein import MMDELWasserstein
 from cmr.methods.fgel_kernel import KernelFGEL
 from cmr.methods.mmd_el import MMDEL
 from cmr.methods.fgel_neural import NeuralFGEL
@@ -158,6 +159,22 @@ methods = {
             'hyperparams': {'kl_reg_param': [1e0, 1e1],
                             "reg_param": [0, 1e-4, 1e-2, 1e0],
                         }
+        },
+
+    'MMDEL-Wasserstein':
+        {
+            'estimator_class': MMDELWasserstein,
+            'estimator_kwargs': {
+                "theta_optim_args": {"lr": 5e-4},
+                "dual_optim_args": {"lr": 5 * 5e-4},
+                "batch_size": 200,
+                "max_num_epochs": 20000,
+                "burn_in_cycles": 5,
+                "eval_freq": 100,
+                "max_no_improve": 3, },
+            'hyperparams': {'kl_reg_param': [0],
+                            "reg_param": [0, 1e-4, 1e-2, 1e0],
+                            }
         },
 
     'MMDEL-neural-annealed':
