@@ -124,9 +124,9 @@ class AbstractEstimationMethod:
                 self._set_kernel_z(z_val=z_val_batch)
                 psi = self.moment_function(x_val_batch)
                 loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z_val, psi) / (n ** 2)
-                val_loss_list.append(loss)
+                val_loss_list.append(loss.detach().numpy())
             loss = np.mean(val_loss_list)
-        return float(loss.detach().numpy())
+        return float(loss)
 
     def _calc_val_moment_violation(self, x_val, z_val=None):
         if not isinstance(x_val, torch.Tensor):
