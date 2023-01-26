@@ -8,12 +8,13 @@ import torch.nn as nn
 
 
 class AbstractEstimationMethod:
-    def __init__(self, model, moment_function, kernel_z_kwargs=None, val_loss_func=None):
+    def __init__(self, model, moment_function, kernel_z_kwargs=None, val_loss_func=None, verbose=False):
         self.model = ModelWrapper(model)
         self.moment_function = self._wrap_moment_function(moment_function)
         self.is_trained = False
         self._custom_val_loss_func = val_loss_func
         self._val_loss_func = None   # To be set in _set_val_loss_func
+        self.verbose = verbose
 
         # Set by `set_data_dependent_attributes`
         self._dim_psi = None
