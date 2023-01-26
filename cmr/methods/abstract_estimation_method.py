@@ -110,9 +110,21 @@ class AbstractEstimationMethod:
         if not isinstance(z_val, torch.Tensor):
             z_val = self._to_tensor(z_val)
         n = z_val.shape[0]
-        self._set_kernel_z(z_val=z_val)
-        psi = self.moment_function(x_val)
-        loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z_val, psi) / (n ** 2)
+        if n < 2500:
+            self._set_kernel_z(z_val=z_val)
+            psi = self.moment_function(x_val)
+            loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z_val, psi) / (n ** 2)
+        else:
+            # Calculate MMR batchwise (this is quite inefficient because kernel matrices are computed everytime again)
+            val_loss_list = []
+            for i in range(0, z_val.shape[0], 5000):
+                x_val_batch = [x_val[0][i:i + 5000, :], x_val[1][i:i + 5000, :]]
+                z_val_batch = z_val[i:i + 5000, :]
+                self._set_kernel_z(z_val=z_val_batch)
+                psi = self.moment_function(x_val_batch)
+                loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z_val, psi) / (n ** 2)
+                val_loss_list.append(loss)
+            loss = np.mean(val_loss_list)
         return float(loss.detach().numpy())
 
     def _calc_val_moment_violation(self, x_val, z_val=None):
@@ -125,16 +137,7 @@ class AbstractEstimationMethod:
     def calc_validation_metric(self, x_val, z_val):
         if not self._val_loss_func:
             self._val_loss_func = self._get_val_loss_func(z_val)
-        if z_val.shape[0] > 2500:
-            val_loss_list = []
-            for i in range(0, z_val.shape[0], 2500):
-                val_loss = self._val_loss_func([x_val[0][i:i + 2500, :],
-                                                x_val[1][i:i + 2500, :]],
-                                               z_val[i:i + 2500, :])
-                val_loss_list.append(val_loss)
-            return np.mean(val_loss_list)
-        else:
-            return self._val_loss_func(x_val, z_val)
+        return self._val_loss_func(x_val, z_val)
 
     def _get_val_loss_func(self, z_val):
         if self._custom_val_loss_func:
