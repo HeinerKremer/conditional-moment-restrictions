@@ -357,14 +357,6 @@ class GeneralizedEL(AbstractEstimationMethod):
             self.dual_optimizer.step()
             if not self.are_dual_params_finite():
                 raise OptimizationError('Dual variables are NaN or inf.')
-        # if self.counter % (self.max_num_epochs/10) == 0:
-        #     plt.plot(losses)
-        #     plt.title(f'Particle loss, iter={self.counter}')
-        #     plt.show()
-        #     print(float(self.x[1][0].detach().numpy()), float(self.x0[1][0].detach().numpy()))
-        #     print('y L2-dist: ', float((torch.norm(self.x[1] - self.x0[1])**2).detach().numpy()))
-        #     print('x L2-dist: ', float((torch.norm(self.x[0] - self.x0[0])**2).detach().numpy()))
-        # self.counter += 1
         return dual_obj
 
     """---------------------------------------------------------------------------------------------------------"""
@@ -386,7 +378,7 @@ class GeneralizedEL(AbstractEstimationMethod):
         if self.batch_training:
             n = x_train[0].shape[0]
             batch_iter = BatchIter(num=n, batch_size=self.batch_size)
-            if self.sampling in ['kde', 'lebesque']:
+            if self.sampling in ['kde', 'lebesgue']:
                 n_exp = self.x_samples[0].shape[0] - n
                 splits = np.ceil(n / self.batch_size).astype(int)
                 exp_batch_iter = BatchIter(num=n_exp, batch_size=np.ceil(n_exp/splits).astype(int))
@@ -422,14 +414,14 @@ class GeneralizedEL(AbstractEstimationMethod):
             # self.dual_moment_func.train()
             if self.annealing and epoch_i % 2 == 0:
                 # self.kl_reg_param = kl_reg_param * np.exp(-0.15 * epoch_i)
-                self.kl_reg_param = self.kl_reg_param * 0.99
+                self.entropy_reg_param = self.entropy_reg_param * 0.99
             if self.batch_training:
-                if self.sampling in ['kde', 'lebesque']:
+                if self.sampling in ['kde', 'lebesgue']:
                     iterator = zip(batch_iter, exp_batch_iter)
                 else:
                     iterator = batch_iter
                 for indexes in iterator:
-                    if self.sampling in ['kde', 'lebesque']:
+                    if self.sampling in ['kde', 'lebesgue']:
                         batch_idx, exp_idx = indexes
                     else:
                         batch_idx = indexes

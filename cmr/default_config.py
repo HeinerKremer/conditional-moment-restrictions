@@ -6,11 +6,11 @@ from cmr.methods.gmm import GMM
 from cmr.methods.vmm_neural import NeuralVMM
 from cmr.methods.sieve_minimum_distance import SMDHeteroskedastic
 from cmr.methods.generalized_el import GeneralizedEL
-from cmr.methods.mmd_el_kernel import MMDELKernel
-from cmr.methods.mmd_el_neural import MMDELNeural
-from cmr.methods.mmd_el_wasserstein import MMDELWasserstein
+from cmr.methods.kmm_kernel import KMMKernel
+from cmr.methods.kmm_neural import KMMNeural
+from cmr.methods.mmd_el_wasserstein import KMMWasserstein
 from cmr.methods.fgel_kernel import KernelFGEL
-from cmr.methods.mmd_el import MMDEL
+from cmr.methods.kmm import KMM
 from cmr.methods.fgel_neural import NeuralFGEL
 # from cmr.methods.deep_iv import DeepIV
 
@@ -117,9 +117,9 @@ methods = {
                         }
         },
 
-    'MMDEL':
+    'KMM':
         {
-            'estimator_class': MMDEL,
+            'estimator_class': KMM,
             'estimator_kwargs': {
                 "dual_optim": 'oadam_gda',
                 "theta_optim": 'oadam_gda',
@@ -127,12 +127,12 @@ methods = {
                 "dual_optim_args": {"lr": 5 * 5e-4},
                 "eval_freq": 100,
                 "max_num_epochs": 20000,},
-            'hyperparams': {'kl_reg_param': [1e5, 1e4, 1e3, 1e2, 1e1, 1e0, 1e-1, 1e-2, 1e-3]}
+            'hyperparams': {'entropy_reg_param': [1e5, 1e4, 1e3, 1e2, 1e1, 1e0, 1e-1, 1e-2, 1e-3]}
         },
 
-    'MMDEL-kernel':
+    'KMM-kernel':
         {
-            'estimator_class': MMDELKernel,
+            'estimator_class': KMMKernel,
             'estimator_kwargs': {
                 "dual_optim": 'oadam_gda',
                 "theta_optim": 'oadam_gda',
@@ -140,14 +140,14 @@ methods = {
                 "dual_optim_args": {"lr": 5 * 5e-4},
                 "eval_freq": 100,
                 "max_num_epochs": 20000,},
-            'hyperparams': {'kl_reg_param': [1e1, 1e0],
+            'hyperparams': {'entropy_reg_param': [1e1, 1e0],
                             'reg_param': [1e-1, 1e-2, 1e-3, 1e-4, 1e-6, 1e-8],
                         }
         },
 
-    'MMDEL-neural':
+    'KMM-neural':
         {
-            'estimator_class': MMDELNeural,
+            'estimator_class': KMMNeural,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -156,14 +156,14 @@ methods = {
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
                 "max_no_improve": 3,},
-            'hyperparams': {'kl_reg_param': [1e0, 1e1],
+            'hyperparams': {'entropy_reg_param': [1e0, 1e1],
                             "reg_param": [0, 1e-4, 1e-2, 1e0],
                         }
         },
 
-    'MMDEL-Wasserstein':
+    'KMM-Wasserstein':
         {
-            'estimator_class': MMDELWasserstein,
+            'estimator_class': KMMWasserstein,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -172,14 +172,14 @@ methods = {
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
                 "max_no_improve": 3, },
-            'hyperparams': {'kl_reg_param': [0],
+            'hyperparams': {'entropy_reg_param': [0],
                             "reg_param": [0, 1e-4, 1e-2, 1e0],
                             }
         },
 
-    'MMDEL-neural-annealed':
+    'KMM-neural-annealed':
         {
-            'estimator_class': MMDELNeural,
+            'estimator_class': KMMNeural,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -191,14 +191,14 @@ methods = {
                 "max_no_improve": 3,
                 "annealing": True
             },
-            'hyperparams': {'kl_reg_param': [1e3],
+            'hyperparams': {'entropy_reg_param': [1e3],
                             "reg_param": [0, 1e-4, 1e-2, 1e0],
                             }
         },
 
-    'RF-MMDEL':
+    'RF-KMM':
         {
-            'estimator_class': MMDELNeural,
+            'estimator_class': KMMNeural,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -209,7 +209,7 @@ methods = {
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
                 "max_no_improve": 5},
-            'hyperparams': {'kl_reg_param': [1, 1e1],
+            'hyperparams': {'entropy_reg_param': [1, 1e1],
                             "reg_param": [1e-4, 1e-2, 1e0],
                             }
         },
@@ -272,7 +272,7 @@ methods = {
 #                 "burn_in_cycles": 5,
 #                 "eval_freq": 100,
 #                 "max_no_improve": 3, },
-#             'hyperparams': {'kl_reg_param': [1, 10],# [1e0, 1e1],
+#             'hyperparams': {'entropy_reg_param': [1, 10],# [1e0, 1e1],
 #                             "reg_param": [0, 1e-4, 1e-2, 1e0],
 #                             }
 #         }
@@ -288,7 +288,7 @@ methods = {
 #                 "burn_in_cycles": 5,
 #                 "eval_freq": 100,
 #                 "max_no_improve": 5},
-#             'hyperparams': {'kl_reg_param': [1e-1, 1, 1e1],
+#             'hyperparams': {'entropy_reg_param': [1e-1, 1, 1e1],
 #                             "reg_param": [1e-4, 1e-2, 1e0],
 #                         }
 #         }
@@ -305,7 +305,7 @@ methods = {
 #                 "burn_in_cycles": 5,
 #                 "eval_freq": 100,
 #                 "max_no_improve": 5},
-#             'hyperparams': {'kl_reg_param': [1e-1, 1, 1e1],
+#             'hyperparams': {'entropy_reg_param': [1e-1, 1, 1e1],
 #                             "reg_param": [1e-4, 1e-2, 1e0],
 #                         }
 #         }
@@ -319,7 +319,7 @@ methods = {
 #             "burn_in_cycles": 5,
 #             "eval_freq": 100,
 #             "max_no_improve": 3, },
-#         'hyperparams': {'kl_reg_param': [reg_param],
+#         'hyperparams': {'entropy_reg_param': [reg_param],
 #                         "reg_param": [0, 1e-4, 1e-2, 1e0],
 #                         "f_divergence_reg": ['kl', 'log'],
 #                         }
@@ -335,7 +335,7 @@ methods = {
 #             "burn_in_cycles": 5,
 #             "eval_freq": 100,
 #             "max_no_improve": 3, },
-#         'hyperparams': {'kl_reg_param': [reg_param],
+#         'hyperparams': {'entropy_reg_param': [reg_param],
 #                         "reg_param": [0, 1e-4, 1e-2, 1e0],
 #                         }
 #     }
@@ -352,7 +352,7 @@ methods = {
 #                 "burn_in_cycles": 5,
 #                 "eval_freq": 100,
 #                 "max_no_improve": 5},
-#             'hyperparams': {'kl_reg_param': [1e-1, 1, 1e1],
+#             'hyperparams': {'entropy_reg_param': [1e-1, 1, 1e1],
 #                             "reg_param": [1e-4, 1e-2, 1e0],
 #                         }
 #         }

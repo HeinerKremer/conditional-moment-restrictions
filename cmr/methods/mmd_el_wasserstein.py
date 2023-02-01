@@ -5,7 +5,7 @@ import torch.optim as optim
 import numpy as np
 from collections import deque
 
-from cmr.methods.mmd_el import MMDEL
+from cmr.methods.kmm import KMM
 from cmr.utils.torch_utils import Parameter, ModularMLPModel
 from cmr.utils.rkhs_utils import get_rbf_kernel
 
@@ -193,7 +193,7 @@ def particle_optimizaton(rkhs_params, x, z, particles, dual_func, mode,
     #       loss_window[-1], i+1))
 
 
-class MMDELWasserstein(MMDEL):
+class KMMWasserstein(KMM):
 
     def __init__(self, model, reg_param, batch_training=False, batch_size=200, dual_func_network_kwargs=None, **kwargs):
         super().__init__(model=model, theta_optim='oadam_gda', **kwargs)
