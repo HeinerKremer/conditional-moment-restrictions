@@ -74,6 +74,6 @@ class KMMNeural(KMM):
 
 if __name__ == '__main__':
     from experiments.tests import test_cmr_estimator
-    # test_cmr_estimator(estimation_method='KMM-neural', n_runs=1, n_train=30, hyperparams=None)
+    test_cmr_estimator(estimation_method='KMM-neural', n_runs=1, n_train=30, hyperparams=None)
     test_cmr_estimator(estimation_method='RF-KMM', n_runs=1, n_train=30, hyperparams=None)
 

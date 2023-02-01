@@ -28,7 +28,7 @@ class KMM(GeneralizedEL):
             kernel_x_kwargs = {}
         self.kernel_x_kwargs = kernel_x_kwargs
         self.n_rff = n_random_features
-        self.kernel_x = None
+        self.kernel_x = torch.Tensor((1, 1))    # Ugly fix to resolve merge conflict, will clean up later
         self.z_dependency = z_dependency
         self.sampling = sampling  # Possible to choose from ['empirical', 'kde', 'lebesgue']
         self.bw = bw  # only used for the KDE scheme
