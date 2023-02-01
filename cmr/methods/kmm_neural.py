@@ -17,10 +17,9 @@ class KMMNeural(KMM):
         self.batch_training = batch_training
 
     def _init_dual_params(self):
+        super()._init_dual_params()
         dual_func_network_kwargs = self._update_default_dual_func_network_kwargs(self.dual_func_network_kwargs_custom)
         self.dual_moment_func = ModularMLPModel(**dual_func_network_kwargs)
-        self.rkhs_func = Parameter(shape=(self.kernel_x.shape[0], 1))
-        self.dual_normalization = Parameter(shape=(1, 1))
         self.all_dual_params = list(self.dual_moment_func.parameters()) + list(self.dual_normalization.parameters()) + list(self.rkhs_func.parameters())
 
     def _update_default_dual_func_network_kwargs(self, dual_func_network_kwargs):
@@ -49,6 +48,6 @@ class KMMNeural(KMM):
 
 if __name__ == '__main__':
     from experiments.tests import test_cmr_estimator
-    test_cmr_estimator(estimation_method='MMDEL-neural', n_runs=1, n_train=30, hyperparams=None)
-    test_cmr_estimator(estimation_method='RF-MMDEL', n_runs=1, n_train=30, hyperparams=None)
+    # test_cmr_estimator(estimation_method='KMM-neural', n_runs=1, n_train=30, hyperparams=None)
+    test_cmr_estimator(estimation_method='RF-KMM', n_runs=1, n_train=30, hyperparams=None)
 

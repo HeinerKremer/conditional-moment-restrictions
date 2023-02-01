@@ -1,6 +1,7 @@
 import cvxpy as cvx
 import numpy as np
 import torch
+import rff
 
 import cmr
 
@@ -16,7 +17,7 @@ class KMM(GeneralizedEL):
     Maximum mean discrepancy empirical likelihood estimator for unconditional moment restrictions.
     """
 
-    def __init__(self, entropy_reg_param, divergence='kl', n_random_features=False, z_dependency=False,
+    def __init__(self, entropy_reg_param, divergence='kl', n_random_features=0, z_dependency=False,
                  annealing=False, sampling='empirical', n_samples=500, kernel_x_kwargs=None,
                  bw=None, **kwargs):
         super().__init__(divergence=divergence, **kwargs)
@@ -41,44 +42,52 @@ class KMM(GeneralizedEL):
             raise NotImplementedError('MMD computation not implemented')
         return divergence
 
-    def _set_kernel_x(self, x, z):
-        """
-        Compute the kernel matrix for the data samples and possibly additional samples.
+    # def _set_kernel_x(self, x, z):
+    #     """
+    #     Compute the kernel matrix for the data samples and possibly additional samples.
+    #
+    #     Parameters
+    #     ----------
+    #     x: list of two tensors
+    #         Data samples of treatment and effect
+    #     z: tensor
+    #         Data samples of instruments
+    #     """
+    #     if self.kernel_x is None and x is not None:
+    #         if self.n_rff == 0:
+    #             kt, self.sigma_t = get_rbf_kernel(self.x_samples[0].numpy(),
+    #                                               self.x_samples[0].numpy(),
+    #                                               **self.kernel_x_kwargs)
+    #             ky, self.sigma_y = get_rbf_kernel(self.x_samples[1].numpy(),
+    #                                               self.x_samples[1].numpy(),
+    #                                               **self.kernel_x_kwargs)
+    #             if self.z_dependency:
+    #                 kz, self.sigma_z = get_rbf_kernel(self.z_samples.numpy(),
+    #                                                   self.z_samples.numpy(),
+    #                                                   **self.kernel_z_kwargs)
+    #             else:
+    #                 kz = torch.ones(ky.shape)
+    #                 self.sigma_z = 0
+    #             self.kernel_x = (kt.type(torch.float32) * ky.type(torch.float32) * kz.type(torch.float32))
+    #             k_cholesky = torch.tensor(np.transpose(compute_cholesky_factor(self.kernel_x.detach().numpy())))
+    #             self.kernel_x_cholesky = k_cholesky
+    #         elif self.n_rff > 0:
+    #             xz = np_to_tensor(self.x_samples)
+    #             if self.z_dependency:
+    #                 xz.extend(np_to_tensor([self.z_samples]))
+    #             xz = torch.hstack(xz)
+    #             self.kernel_x, self.sigma_rff = get_rff(xz, n_rff=self.n_rff, **self.kernel_x_kwargs)
+    #             self.kernel_x = self.kernel_x.type(torch.float32)
+    #         else:
+    #             raise ValueError("Number of random features must be larger than 0!")
 
-        Parameters
-        ----------
-        x: list of two tensors
-            Data samples of treatment and effect
-        z: tensor
-            Data samples of instruments
-        """
-        if self.kernel_x is None and x is not None:
-            if self.n_rff == 0:
-                kt, self.sigma_t = get_rbf_kernel(self.x_samples[0].numpy(),
-                                                  self.x_samples[0].numpy(),
-                                                  **self.kernel_x_kwargs)
-                ky, self.sigma_y = get_rbf_kernel(self.x_samples[1].numpy(),
-                                                  self.x_samples[1].numpy(),
-                                                  **self.kernel_x_kwargs)
-                if self.z_dependency:
-                    kz, self.sigma_z = get_rbf_kernel(self.z_samples.numpy(),
-                                                      self.z_samples.numpy(),
-                                                      **self.kernel_z_kwargs)
-                else:
-                    kz = torch.ones(ky.shape)
-                    self.sigma_z = 0
-                self.kernel_x = (kt.type(torch.float32) * ky.type(torch.float32) * kz.type(torch.float32))
-                k_cholesky = torch.tensor(np.transpose(compute_cholesky_factor(self.kernel_x.detach().numpy())))
-                self.kernel_x_cholesky = k_cholesky
-            elif self.n_rff > 0:
-                xz = np_to_tensor(self.x_samples)
-                if self.z_dependency:
-                    xz.extend(np_to_tensor([self.z_samples]))
-                xz = torch.hstack(xz)
-                self.kernel_x, self.sigma_rff = get_rff(xz, n_rff=self.n_rff, **self.kernel_x_kwargs)
-                self.kernel_x = self.kernel_x.type(torch.float32)
-            else:
-                raise ValueError("Number of random features must be larger than 0!")
+    def _set_kernel_x(self, x, z):
+        x_np, z_np = tensor_to_np(x), tensor_to_np(z)
+        kernel_t, _ = get_rbf_kernel(x_np[0], x_np[0], **self.kernel_x_kwargs)
+        kernel_y, _ = get_rbf_kernel(x_np[1], x_np[1], **self.kernel_x_kwargs)
+        kernel_z, _ = get_rbf_kernel(z_np, z_np, **self.kernel_z_kwargs)
+
+        self.kernel_x = torch.Tensor(kernel_t * kernel_y * kernel_z)
 
     def _init_rff(self, x, z):
         x_np, z_np = tensor_to_np(x), tensor_to_np(z)
@@ -98,19 +107,31 @@ class KMM(GeneralizedEL):
 
     def eval_rkhs_func(self, x, z):
         if self.n_rff > 0:
-            return torch.einsum('ij, ki -> kj', self.rkhs_func, self.eval_rff(x, z))
+            return torch.einsum('ij, ki -> kj', self.rkhs_func.params, self.eval_rff(x, z))
         else:
-            raise NotImplementedError('Representer theorem doesnt hold but can implement sth as sanity check')
+            return torch.einsum('ij, ik -> kj', self.rkhs_func.params, self.kernel_x)
+
+    def rkhs_norm_sq(self):
+        if self.n_rff == 0:
+            return torch.einsum('ir, ij, jr ->', self.rkhs_func.params, self.kernel_x, self.rkhs_func.params)
+        elif self.n_rff > 0:
+            return torch.einsum('ij, ij ->', self.rkhs_func.params, self.rkhs_func.params)
 
     def _init_dual_params(self):
         self.dual_moment_func = Parameter(shape=(1, self.dim_psi))
-        self.rkhs_func = Parameter(shape=(self.kernel_x.shape[0], 1))
         self.dual_normalization = Parameter(shape=(1, 1))
+        if self.n_rff > 0:
+            self.rkhs_func = Parameter(shape=(self.n_rff, 1))
+        else:
+            self.rkhs_func = Parameter(shape=(self.kernel_x.shape[0], 1))
         self.all_dual_params = list(self.dual_moment_func.parameters()) + list(self.dual_normalization.parameters()) + list(self.rkhs_func.parameters())
 
     def init_estimator(self, x_tensor, z_tensor):
         self._get_samples(x_tensor, z_tensor)
-        self._set_kernel_x(x_tensor, z_tensor)
+        if self.n_rff > 0:
+            self._init_rff(x_tensor, z_tensor)
+        else:
+            self._set_kernel_x(x_tensor, z_tensor)
         super().init_estimator(x_tensor=x_tensor, z_tensor=z_tensor)
 
     def _get_samples(self, x, z):
@@ -165,29 +186,22 @@ class KMM(GeneralizedEL):
             self.z_samples = torch.vstack((zz, xz_samples[:, -z.shape[1]:]))
 
     """------------- Objective of MMD-GEL ------------"""
-
     def _objective(self, x, z, *args, **kwargs):
-        if self.batch_training:
-            mb_idx = self.batch_idx + self.exp_idx
-            kx = self.kernel_x[:, mb_idx]
-        else:
-            if self.sampling in ['lebesgue', 'kde'] and self.n_samples > 0:
-                kx = self.kernel_x[:, :-self.n_samples]
-            else:
-                kx = self.kernel_x
-        rkhs_func = torch.einsum('ij, ik -> kj', self.rkhs_func.params, kx)
-        if self.n_rff == 0:
-            rkhs_norm_sq = torch.einsum('ir, ij, jr ->', self.rkhs_func.params, self.kernel_x, self.rkhs_func.params)
-        elif self.n_rff > 0:
-            rkhs_norm_sq = torch.einsum('i, i ->', self.rkhs_func.params[:, 0], self.rkhs_func.params[:, 0])
-        else:
-            raise ValueError("Number of random features cannot be smaller than 0!")
-        rkhs_func_samples = torch.einsum('ij,ik->kj', self.rkhs_func.params, self.kernel_x)
+        # if self.batch_training:
+        #     mb_idx = self.batch_idx + self.exp_idx
+        #     kx = self.kernel_x[:, mb_idx]
+        # else:
+        #     if self.sampling in ['lebesgue', 'kde'] and self.n_samples > 0:
+        #         kx = self.kernel_x[:, :-self.n_samples]
+        #     else:
+        #         kx = self.kernel_x
+        rkhs_func = self.eval_rkhs_func(x, z)
+        rkhs_func_samples = self.eval_rkhs_func(self.x_samples, self.z_samples)
 
         exponent = (rkhs_func_samples + self.dual_normalization.params
                     - torch.sum(self._eval_dual_moment_func(self.z_samples) * self.moment_function(self.x_samples),
                                 dim=1, keepdim=True))
-        objective = (torch.mean(rkhs_func) + self.dual_normalization.params - 1 / 2 * rkhs_norm_sq
+        objective = (torch.mean(rkhs_func) + self.dual_normalization.params - 1 / 2 * self.rkhs_norm_sq()
                      - self.entropy_reg_param * torch.mean(self.conj_divergence(1 / self.entropy_reg_param * exponent)))
         return objective, -objective
 
@@ -234,13 +248,8 @@ if __name__ == '__main__':
     from experiments.tests import test_mr_estimator
     # test_mr_estimator(estimation_method='KMM', n_runs=2, n_train=2000, hyperparams=None)
 
-    import torch
-    import rff
-
-    X = torch.randn((256, 2))
-    eval_rff_featues = rff.layers.GaussianEncoding(sigma=10.0, input_size=2, encoded_size=256)
-    Xp = eval_rff_featues(X)
-    print(Xp.shape)
+    np.random.seed(123485)
+    torch.random.manual_seed(12345)
 
     from experiments.exp_heteroskedastic import HeteroskedasticNoiseExperiment
 
@@ -248,10 +257,13 @@ if __name__ == '__main__':
 
     exp.prepare_dataset(n_train=100, n_val=100, n_test=20000)
     model = exp.get_model()
-    estimator = KMM(model=exp.get_model(), moment_function=exp.moment_function, entropy_reg_param=1.0, n_random_features=500)
+    estimator = KMM(model=exp.get_model(), moment_function=exp.moment_function, entropy_reg_param=1.0,
+                    n_random_features=1000, theta_optim='oadam_gda')
 
     x = np_to_tensor([exp.train_data['t'], exp.train_data['y']])
     z = np_to_tensor(exp.train_data['z'])
     estimator._init_rff(x, z)
-    print(estimator._eval_rff_t(x[0]).shape)
-    print(estimator.eval_rff(x, z).shape)
+    estimator.init_estimator(x, z)
+    print(estimator.objective(x, z))
+    estimator.train(exp.train_data, exp.val_data)
+    print(estimator.get_trained_parameters())
