@@ -8,7 +8,7 @@ from cmr.methods.mmr import MMR
 from cmr.methods.least_squares import OrdinaryLeastSquares
 from cmr.default_config import methods
 
-mr_estimators = ['OLS', 'GMM', 'GEL', 'MMDEL']
+mr_estimators = ['OLS', 'GMM', 'GEL', 'KMM']
 cmr_estimators = [item for item in methods.keys() if item not in mr_estimators]   # + ['DeepIV']
 
 

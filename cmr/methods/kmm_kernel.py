@@ -1,13 +1,13 @@
 import cvxpy as cvx
 import torch
 
-from cmr.methods.mmd_el import MMDEL
+from cmr.methods.kmm import KMM
 from cmr.utils.torch_utils import Parameter
 
 cvx_solver = cvx.MOSEK
 
 
-class MMDELKernel(MMDEL):
+class KMMKernel(KMM):
 
     def __init__(self, reg_param, **kwargs):
         super().__init__(**kwargs)

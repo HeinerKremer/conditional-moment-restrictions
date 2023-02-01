@@ -7,7 +7,7 @@ import cvxpy as cvx
 import seaborn as sns
 
 
-from cmr.methods.mmd_el import MMDEL
+from cmr.methods.kmm import KMM
 from cmr.utils.torch_utils import Parameter, OptimizationError
 
 
@@ -74,7 +74,7 @@ NEURIPS_RCPARAMS = {
 }
 
 
-class MMDELAnalysis(MMDEL):
+class KMMAnalysis(KMM):
     def __init__(self, x, ymax=70, **kwargs):
         super().__init__(**kwargs)
         kwargs.setdefault('n_random_features', 0)
@@ -246,15 +246,15 @@ if __name__ == "__main__":
 
     x = [torch.Tensor(np.linspace(-x_lim, x_lim, 500)).reshape((-1, 1)),
          torch.Tensor(np.linspace(-10, 10, 500)).reshape((-1, 1))]
-    estimator = MMDELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='kl', **estimator_kwargs)
+    estimator = KMMAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='kl', **estimator_kwargs)
     estimator._optimize_dual_params_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
     y_kl = estimator.eval_rkhs_func()
 
-    estimator = MMDELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
+    estimator = KMMAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
     estimator._optimize_dual_params_cvxpy(x_tensor=x, z_tensor=x, f_divergence='log')
     y_log = estimator.eval_rkhs_func()
 
-    estimator = MMDELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
+    estimator = KMMAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
     estimator._optimize_dual_params_cvxpy(x_tensor=x, z_tensor=x, f_divergence='exact')
     y_exact = estimator.eval_rkhs_func()
 

@@ -7,9 +7,9 @@ import cvxpy as cvx
 import seaborn as sns
 
 
-from cmr.methods.mmd_el import MMDEL
+from cmr.methods.kmm import KMM
 from cmr.utils.torch_utils import Parameter, OptimizationError
-from cmr.utils.visualize_kel import MMDELAnalysis, Model
+from cmr.utils.visualize_kel import KMMAnalysis, Model
 from cmr.utils.visualize_kel import *
 
 
@@ -42,22 +42,22 @@ if __name__ == "__main__":
     #                              annealing=True, **estimator_kwargs)
     # y_annealing = estimator._optimize_dual_func_gd(x_tensor=x, z_tensor=x[0], iters=100000)
 
-    estimator = MMDELAnalysis(x=x, ymax=ymax, model=model,
-                              n_random_features=5000,
-                              kl_reg_param=0.01,
-                              f_divergence_reg='kl',
-                              **estimator_kwargs)
+    estimator = KMMAnalysis(x=x, ymax=ymax, model=model,
+                            n_random_features=5000,
+                            kl_reg_param=0.01,
+                            f_divergence_reg='kl',
+                            **estimator_kwargs)
     estimator._optimize_dual_params_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
     y_kl_rff = estimator.eval_rkhs_func()
 
-    estimator = MMDELAnalysis(x=x, ymax=ymax, model=model,
-                              kl_reg_param=0.01,
-                              f_divergence_reg='kl',
-                              **estimator_kwargs)
+    estimator = KMMAnalysis(x=x, ymax=ymax, model=model,
+                            kl_reg_param=0.01,
+                            f_divergence_reg='kl',
+                            **estimator_kwargs)
     estimator._optimize_dual_params_cvxpy(x_tensor=x, z_tensor=x, f_divergence='kl')
     y_kl = estimator.eval_rkhs_func()
 
-    estimator = MMDELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
+    estimator = KMMAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
     estimator._optimize_dual_params_cvxpy(x_tensor=x, z_tensor=x, f_divergence='exact')
     y_exact = estimator.eval_rkhs_func()
 
