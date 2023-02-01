@@ -361,6 +361,10 @@ class GeneralizedEL(AbstractEstimationMethod):
 
     """---------------------------------------------------------------------------------------------------------"""
 
+    def _setup_training(self):
+        """Put all variable used in training on the proper device should return device used."""
+        return 'cpu'
+
     def _train_internal(self, x_train, z_train, x_val, z_val, debugging):
         x_tensor = self._to_tensor(x_train)
         x_val_tensor = self._to_tensor(x_val)
@@ -393,11 +397,7 @@ class GeneralizedEL(AbstractEstimationMethod):
 
         # Put everything on the same device
         # TODO(Yassine): Make this in appropriate location and not hacky
-        if self.batch_training:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-        else:
-            device = 'cpu'
-        self.model.to(device)
+        device = self._setup_training()
 
         x_tensor = [x_tensor[0].to(device), x_tensor[1].to(device)]
         x_val_tensor = [x_val_tensor[0].to(device), x_val_tensor[1].to(device)]
@@ -405,16 +405,7 @@ class GeneralizedEL(AbstractEstimationMethod):
         if z_tensor is not None:
             z_tensor = z_tensor.to(device)
             z_val_tensor = z_val_tensor.to(device)
-        # use list with dual parameters etc
-        for ele in self.all_dual_params:
-            ele.to(device)
-        try:
-            self.dual_moment_func.to(device)
-            self.rkhs_func.to(device)
-            self.dual_normalization.to(device)
-            self.kernel_x = self.kernel_x.to(device)
-        except:
-            pass
+
         if self.annealing:
             kl_reg_param = self.kl_reg_param
 

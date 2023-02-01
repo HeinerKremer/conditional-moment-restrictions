@@ -80,7 +80,7 @@ def pretrain_model_and_renormalize_moment_function(moment_function, model, train
                                                         torch.Tensor(train_data['y'])).detach().numpy(), axis=0))
 
     def moment_function_normalized(model_evaluation, y):
-        return moment_function(model_evaluation, y) / normalization
+        return moment_function(model_evaluation, y) / normalization.to(y.device)
 
     return pretrained_model, moment_function_normalized
 
