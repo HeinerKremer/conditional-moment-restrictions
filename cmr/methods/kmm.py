@@ -194,6 +194,7 @@ class KMM(GeneralizedEL):
         #         kx = self.kernel_x[:, :-self.n_samples]
         #     else:
         #         kx = self.kernel_x
+        assert not self.batch_training, 'Batch training has been temporarily disabled. Will be added again in next commit.'
         rkhs_func = self.eval_rkhs_func(x, z)
         rkhs_func_samples = self.eval_rkhs_func(self.x_samples, self.z_samples)
 
