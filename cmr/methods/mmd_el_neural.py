@@ -22,6 +22,32 @@ class MMDELNeural(MMDEL):
         self.rkhs_func = Parameter(shape=(self.kernel_x.shape[0], 1))
         self.dual_normalization = Parameter(shape=(1, 1))
         self.all_dual_params = list(self.dual_moment_func.parameters()) + list(self.dual_normalization.parameters()) + list(self.rkhs_func.parameters())
+        # if self.batch_training:
+        #     device = "cuda" if torch.cuda.is_available() else "cpu"
+        # else:
+        #     device = 'cpu'
+        # self.dual_moment_func.to(device)
+        # self.rkhs_func.to(device)
+        # self.dual_normalization.to(device)
+        # if self.sampling in ['kde', 'lebesque']:
+        #     self.z_samples.to(device)
+        #     self.x_samples[0].to(device)
+        #     self.x_samples[1].to(device)
+
+    def _setup_training(self):
+        if self.batch_training:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        else:
+            device = 'cpu'
+        self.model = self.model.to(device)
+        self.dual_moment_func = self.dual_moment_func.to(device)
+        self.rkhs_func = self.rkhs_func.to(device)
+        self.dual_normalization = self.dual_normalization.to(device)
+        self.kernel_x = self.kernel_x.to(device)
+        self.z_samples = self.z_samples.to(device)
+        self.x_samples = [self.x_samples[0].to(device),
+                          self.x_samples[1].to(device)]
+        return device
 
     def _update_default_dual_func_network_kwargs(self, dual_func_network_kwargs):
         dual_func_network_kwargs_default = {

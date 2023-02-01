@@ -107,7 +107,6 @@ class MMDEL(GeneralizedEL):
             Data samples of instruments
         """
         if self.sampling == 'empirical':
-            self.k_samples = self.kernel_x
             self.x_samples = np_to_tensor(x)
             self.z_samples = np_to_tensor(z)
         elif self.sampling == 'lebesque':
