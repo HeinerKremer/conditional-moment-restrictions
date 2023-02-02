@@ -9,7 +9,7 @@ import logging
 
 from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
 from cmr.utils.oadam import OAdam
-from cmr.utils.torch_utils import Parameter, BatchIter, OptimizationError
+from cmr.utils.torch_utils import Parameter, BatchIter, OptimizationError, np_to_tensor
 
 cvx_solver = cvx.MOSEK
 
@@ -24,8 +24,8 @@ class GeneralizedEL(AbstractEstimationMethod):
     """
 
     def __init__(self, model, moment_function, reg_param=0.0,
-                 max_num_epochs=50000, eval_freq=2000, max_no_improve=3, burn_in_cycles=5,
-                 theta_optim=None, theta_optim_args=None, pretrain=True,
+                 max_num_epochs=50000, batch_size=None, eval_freq=2000, max_no_improve=3, burn_in_cycles=5,
+                 theta_optim=None, theta_optim_args=None, pretrain=False,
                  dual_optim=None, dual_optim_args=None, inneriters=None,
                  divergence=None, kernel_z_kwargs=None, val_loss_func=None,
                  verbose=False):
@@ -56,14 +56,12 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.theta_optimizer = None
 
         self.max_num_epochs = max_num_epochs if not self.theta_optim_type == 'lbfgs' else 3
+        self.batch_size = batch_size
         self.eval_freq = eval_freq
         self.max_no_improve = max_no_improve
         self.burn_in_cycles = burn_in_cycles
         self.pretrain = pretrain
-        self.batch_training = False
         self.annealing = False
-        self.sampling = 'empirical'
-        self.batch_size = None
         self.verbose = verbose
 
         self.counter = 0
@@ -366,22 +364,12 @@ class GeneralizedEL(AbstractEstimationMethod):
         return 'cpu'
 
     def _train_internal(self, x_train, z_train, x_val, z_val, debugging):
-        x_tensor = self._to_tensor(x_train)
-        x_val_tensor = self._to_tensor(x_val)
+        x_tensor, z_tensor = np_to_tensor(x_train), np_to_tensor(z_train)
+        x_val_tensor, z_val_tensor = np_to_tensor(x_val), np_to_tensor(z_val)
 
-        if z_train is not None:
-            z_tensor = self._to_tensor(z_train)
-            z_val_tensor = self._to_tensor(z_val)
-        else:
-            z_tensor, z_val_tensor = None, None
-
-        if self.batch_training:
+        if self.batch_size:
             n = x_train[0].shape[0]
             batch_iter = BatchIter(num=n, batch_size=self.batch_size)
-            if self.sampling in ['kde', 'lebesgue']:
-                n_exp = self.x_samples[0].shape[0] - n
-                splits = np.ceil(n / self.batch_size).astype(int)
-                exp_batch_iter = BatchIter(num=n_exp, batch_size=np.ceil(n_exp/splits).astype(int))
             batches_per_epoch = np.ceil(n / self.batch_size)
             eval_freq_epochs = np.ceil(self.eval_freq / batches_per_epoch)
         else:
@@ -406,28 +394,12 @@ class GeneralizedEL(AbstractEstimationMethod):
             z_tensor = z_tensor.to(device)
             z_val_tensor = z_val_tensor.to(device)
 
-        if self.annealing:
-            kl_reg_param = self.kl_reg_param
-
         for epoch_i in range(self.max_num_epochs):
             self.model.train()
-            # self.dual_moment_func.train()
             if self.annealing and epoch_i % 2 == 0:
-                # self.kl_reg_param = kl_reg_param * np.exp(-0.15 * epoch_i)
                 self.entropy_reg_param = self.entropy_reg_param * 0.99
-            if self.batch_training:
-                if self.sampling in ['kde', 'lebesgue']:
-                    iterator = zip(batch_iter, exp_batch_iter)
-                else:
-                    iterator = batch_iter
-                for indexes in iterator:
-                    if self.sampling in ['kde', 'lebesgue']:
-                        batch_idx, exp_idx = indexes
-                    else:
-                        batch_idx = indexes
-                        exp_idx = []
-                    self.batch_idx = batch_idx
-                    self.exp_idx = [ele + n for ele in exp_idx]
+            if self.batch_size:
+                for batch_idx in batch_iter:
                     x_batch = [x_tensor[0][batch_idx], x_tensor[1][batch_idx]]
                     z_batch = z_tensor[batch_idx] if z_tensor is not None else None
                     obj = self._optimize_step_theta(x_batch, z_batch)
@@ -442,8 +414,7 @@ class GeneralizedEL(AbstractEstimationMethod):
 
             if epoch_i % eval_freq_epochs == 0:
                 cycle_num += 1
-                val_loss = self.calc_validation_metric(x_val_tensor,
-                                                       z_val_tensor)
+                val_loss = self.calc_validation_metric(x_val_tensor, z_val_tensor)
                 if self.verbose:
                     last_obj = obj[-1] if isinstance(obj, list) else obj
                     print("epoch %d, theta-obj=%f, val-loss=%f"
@@ -457,9 +428,9 @@ class GeneralizedEL(AbstractEstimationMethod):
                 if num_no_improve == self.max_no_improve:
                     break
 
-        # plt.plot(train_losses)
-        # plt.title('Theta loss')
-        # plt.show()
+        plt.plot(train_losses)
+        plt.title('Theta loss')
+        plt.show()
 
         if self.verbose:
             print("time taken:", time.time() - time_0)

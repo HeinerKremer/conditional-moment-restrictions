@@ -20,6 +20,8 @@ class AbstractEstimationMethod:
         self._dim_psi = None
         self._dim_z = None
         self._is_init = False
+        self.dim_t = None
+        self.dim_y = None
 
         # For validation purposes by default all methods for CMR use the kernel MMR loss and therefore require the kernel Gram matrices
         if kernel_z_kwargs is None:
@@ -74,6 +76,8 @@ class AbstractEstimationMethod:
             # Eval moment function once on a single sample to get its dimension
             single_sample = [torch.Tensor(x[0][0:1]), torch.Tensor(x[1][0:1])]
             self._dim_psi = self.moment_function(single_sample).shape[1]
+            self.dim_t = x[0].shape[1]
+            self.dim_y = x[1].shape[1]
 
     def train(self, train_data, val_data=None, debugging=False):
         x_train = [train_data['t'], train_data['y']]

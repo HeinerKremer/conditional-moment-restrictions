@@ -151,7 +151,7 @@ methods = {
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
-                "batch_size": 200,
+                "batch_size": None,
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
@@ -167,7 +167,7 @@ methods = {
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
-                "batch_size": 200,
+                "batch_size": None,
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
@@ -184,7 +184,7 @@ methods = {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
                 "f_divergence_reg": 'log',
-                "batch_size": 200,
+                "batch_size": None,
                 "max_num_epochs": 20000,
                 "burn_in_cycles": 5,
                 "eval_freq": 100,
@@ -202,7 +202,6 @@ methods = {
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
-                "batch_training": True,
                 "batch_size": 200,
                 "n_random_features": 10000,
                 "max_num_epochs": 20000,

@@ -25,8 +25,8 @@ class NeuralVMM(NeuralFGEL):
             k_reg = 2 * self.kernel_lambda * torch.cat(k_reg_list, dim=0).sum()
         else:
             k_reg = 0
-        if self.l2_lambda > 0:
-            l_reg = self.l2_lambda * (f_of_z ** 2).mean()
+        if self.reg_param > 0:
+            l_reg = self.reg_param * (f_of_z ** 2).mean()
         else:
             l_reg = 0
         return moment, -moment + ow_reg + k_reg + l_reg
