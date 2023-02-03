@@ -3,8 +3,8 @@ import os
 from run_experiment import experiment_setups
 
 # ---------------- Cluster resources
-cpus = 32
-memory = 128000
+cpus = 8
+memory = 16000
 bid = 12
 
 # ---------------- Simulation details ----------------

@@ -142,7 +142,7 @@ if __name__ == "__main__":
     parser.add_argument('--experiment', type=str, default='network_iv')
     parser.add_argument('--exp_option', default='sin')  # TODO: Try to fix this since it should be a dict
     parser.add_argument('--n_train', type=int, default=1000)
-    parser.add_argument('--method', type=str, default='KMM-kernel-RF-1x')
+    parser.add_argument('--method', type=str, default='KMM-RF-2x-ref')
     parser.add_argument('--method_option', default=None)
     parser.add_argument('--rollouts', type=int, default=2)
     parser.add_argument('--run_dir', type=str, default='')
@@ -159,20 +159,19 @@ if __name__ == "__main__":
         filename = '_' + args.exp_option
     else:
         filename = ''
-    if "KMM" in args.method:
-        estimator_kwargs = {
-            'n_reference_samples': args.n_samples,
-            'kde_bw': args.bw,
-            'divergence': args.f_div,
-        }
-    else:
-        estimator_kwargs = {}
+    # if "KMM" in args.method:
+    #     estimator_kwargs = {
+    #         'n_reference_samples': args.n_samples,
+    #         'kde_bw': args.bw,
+    #         'divergence': args.f_div,
+    #     }
+    # else:
+    #     estimator_kwargs = {}
 
     results = run_experiment_repeated(experiment=exp_info['exp_class'],
                                       exp_params=exp_info['exp_params'],
                                       n_train=args.n_train,
                                       estimation_method=args.method,
-                                      estimator_kwargs=estimator_kwargs,
                                       repititions=args.rollouts,
                                       parallel=args.run_parallel,
                                       filename=filename,
