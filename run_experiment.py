@@ -23,9 +23,8 @@ def run_experiment(experiment, exp_params, n_train, estimation_method, estimator
 
     exp = experiment(**exp_params)
     exp.prepare_dataset(n_train=n_train, n_val=n_train, n_test=20000)
-    model = exp.get_model()
 
-    trained_model, full_results = estimation(model=model,
+    trained_model, full_results = estimation(model=exp.get_model(),
                                              train_data=exp.train_data,
                                              moment_function=exp.moment_function,
                                              estimation_method=estimation_method,
@@ -143,15 +142,13 @@ if __name__ == "__main__":
     parser.add_argument('--experiment', type=str, default='network_iv')
     parser.add_argument('--exp_option', default='sin')  # TODO: Try to fix this since it should be a dict
     parser.add_argument('--n_train', type=int, default=1000)
-    parser.add_argument('--method', type=str, default='MMDEL-neural')
+    parser.add_argument('--method', type=str, default='KMM-kernel-RF-1x')
     parser.add_argument('--method_option', default=None)
-    parser.add_argument('--rollouts', type=int, default=10)
+    parser.add_argument('--rollouts', type=int, default=2)
     parser.add_argument('--run_dir', type=str, default='')
-    parser.add_argument('--sampling', type=str, default='empirical')
     parser.add_argument('--bw', type=float, default=0.1)
     parser.add_argument('--n_samples', type=int, default=0)
     parser.add_argument('--f_div', type=str, default='kl')
-    parser.add_argument('--z_dependency', default=False, action=argparse.BooleanOptionalAction)
 
     args = parser.parse_args()
 
@@ -162,16 +159,15 @@ if __name__ == "__main__":
         filename = '_' + args.exp_option
     else:
         filename = ''
-    if "MMD" in args.method:
+    if "KMM" in args.method:
         estimator_kwargs = {
-            'sampling': args.sampling,
-            'n_samples': args.n_samples,
-            'bw': args.bw,
-            'z_dependency': args.z_dependency,
-            'f_divergence_reg': args.f_div,
+            'n_reference_samples': args.n_samples,
+            'kde_bw': args.bw,
+            'divergence': args.f_div,
         }
     else:
         estimator_kwargs = {}
+
     results = run_experiment_repeated(experiment=exp_info['exp_class'],
                                       exp_params=exp_info['exp_params'],
                                       n_train=args.n_train,
@@ -184,5 +180,4 @@ if __name__ == "__main__":
                                       run_dir=args.run_dir,
                                       overwrite=args.overwrite)
     print(results['results_summarized'])
-    # print('Nachher: ', int(np.random.randint(10000, size=(1,1))), int(torch.randint(high=10000, size=(1, 1)).detach().numpy()))
 

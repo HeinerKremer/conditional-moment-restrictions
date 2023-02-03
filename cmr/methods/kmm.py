@@ -19,7 +19,7 @@ class KMM(GeneralizedEL):
     Maximum mean discrepancy empirical likelihood estimator for unconditional moment restrictions.
     """
 
-    def __init__(self, entropy_reg_param, divergence='kl', n_random_features=None, n_reference_samples=500, kde_bw=0.1,
+    def __init__(self, entropy_reg_param, divergence='kl', n_random_features=None, n_reference_samples=None, kde_bw=0.1,
                  annealing=False, kernel_x_kwargs=None, **kwargs):
         super().__init__(divergence=divergence, **kwargs)
         self.entropy_reg_param = entropy_reg_param
