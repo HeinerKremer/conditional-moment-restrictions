@@ -9,19 +9,19 @@ bid = 12
 
 # ---------------- Simulation details ----------------
 experiments = [
-    ('network_iv', {'n_train': [2000],
-                    'method': experiment_setups['network_iv']["methods"],
-                    'rollouts': [50],
-                    'exp_option': ['abs', 'sin', 'linear', 'step']}),
+    # ('network_iv', {'n_train': [2000],
+    #                 'method': experiment_setups['network_iv']["methods"],
+    #                 'rollouts': [50],
+    #                 'exp_option': ['abs', 'sin', 'linear', 'step']}),
 
     # ('bennet_simple', {'n_train': experiment_setups['bennet_simple']['n_train'],
     #                   'method': experiment_setups['bennet_simple']["methods"],
     #                   'rollouts': [experiment_setups['bennet_simple']['rollouts']],
     #                   }),
-    # ('bennet_hetero', {'n_train': experiment_setups['bennet_hetero']['n_train'],
-    #                   'method': experiment_setups['bennet_hetero']["methods"],
-    #                   'rollouts': [experiment_setups['bennet_hetero']['rollouts']],
-    #                   }),
+    ('bennet_hetero', {'n_train': experiment_setups['bennet_hetero']['n_train'],
+                      'method': experiment_setups['bennet_hetero']["methods"],
+                      'rollouts': [experiment_setups['bennet_hetero']['rollouts']],
+                      }),
     #
     # ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
     #                      'method': experiment_setups['heteroskedastic_one']["methods"],
