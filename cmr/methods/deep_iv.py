@@ -14,7 +14,6 @@ class DeepIV(AbstractEstimationMethod):
         self.verbose = verbose
 
         self._estimator = None
-        self.context = np.zeros((x.shape[0], 1))
         self.treatment_model = lambda input_shape: keras.Sequential([
             keras.layers.Dense(20, activation='relu', input_shape=input_shape),
             keras.layers.Dense(3, activation='relu'),
@@ -26,6 +25,7 @@ class DeepIV(AbstractEstimationMethod):
         z = z_train
         x_dim = x.shape[1]
         z_dim = z.shape[1]
+        self.context = np.zeros((x.shape[0], 1))
         context_dim = self.context.shape[1]
 
         treatment_model = self.treatment_model((context_dim + z_dim,))
