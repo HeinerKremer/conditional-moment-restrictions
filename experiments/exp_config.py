@@ -86,7 +86,7 @@ experiment_setups = {
             # 'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM',
             #             'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log', 'RFKernelELNeural-MB',
             #             'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
-            'methods': ['OLS', 'MMR', 'VMM-neural',
+            'methods': ['OLS', 'SMD', 'MMR', 'VMM-neural', 'DeepIV', 'FGEL-neural',
                         'KMM-kernel-RF-0x', 'KMM-kernel-RF-1x',
                         'KMM-FB', 'KMM-RF-0x-ref', 'KMM-RF-0.5x-ref', 'KMM-RF-1x-ref', 'KMM-RF-2x-ref'],
             'rollouts': 50,

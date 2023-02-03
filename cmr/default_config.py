@@ -1,4 +1,5 @@
 # from cmr.methods.minimum_divergence import MinimumDivergence
+from cmr.methods.deep_iv import DeepIV
 from cmr.methods.vmm_kernel import KernelVMM
 from cmr.methods.least_squares import OrdinaryLeastSquares
 from cmr.methods.mmr import MMR
@@ -12,7 +13,6 @@ from cmr.methods.mmd_el_wasserstein import KMMWasserstein
 from cmr.methods.fgel_kernel import KernelFGEL
 from cmr.methods.kmm import KMM
 from cmr.methods.fgel_neural import NeuralFGEL
-# from cmr.methods.deep_iv import DeepIV
 
 
 methods = {
@@ -58,12 +58,12 @@ methods = {
             'hyperparams': {}
         },
 
-    # 'DeepIV':
-    #     {
-    #         'estimator_class': DeepIV,
-    #         'estimator_kwargs': {},
-    #         'hyperparams': {}
-    #     },
+    'DeepIV':
+        {
+            'estimator_class': DeepIV,
+            'estimator_kwargs': {},
+            'hyperparams': {}
+        },
 
     'VMM-kernel':
         {
