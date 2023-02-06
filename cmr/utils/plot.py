@@ -87,33 +87,39 @@ NEURIPS_RCPARAMS = {
 }
 
 
-def load_and_summarize_results(filename, validation_metric):
+def load_and_summarize_results(filename, validation_metric, entropy=None):
     with open(filename, "r") as fp:
         results = json.load(fp)
 
+    results = results['results']
+
     hypervals = []
-    train_risk = []
-    val_risk = []
+    val_loss = []
     test_risk = []
     mse = []
-    params = []
-    val_mmr = []
 
     for stats in results:
+        print(stats)
         if len(stats['hyperparam']) > 1:
             metric = stats[validation_metric]
             metric = np.nan_to_num(metric, nan=np.inf)
-            i = np.argmin(metric)
+            try:
+                indices = []
+                val = []
+                for i, hyp in enumerate(stats['hyperparam']):
+                    if hyp['entropy_reg_param'] == entropy:
+                        indices.append(i)
+                        val.append(stats[validation_metric][i])
+                i = indices[np.argmin(val)]
+            except KeyError or TypeError:
+                i = np.argmin(metric)
         else:
             i = 0
 
         hypervals.append(stats['hyperparam'][i])
-        train_risk.append(stats['train_risk'][i])
-        val_risk.append(stats['val_risk'][i])
+        val_loss.append(stats['val_loss'][i])
         test_risk.append(stats['test_risk'][i])
         mse.append(stats['mse'][i])
-        params.append(stats['param'][i])
-        val_mmr.append(stats['val_mmr'][i])
 
     results_summarized = {
         "mean_square_error": np.mean(mse),
@@ -122,16 +128,11 @@ def load_and_summarize_results(filename, validation_metric):
         "mean_risk": np.mean(test_risk),
         "std_risk": np.std(test_risk),
         "max_risk": np.max(test_risk),
-        "mean_mmr_loss": np.mean(val_mmr),
-        "std_mmr_loss": np.std(val_mmr),
+        "val_loss": np.mean(val_loss),
         "n_runs": len(results),
         "hyperparam_values": hypervals,
-        "train_risk": train_risk,
-        "val_risk": val_risk,
         "test_risk": test_risk,
         "mse": mse,
-        "val_mmr": val_mmr,
-        "params": params,
     }
     return results_summarized
 
@@ -306,17 +307,7 @@ def plot_divergence_comparison(n_samples, validation_metric, logscale=False, rem
     plt.show()
 
 
-def generate_table(n_train, test_metric='test_risk', validation_metric='val_mmr', remove_failed=False, optimizer='lbfgs'):
-    methods = ['DeepIV',
-               'KernelVMM',
-               'NeuralVMM',
-               'KernelELKernel',
-               'KernelELNeural',
-               'RFKernelELNeural',
-               'RFKernelELKernel'
-               ]
-    # methods = ['KernelFGEL-chi2']
-
+def generate_table_network_iv(n_train, methods, entropy=None):
     funcs = ['abs', 'step', 'sin', 'linear']
 
     base_path = Path(__file__).parent.parent.parent
@@ -324,24 +315,43 @@ def generate_table(n_train, test_metric='test_risk', validation_metric='val_mmr'
     results = {func: {model: {} for model in methods} for func in funcs}
     for func in funcs:
         for method in methods:
-            if method in ['NeuralFGEL', 'KernelFGEL']:
-                test, val = get_result_for_best_divergence(method, n_train, test_metric, validation_metric, func, optimizer=optimizer)
-            else:
-                filename =base_path / f"results/NetworkIVExperiment/NetworkIVExperiment_method={method}_n={n_train}_{func}.json"
-                res = load_and_summarize_results(filename, validation_metric)
-                test, val = res[test_metric], res[validation_metric]
-            if remove_failed:
-                test = remove_failed_runs(test, val)
+            filename =base_path / f"results/network_iv/network_iv_method={method}_n={n_train}_{func}.json"
+            res = load_and_summarize_results(filename, 'val_loss', entropy=entropy)
+            print(res)
+            test, val = res['test_risk'], res['val_loss']
 
             results[func][method]['mean'] = np.mean(test)
             results[func][method]['std'] = np.std(test) / np.sqrt(len(test))
 
-    row1 = [''] + [f"{labels[model]}" for model in methods] # + ['NN-FGEL'] * 3
-    # row2 = ['']*5 + []
+    row1 = [''] + [f"{model}" for model in methods]
     table = [row1]
     for func in funcs:
         table.append([f'{func}'] + [r"${:.2f}\pm{:.2f}$".format(results[func][model]["mean"] * 1e1, results[func][model]["std"] * 1e1) for model in
                       methods])
+    print(tabulate(table, tablefmt="latex_raw"))
+
+
+def generate_table_bennett_hetero(n_trains, methods, entropy=None):
+    base_path = Path(__file__).parent.parent.parent
+
+    results = {n_train: {model: {} for model in methods} for n_train in n_trains}
+    for n_train in n_trains:
+        for method in methods:
+            filename = base_path / f"results/bennet_hetero/bennet_hetero_method={method}_n={n_train}.json"
+            res = load_and_summarize_results(filename, 'val_loss', entropy=entropy)
+            print(res)
+            test, val = res['test_risk'], res['val_loss']
+
+            results[n_train][method]['mean'] = np.mean(test)
+            results[n_train][method]['std'] = np.std(test) / np.sqrt(len(test))
+
+    row1 = [''] + [f"{model}" for model in methods]
+    table = [row1]
+    for n_train in n_trains:
+        table.append([f'{n_train}'] + [
+            r"${:.2f}\pm{:.2f}$".format(results[n_train][model]["mean"], results[n_train][model]["std"]) for
+            model in
+            methods])
     print(tabulate(table, tablefmt="latex_raw"))
 
 
@@ -365,8 +375,12 @@ if __name__ == "__main__":
     #                            optimizer=kernelfgel_optimizer
     #                            )
 
-    generate_table(n_train=2000,
-                   test_metric='test_risk',
-                   validation_metric='val_mmr',
-                   remove_failed=False,
-                   optimizer=None)
+    methods = ['OLS', 'SMD', 'MMR', 'DeepIV', 'VMM-neural', 'FGEL-neural',
+                'KMM-FB', 'KMM-RF-0x-ref', 'KMM-RF-0.5x-ref', 'KMM-RF-1x-ref', 'KMM-RF-2x-ref']
+    generate_table_network_iv(n_train=2000, methods=methods, entropy=None)
+
+    methods = ['OLS', 'SMD', 'MMR', 'DeepIV', 'VMM-neural', 'FGEL-neural',
+               'KMM-RF-0x-ref', 'KMM-RF-0.5x-ref', 'KMM-RF-1x-ref', 'KMM-RF-2x-ref']
+    # generate_table_bennett_hetero(n_trains=[2000, 4000, 10000], methods=methods, entropy=1)
+
+
