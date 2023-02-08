@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from tabulate import tabulate
+import pandas as pd
 
 
 
@@ -87,7 +88,63 @@ NEURIPS_RCPARAMS = {
 }
 
 
-def load_and_summarize_results(filename, validation_metric, entropy=None):
+def load_data_to_df(filepath):
+    with open(filepath, 'rb') as f:
+        res = json.load(f)
+    res = res['results']
+    df = pd.concat([pd.DataFrame(r) for r in res], axis=0, keys=range(len(res)))
+    df = pd.concat([df, df['hyperparam'].apply(pd.Series)], axis=1).drop(columns='hyperparam')
+    df = df.rename_axis(['rollout', 'config_id'], axis='index')
+    return df
+
+
+def get_mean_and_sem(df, test_metric='test_risk', val_metric='val_loss', hparam_config=None):
+    # Select results for specific hparams
+    if hparam_config:
+        for key, val in hparam_config.items():
+            df = df[df[key] == val]
+
+    # Select best hparams
+    df = df.loc[df.groupby('rollout')[val_metric].idxmin()]
+    return df[test_metric].mean(), df[test_metric].sem()
+
+
+# Merge datasets
+def load_and_merge_datasets(filepaths, property_dict=None):
+    dfs = []
+    if not property_dict:
+        prop_name = 'version'
+        vals = range(len(filepaths))
+    else:
+        prop_name = list(property_dict.keys())[0]
+        vals = property_dict[prop_name]
+
+    start_config_id = 0
+
+    for filepath, prop in zip(filepaths, vals):
+        data_frame = load_data_to_df(filepath)
+        data_frame.drop(columns=['test_risk_optim', 'parameter_mse_optim', 'best_index'])
+        data_frame[prop_name] = prop
+        # data_frame.index = data_frame.index.droplevel('config_id')
+        data_frame = data_frame.reset_index()
+
+        # Add new config id
+        data_frame = data_frame.reset_index()
+        end_config_id = start_config_id + data_frame['config_id'].max() + 1
+        config_ids = list(range(start_config_id, end_config_id))
+        start_config_id = end_config_id
+        num_rollouts = data_frame['rollout'].max() + 1
+        data_frame['config_id'] = config_ids * num_rollouts
+
+        data_frame.drop(columns=['test_risk_optim', 'parameter_mse_optim', 'best_index'])
+        dfs.append(data_frame)
+
+    df = pd.concat(dfs, ignore_index=True)
+    df = df.set_index(['rollout', 'config_id'])
+    df = df.drop(columns='index')
+    return df
+
+def load_and_summarize_results(filename, validation_metric):
     with open(filename, "r") as fp:
         results = json.load(fp)
 
@@ -99,20 +156,10 @@ def load_and_summarize_results(filename, validation_metric, entropy=None):
     mse = []
 
     for stats in results:
-        print(stats)
         if len(stats['hyperparam']) > 1:
             metric = stats[validation_metric]
             metric = np.nan_to_num(metric, nan=np.inf)
-            try:
-                indices = []
-                val = []
-                for i, hyp in enumerate(stats['hyperparam']):
-                    if hyp['entropy_reg_param'] == entropy:
-                        indices.append(i)
-                        val.append(stats[validation_metric][i])
-                i = indices[np.argmin(val)]
-            except KeyError or TypeError:
-                i = np.argmin(metric)
+            i = np.argmin(metric)
         else:
             i = 0
 
@@ -307,7 +354,30 @@ def plot_divergence_comparison(n_samples, validation_metric, logscale=False, rem
     plt.show()
 
 
-def generate_table_network_iv(n_train, methods, entropy=None):
+# def generate_table_network_iv(n_train, methods):
+#     funcs = ['abs', 'step', 'sin', 'linear']
+#
+#     base_path = Path(__file__).parent.parent.parent
+#
+#     results = {func: {model: {} for model in methods} for func in funcs}
+#     for func in funcs:
+#         for method in methods:
+#             filename = base_path / f"results/network_iv/network_iv_method={method}_n={n_train}_{func}.json"
+#             res = load_and_summarize_results(filename, 'val_loss')
+#             test, val = res['test_risk'], res['val_loss']
+#
+#             results[func][method]['mean'] = np.mean(test)
+#             results[func][method]['std'] = np.std(test) / np.sqrt(len(test))
+#
+#     row1 = [''] + [f"{model}" for model in methods]
+#     table = [row1]
+#     for func in funcs:
+#         table.append([f'{func}'] + [r"${:.2f}\pm{:.2f}$".format(results[func][model]["mean"] * 1e1, results[func][model]["std"] * 1e1) for model in
+#                       methods])
+#     print(tabulate(table, tablefmt="latex_raw"))
+
+
+def generate_table_network_iv(n_train, methods, hparam_config=None):
     funcs = ['abs', 'step', 'sin', 'linear']
 
     base_path = Path(__file__).parent.parent.parent
@@ -315,49 +385,75 @@ def generate_table_network_iv(n_train, methods, entropy=None):
     results = {func: {model: {} for model in methods} for func in funcs}
     for func in funcs:
         for method in methods:
-            filename =base_path / f"results/network_iv/network_iv_method={method}_n={n_train}_{func}.json"
-            res = load_and_summarize_results(filename, 'val_loss', entropy=entropy)
-            print(res)
-            test, val = res['test_risk'], res['val_loss']
+            if isinstance(method, str):
+                method = [method]
+            filename = [base_path / f"results/network_iv/network_iv_method={m}_n={n_train}_{func}.json" for m in method]
+            df = load_and_merge_datasets(filename)
+            mean, sem = get_mean_and_sem(df, test_metric='test_risk', val_metric='val_loss',
+                                         hparam_config=hparam_config if 'KMM' in method[0] else None)
 
-            results[func][method]['mean'] = np.mean(test)
-            results[func][method]['std'] = np.std(test) / np.sqrt(len(test))
+            results[func][''.join(method)] = {'mean': mean, 'sem': sem}
 
-    row1 = [''] + [f"{model}" for model in methods]
+    row1 = [''] + [f"{''.join(model)}" for model in methods]
     table = [row1]
     for func in funcs:
-        table.append([f'{func}'] + [r"${:.2f}\pm{:.2f}$".format(results[func][model]["mean"] * 1e1, results[func][model]["std"] * 1e1) for model in
-                      methods])
+        table.append([f'{func}'] + [
+            r"${:.2f}\pm{:.2f}$".format(results[func][model]["mean"] * 1e1, results[func][model]["sem"] * 1e1) for
+            model in results[func].keys()])
     print(tabulate(table, tablefmt="latex_raw"))
 
+# def generate_table_bennett_hetero(n_trains, methods, entropy=None):
+#     base_path = Path(__file__).parent.parent.parent
+#
+#     results = {n_train: {model: {} for model in methods} for n_train in n_trains}
+#     for n_train in n_trains:
+#         for method in methods:
+#             filename = base_path / f"results/bennet_hetero/bennet_hetero_method={method}_n={n_train}.json"
+#             res = load_and_summarize_results(filename, 'val_loss')
+#             print(res)
+#             test, val = res['test_risk'], res['val_loss']
+#
+#             results[n_train][method]['mean'] = np.mean(test)
+#             results[n_train][method]['std'] = np.std(test) / np.sqrt(len(test))
+#
+#     row1 = [''] + [f"{model}" for model in methods]
+#     table = [row1]
+#     for n_train in n_trains:
+#         table.append([f'{n_train}'] + [
+#             r"${:.2f}\pm{:.2f}$".format(results[n_train][model]["mean"], results[n_train][model]["std"]) for
+#             model in
+#             methods])
+#     print(tabulate(table, tablefmt="latex_raw"))
 
-def generate_table_bennett_hetero(n_trains, methods, entropy=None):
+
+def generate_table_bennett_hetero(n_trains, methods, hparam_config):
+    """If the elements in methods are lists, it is assumed that they correspond to the same method with different
+    hyperparams. The results are combined and the best hyperparams are selected automatically."""
+
     base_path = Path(__file__).parent.parent.parent
 
-    results = {n_train: {model: {} for model in methods} for n_train in n_trains}
+    results = {n_train: {''.join(model): {} for model in methods} for n_train in n_trains}
     for n_train in n_trains:
         for method in methods:
-            filename = base_path / f"results/bennet_hetero/bennet_hetero_method={method}_n={n_train}.json"
-            res = load_and_summarize_results(filename, 'val_loss', entropy=entropy)
-            print(res)
-            test, val = res['test_risk'], res['val_loss']
+            if isinstance(method, str):
+                method = [method]
+            filename = [base_path / f"results/bennet_hetero/bennet_hetero_method={m}_n={n_train}.json" for m in method]
+            df = load_and_merge_datasets(filename)
+            mean, sem = get_mean_and_sem(df, test_metric='test_risk', val_metric='val_loss',
+                                         hparam_config=hparam_config if 'KMM' in method[0] else None)
 
-            results[n_train][method]['mean'] = np.mean(test)
-            results[n_train][method]['std'] = np.std(test) / np.sqrt(len(test))
+            results[n_train][''.join(method)] = {'mean': mean, 'sem': sem}
 
-    row1 = [''] + [f"{model}" for model in methods]
+    row1 = [''] + [f"{''.join(model)}" for model in methods]
     table = [row1]
     for n_train in n_trains:
         table.append([f'{n_train}'] + [
-            r"${:.2f}\pm{:.2f}$".format(results[n_train][model]["mean"], results[n_train][model]["std"]) for
-            model in
-            methods])
+            r"${:.2f}\pm{:.2f}$".format(results[n_train][model]["mean"], results[n_train][model]["sem"]) for
+            model in results[n_train].keys()])
     print(tabulate(table, tablefmt="latex_raw"))
 
 
 if __name__ == "__main__":
-    kernelfgel_optimizer = 'lbfgs'
-    remove_failed = True
 
     # plot_results_over_sample_size(['DeepIV', 'KernelVMM', 'NeuralVMM', 'RFKernelELKernel', 'RFKernelELNeural'], # 'OrdinaryLeastSquares', 'KernelMMR', 'KernelVMM', 'KernelFGEL'],
     #     # methods=['OrdinaryLeastSquares', 'KernelMMR', 'SMDHeteroskedastic', 'KernelFGEL-chi2', 'KernelVMM', 'NeuralFGEL-log', 'NeuralVMM'],
@@ -376,11 +472,14 @@ if __name__ == "__main__":
     #                            )
 
     methods = ['OLS', 'SMD', 'MMR', 'DeepIV', 'VMM-neural', 'FGEL-neural',
-                'KMM-FB', 'KMM-RF-0x-ref', 'KMM-RF-0.5x-ref', 'KMM-RF-1x-ref', 'KMM-RF-2x-ref']
-    generate_table_network_iv(n_train=2000, methods=methods, entropy=None)
+             'KMM-RF-0x-ref-kl', 'KMM-RF-0.5x-ref-kl', 'KMM-RF-1x-ref-kl', 'KMM-RF-2x-ref-kl']
+    generate_table_network_iv(n_train=2000, methods=methods,)
 
-    methods = ['OLS', 'SMD', 'MMR', 'DeepIV', 'VMM-neural', 'FGEL-neural',
-               'KMM-RF-0x-ref', 'KMM-RF-0.5x-ref', 'KMM-RF-1x-ref', 'KMM-RF-2x-ref']
-    # generate_table_bennett_hetero(n_trains=[2000, 4000, 10000], methods=methods, entropy=1)
+
+    # methods = ['OLS', 'SMD', 'MMR', 'DeepIV', 'VMM-neural', 'FGEL-neural',
+    #            'KMM-RF-0x-ref-kl', 'KMM-RF-0.5x-ref-kl', 'KMM-RF-1x-ref-kl', 'KMM-RF-2x-ref-kl'
+    #            ]# ['KMM-RF-0x-ref-kl', 'KMM-RF-0x-ref-log']]
+    # generate_table_bennett_hetero(n_trains=[2000, 4000, 10000], methods=methods,
+    #                                   hparam_config=None)#{'entropy_reg_param': 1})
 
 

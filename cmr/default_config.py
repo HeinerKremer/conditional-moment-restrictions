@@ -198,7 +198,7 @@ methods = {
                             }
         },
 
-    'KMM-FB':
+    'KMM-FB-kl':
         {
             'estimator_class': KMMNeural,
             'estimator_kwargs': {
@@ -215,7 +215,7 @@ methods = {
                             }
         },
 
-    'KMM-RF-0x-ref':
+    'KMM-RF-0x-ref-kl':
         {
             'estimator_class': KMMNeural,
             'estimator_kwargs': {
@@ -229,11 +229,11 @@ methods = {
                 "eval_freq": 100,
                 "max_no_improve": 3},
             'hyperparams': {'entropy_reg_param': [1, 1e1, 1e2],
-                            "reg_param": [1e-4, 1e-2, 1e0],
+                            "reg_param":  [0, 1e-4, 1e-2, 1e0],
                             }
         },
 
-    'KMM-RF-0.5x-ref':
+    'KMM-RF-0.5x-ref-kl':
         {
             'estimator_class': KMMNeural,
             'estimator_kwargs': {
@@ -247,12 +247,12 @@ methods = {
                 "eval_freq": 100,
                 "max_no_improve": 3},
             'hyperparams': {'entropy_reg_param': [1, 1e1, 1e2],
-                            "reg_param": [1e-4, 1e-2, 1e0],
+                            "reg_param":  [0, 1e-4, 1e-2, 1e0],
                             "kde_bw": [0.1, 0.5]
                             }
         },
 
-    'KMM-RF-1x-ref':
+    'KMM-RF-1x-ref-kl':
         {
             'estimator_class': KMMNeural,
             'estimator_kwargs': {
@@ -266,12 +266,12 @@ methods = {
                 "eval_freq": 100,
                 "max_no_improve": 3},
             'hyperparams': {'entropy_reg_param': [1, 1e1, 1e2],
-                            "reg_param": [1e-4, 1e-2, 1e0],
+                            "reg_param":  [0, 1e-4, 1e-2, 1e0],
                             "kde_bw": [0.1, 0.5]
                             }
         },
 
-    'KMM-RF-2x-ref':
+    'KMM-RF-2x-ref-kl':
         {
             'estimator_class': KMMNeural,
             'estimator_kwargs': {
@@ -285,7 +285,104 @@ methods = {
                 "eval_freq": 100,
                 "max_no_improve": 3},
             'hyperparams': {'entropy_reg_param': [1, 1e1, 1e2],
-                            "reg_param": [1e-4, 1e-2, 1e0],
+                            "reg_param":  [0, 1e-4, 1e-2, 1e0],
+                            "kde_bw": [0.1, 0.5]
+                            }
+        },
+
+    'KMM-FB-log':
+        {
+            'estimator_class': KMMNeural,
+            'estimator_kwargs': {
+                "theta_optim_args": {"lr": 5e-4},
+                "dual_optim_args": {"lr": 5 * 5e-4},
+                "divergence": 'log',
+                "batch_size": None,
+                "n_reference_samples": None,
+                "max_num_epochs": 20000,
+                "burn_in_cycles": 5,
+                "eval_freq": 100,
+                "max_no_improve": 3, },
+            'hyperparams': {'entropy_reg_param': [1e0, 1e1, 1e2],
+                            "reg_param": [0, 1e-4, 1e-2, 1e0],
+                            }
+        },
+
+    'KMM-RF-0x-ref-log':
+        {
+            'estimator_class': KMMNeural,
+            'estimator_kwargs': {
+                "theta_optim_args": {"lr": 5e-4},
+                "dual_optim_args": {"lr": 5 * 5e-4},
+                "divergence": 'log',
+                "batch_size": 200,
+                "n_reference_samples": None,
+                "n_random_features": 10000,
+                "max_num_epochs": 20000,
+                "burn_in_cycles": 5,
+                "eval_freq": 100,
+                "max_no_improve": 3},
+            'hyperparams': {'entropy_reg_param': [1, 1e1, 1e2],
+                            "reg_param":  [0, 1e-4, 1e-2, 1e0],
+                            }
+        },
+
+    'KMM-RF-0.5x-ref-log':
+        {
+            'estimator_class': KMMNeural,
+            'estimator_kwargs': {
+                "theta_optim_args": {"lr": 5e-4},
+                "dual_optim_args": {"lr": 5 * 5e-4},
+                "divergence": 'log',
+                "batch_size": 200,
+                "n_reference_samples": 100,
+                "n_random_features": 10000,
+                "max_num_epochs": 20000,
+                "burn_in_cycles": 5,
+                "eval_freq": 100,
+                "max_no_improve": 3},
+            'hyperparams': {'entropy_reg_param': [1, 1e1, 1e2],
+                            "reg_param":  [0, 1e-4, 1e-2, 1e0],
+                            "kde_bw": [0.1, 0.5]
+                            }
+        },
+
+    'KMM-RF-1x-ref-log':
+        {
+            'estimator_class': KMMNeural,
+            'estimator_kwargs': {
+                "theta_optim_args": {"lr": 5e-4},
+                "dual_optim_args": {"lr": 5 * 5e-4},
+                "divergence": 'log',
+                "batch_size": 200,
+                "n_reference_samples": 200,
+                "n_random_features": 10000,
+                "max_num_epochs": 20000,
+                "burn_in_cycles": 5,
+                "eval_freq": 100,
+                "max_no_improve": 3},
+            'hyperparams': {'entropy_reg_param': [1, 1e1, 1e2],
+                            "reg_param":  [0, 1e-4, 1e-2, 1e0],
+                            "kde_bw": [0.1, 0.5]
+                            }
+        },
+
+    'KMM-RF-2x-ref-log':
+        {
+            'estimator_class': KMMNeural,
+            'estimator_kwargs': {
+                "theta_optim_args": {"lr": 5e-4},
+                "dual_optim_args": {"lr": 5 * 5e-4},
+                "divergence": 'log',
+                "batch_size": 100,
+                "n_reference_samples": 200,
+                "n_random_features": 10000,
+                "max_num_epochs": 20000,
+                "burn_in_cycles": 5,
+                "eval_freq": 100,
+                "max_no_improve": 3},
+            'hyperparams': {'entropy_reg_param': [1, 1e1, 1e2],
+                            "reg_param":  [0, 1e-4, 1e-2, 1e0],
                             "kde_bw": [0.1, 0.5]
                             }
         },
