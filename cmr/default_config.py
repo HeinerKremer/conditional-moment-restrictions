@@ -9,7 +9,7 @@ methods = {
     'GMM':
         {
             'estimator_kwargs': {},
-            'hyperparams': {'alpha': [1e-8, 1e-6, 1e-4]}
+            'hyperparams': {'reg_param': [1e-8, 1e-6, 1e-4]}
         },
 
     f'GEL':
@@ -46,7 +46,7 @@ methods = {
     'VMM-kernel':
         {
             'estimator_kwargs': {},
-            'hyperparams': {'alpha': [1e-8, 1e-6, 1e-4]}
+            'hyperparams': {'reg_param': [1e-8, 1e-6, 1e-4]}
         },
 
     'VMM-neural':

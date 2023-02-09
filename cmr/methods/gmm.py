@@ -6,14 +6,14 @@ from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
 
 
 class GMM(AbstractEstimationMethod):
-    def __init__(self, model, moment_function, alpha, num_iter=2, verbose=False, **kwargs):
+    def __init__(self, model, moment_function, reg_param, num_iter=2, verbose=False, **kwargs):
         super().__init__(model=model, moment_function=moment_function, **kwargs)
-        self.alpha = alpha
+        self.reg_param = reg_param
         self.num_iter = num_iter
         self.verbose = verbose
 
     def _train_internal(self, x, z, x_val, z_val, debugging):
-        alpha = self.alpha
+        alpha = self.reg_param
         while True:
             try:
                 self._try_fit_internal(x, z, x_val, z_val, alpha)
