@@ -30,8 +30,7 @@ class GeneralizedEL(AbstractEstimationMethod):
                  divergence=None, kernel_z_kwargs=None, val_loss_func=None,
                  verbose=False):
         super().__init__(model=model, moment_function=moment_function, kernel_z_kwargs=kernel_z_kwargs,
-                         val_loss_func=val_loss_func)
-
+                         val_loss_func=val_loss_func, verbose=verbose)
         if theta_optim_args is None:
             theta_optim_args = {"lr": 5e-4}
 
@@ -40,9 +39,7 @@ class GeneralizedEL(AbstractEstimationMethod):
 
         self.reg_param = reg_param
         self.divergence_type = divergence
-        self.softplus = torch.nn.Softplus(beta=10)
-        self.divergence = self._set_divergence()
-        self.conj_divergence = self._set_conjugate_divergence()
+        self.divergence, self.conj_divergence = self._set_divergence_and_conjugate(divergence_type=divergence)
 
         self.all_dual_params = None     # List of parameters of all dual variables
         self.dual_moment_func = None
@@ -63,8 +60,6 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.pretrain = pretrain
         self.annealing = False
         self.verbose = verbose
-
-        self.counter = 0
 
     def init_estimator(self, x_tensor, z_tensor):
         super().init_estimator(x_tensor, z_tensor)
@@ -87,15 +82,15 @@ class GeneralizedEL(AbstractEstimationMethod):
         return self.dual_moment_func.params
 
     def _objective(self, x, z, *args, **kwargs):
-        self.check_init()
         dual_func_psi = torch.einsum('ij, ij -> i', self.moment_function(x), self._eval_dual_moment_func(z))
         objective = - torch.mean(self.conj_divergence(dual_func_psi))
         return objective, -objective + self.reg_param * torch.norm(self._eval_dual_moment_func(z))
 
     """-----------------------------------------------------------------------"""
 
-    def _set_divergence(self):
-        if self.divergence_type == 'log':
+    @staticmethod
+    def _set_divergence_and_conjugate(divergence_type):
+        if divergence_type == 'log':
             def divergence(weights=None, cvxpy=False):
                 n_sample = weights.shape[0]
                 if cvxpy:
@@ -105,7 +100,14 @@ class GeneralizedEL(AbstractEstimationMethod):
                 else:
                     return - torch.sum(torch.log(n_sample * weights))
 
-        elif self.divergence_type == 'chi2':
+            def conj_divergence(x=None, cvxpy=False):
+                if not cvxpy:
+                    softplus = torch.nn.Softplus(beta=10)
+                    return - torch.log(softplus(1 - x) + 1 / x.shape[0])
+                else:
+                    return - cvx.log(1 - x)
+
+        elif divergence_type == 'chi2':
             def divergence(weights=None, cvxpy=False):
                 n_sample = weights.shape[0]
                 if cvxpy:
@@ -114,7 +116,14 @@ class GeneralizedEL(AbstractEstimationMethod):
                     return np.sum(np.square(n_sample * weights - 1))
                 else:
                     return torch.sum(torch.square(n_sample * weights - 1))
-        elif self.divergence_type == 'kl':
+
+            def conj_divergence(x=None, cvxpy=False):
+                if not cvxpy:
+                    return 1/2 * torch.square(x + 1)  # -1/2 * torch.square(x + 1)
+                else:
+                    return cvx.square(1/2 * x + 1)
+
+        elif divergence_type == 'kl':
             def divergence(weights=None, cvxpy=False):
                 n_sample = weights.shape[0]
                 if cvxpy:
@@ -123,43 +132,28 @@ class GeneralizedEL(AbstractEstimationMethod):
                     return np.sum(weights * np.log(n_sample * weights))
                 else:
                     return torch.sum(weights * torch.log(n_sample * weights))
-        elif self.divergence_type == 'off':
-            return None
-        else:
-            raise NotImplementedError()
-        return divergence
 
-    def _set_conjugate_divergence(self):
-        if self.divergence_type == 'log':
-            def conj_divergence(x=None, cvxpy=False):
-                if not cvxpy:
-                    return - torch.log(self.softplus(1 - x) + 1 / x.shape[0])
-                else:
-                    return - cvx.log(1 - x)
-
-        elif self.divergence_type == 'chi2':
-            def conj_divergence(x=None, cvxpy=False):
-                if not cvxpy:
-                    return 1/2 * torch.square(x + 1)  # -1/2 * torch.square(x + 1)
-                else:
-                    return cvx.square(1/2 * x + 1)
-        elif self.divergence_type == 'kl':
             def conj_divergence(x=None, cvxpy=False):
                 if not cvxpy:
                     return torch.exp(x)
                 else:
                     return cvx.exp(x)
-        elif self.divergence_type == 'chi2-sqrt':
+
+        elif divergence_type == 'chi2-sqrt':
+            def divergence(weights, cvxpy=False):
+                raise NotImplementedError
+
             def conj_divergence(x=None, cvxpy=False):
                 if not cvxpy:
                     return 2 * torch.sqrt(1 - x)
                 else:
                     return 2 * cvx.square(1 - x)
-        elif self.divergence_type == 'off':
-            return None
+
+        elif divergence_type == 'off':
+            return None, None
         else:
-            raise NotImplementedError
-        return conj_divergence
+            raise NotImplementedError()
+        return divergence, conj_divergence
 
     def _set_theta_optimizer(self):
         # Outer optimization settings (theta)
@@ -434,25 +428,25 @@ class GeneralizedEL(AbstractEstimationMethod):
 
         if self.verbose:
             print("time taken:", time.time() - time_0)
-        if debugging:
-            import matplotlib
-            matplotlib.use('Qt5Agg')
-            # print rkhs lagrangian function:
-            x = np.linspace(-20, 20, 500).reshape((-1, 1))
-            from cmr.utils.rkhs_utils import get_rbf_kernel, get_rff
-            if self.n_rff > 0:
-                k = get_rff(x, self.n_rff, sigma=self.sigma_rff)[0]
-            else:
-                k = (get_rbf_kernel(x_tensor[0].double(), torch.from_numpy(x), sigma=self.sigma_t)[0] *
-                     get_rbf_kernel(x_tensor[1].double(), torch.from_numpy(x), sigma=self.sigma_y)[0])
-            rkhs_func = torch.einsum('ij, ik -> k', self.rkhs_func.params.double(), k)
-            plt.plot(x, rkhs_func.detach().cpu().numpy())
-            plt.show()
-            try:
-                plt.plot(val_losses)
-                plt.show()
-            except:
-                pass
+        # if debugging:
+        #     import matplotlib
+        #     matplotlib.use('Qt5Agg')
+        #     # print rkhs lagrangian function:
+        #     x = np.linspace(-20, 20, 500).reshape((-1, 1))
+        #     from cmr.utils.rkhs_utils import get_rbf_kernel, get_rff
+        #     if self.n_rff > 0:
+        #         k = get_rff(x, self.n_rff, sigma=self.sigma_rff)[0]
+        #     else:
+        #         k = (get_rbf_kernel(x_tensor[0].double(), torch.from_numpy(x), sigma=self.sigma_t)[0] *
+        #              get_rbf_kernel(x_tensor[1].double(), torch.from_numpy(x), sigma=self.sigma_y)[0])
+        #     rkhs_func = torch.einsum('ij, ik -> k', self.rkhs_func.params.double(), k)
+        #     plt.plot(x, rkhs_func.detach().cpu().numpy())
+        #     plt.show()
+        #     try:
+        #         plt.plot(val_losses)
+        #         plt.show()
+        #     except:
+        #         pass
 
 
 if __name__ == '__main__':

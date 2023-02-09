@@ -7,9 +7,7 @@ import torch.nn as nn
 from cmr.methods.mmr import MMR
 from cmr.methods.least_squares import OrdinaryLeastSquares
 from cmr.default_config import methods
-
-mr_estimators = ['OLS', 'GMM', 'GEL', 'KMM']
-cmr_estimators = [item for item in methods.keys() if item not in mr_estimators]   # + ['DeepIV']
+from cmr.methods.import_estimator import mr_estimators, cmr_estimators, import_estimator
 
 
 def estimation(model, train_data, moment_function, estimation_method,
@@ -39,7 +37,8 @@ def estimation(model, train_data, moment_function, estimation_method,
         assert np.alltrue([isinstance(h, list) for h in list(hyperparams.values())]), '`hyperparams` arguments must be of the form {key: list}'
 
     method = methods[estimation_method]
-    estimator_class = method['estimator_class']
+    # estimator_class = method['estimator_class']
+    estimator_class = import_estimator(estimation_method)
     estimator_kwargs_default = method['estimator_kwargs']
     hyperparams_default = method['hyperparams']
 

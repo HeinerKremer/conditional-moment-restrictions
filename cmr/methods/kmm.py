@@ -5,8 +5,6 @@ import rff
 
 from sklearn.neighbors import KernelDensity
 
-import cmr
-
 from cmr.utils.rkhs_utils import get_rbf_kernel, calc_sq_dist
 from cmr.utils.torch_utils import Parameter, np_to_tensor, tensor_to_np
 from cmr.methods.generalized_el import GeneralizedEL
@@ -32,11 +30,6 @@ class KMM(GeneralizedEL):
         self.kernel_x = torch.Tensor((1, 1))    # Ugly fix to resolve merge conflict, will clean up later
         self.kde_bw = kde_bw        # only used for the KDE scheme
         self.n_reference_samples = n_reference_samples
-
-    def _set_divergence(self):
-        def divergence(weights=None, cvxpy=False):
-            raise NotImplementedError('MMD computation not implemented')
-        return divergence
 
     # def _set_kernel_x(self, x, z):
     #     """
@@ -81,19 +74,21 @@ class KMM(GeneralizedEL):
         x_np, z_np = tensor_to_np(x), tensor_to_np(z)
         kernel_t, _ = get_rbf_kernel(x_np[0], x_np[0], **self.kernel_x_kwargs)
         kernel_y, _ = get_rbf_kernel(x_np[1], x_np[1], **self.kernel_x_kwargs)
-        kernel_z, _ = get_rbf_kernel(z_np, z_np, **self.kernel_z_kwargs)
-
+        kernel_z, _ = get_rbf_kernel(z_np, z_np, **self.kernel_z_kwargs) if z_np is not None else 1.0
         self.kernel_x = torch.Tensor(kernel_t * kernel_y * kernel_z)
 
     def _init_rff(self, x, z):
         x_np, z_np = tensor_to_np(x), tensor_to_np(z)
         sigma_t = np.sqrt(0.5 * np.median(calc_sq_dist(x_np[0], x_np[0], numpy=True)))
         sigma_y = np.sqrt(0.5 * np.median(calc_sq_dist(x_np[1], x_np[1], numpy=True)))
-        sigma_z = np.sqrt(0.5 * np.median(calc_sq_dist(z_np, z_np, numpy=True)))
+        sigma_z = np.sqrt(0.5 * np.median(calc_sq_dist(z_np, z_np, numpy=True))) if z_np is not None else 1.0
 
         self._eval_rff_t = rff.layers.GaussianEncoding(sigma=sigma_t, input_size=x[0].shape[1], encoded_size=self.n_rff // 2)
         self._eval_rff_y = rff.layers.GaussianEncoding(sigma=sigma_y, input_size=x[1].shape[1], encoded_size=self.n_rff // 2)
-        self._eval_rff_z = rff.layers.GaussianEncoding(sigma=sigma_z, input_size=z.shape[1], encoded_size=self.n_rff // 2)
+        if z is not None:
+            self._eval_rff_z = rff.layers.GaussianEncoding(sigma=sigma_z, input_size=z.shape[1], encoded_size=self.n_rff // 2)
+        else:
+            self._eval_rff_z = lambda arg: 1.0
 
     def eval_rff(self, x, z):
         rff_t = self._eval_rff_t(x[0])
@@ -133,7 +128,10 @@ class KMM(GeneralizedEL):
 
     def _init_reference_distribution(self, x, z, sample_weight=None):
         x_np, z_np = tensor_to_np(x), tensor_to_np(z)
-        xz = np.concatenate([x_np[0], x_np[1], z_np], axis=1)
+        if z_np is not None:
+            xz = np.concatenate([x_np[0], x_np[1], z_np], axis=1)
+        else:
+            xz = np.concatenate(x_np, axis=1)
         self.kde = KernelDensity(bandwidth=self.kde_bw)
         self.kde.fit(xz, sample_weight=sample_weight)
 

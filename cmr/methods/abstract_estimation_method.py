@@ -115,7 +115,7 @@ class AbstractEstimationMethod:
         if not isinstance(z_val, torch.Tensor):
             z_val = self._to_tensor(z_val)
         n = z_val.shape[0]
-        if n < 2500:
+        if n < 5001:
             self._set_kernel_z(z_val=z_val)
             psi = self.moment_function(x_val)
             loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z_val, psi) / (n ** 2)

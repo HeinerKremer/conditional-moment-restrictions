@@ -378,16 +378,20 @@ if __name__ == "__main__":
     #                            remove_failed=remove_failed,
     #                            optimizer=kernelfgel_optimizer
     #                            )
-
-    methods = ['OLS', 'SMD', 'MMR', 'DeepIV', 'VMM-neural', 'FGEL-neural', 'KMM-FB-kl',
-             'KMM-RF-0x-ref-kl', 'KMM-RF-0.5x-ref-kl', 'KMM-RF-1x-ref-kl', 'KMM-RF-2x-ref-kl']
-    generate_table_network_iv(n_train=2000, methods=methods,)
+    #
+    # methods = ['OLS', 'SMD', 'MMR', 'DeepIV', 'VMM-neural', 'FGEL-neural', 'KMM-FB-kl',
+    #          'KMM-RF-0x-ref-kl', 'KMM-RF-0.5x-ref-kl', 'KMM-RF-1x-ref-kl', 'KMM-RF-2x-ref-kl']
+    # generate_table_network_iv(n_train=2000, methods=methods,)
 
 
     # methods = ['OLS', 'SMD', 'MMR', 'DeepIV', 'VMM-neural', 'FGEL-neural',
     #            'KMM-RF-0x-ref-kl', 'KMM-RF-0.5x-ref-kl', 'KMM-RF-1x-ref-kl', 'KMM-RF-2x-ref-kl'
     #            ]# ['KMM-RF-0x-ref-kl', 'KMM-RF-0x-ref-log']]
-    # generate_table_bennett_hetero(n_trains=[2000, 4000, 10000], methods=methods,
-    #                                   hparam_config=None)#{'entropy_reg_param': 1})
+    methods = ['OLS', 'SMD', 'DeepIV', 'VMM-neural',
+               ['FGEL-neural-kl', 'FGEL-neural-chi2', 'FGEL-neural-log'],
+               'KMM-RF',]
+
+    generate_table_bennett_hetero(n_trains=[2000, 4000, 10000], methods=methods,
+                                hparam_config=None)#{'entropy_reg_param': 1})
 
 

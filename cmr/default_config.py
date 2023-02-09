@@ -1,38 +1,19 @@
-# from cmr.methods.minimum_divergence import MinimumDivergence
-from cmr.methods.deep_iv import DeepIV
-from cmr.methods.vmm_kernel import KernelVMM
-from cmr.methods.least_squares import OrdinaryLeastSquares
-from cmr.methods.mmr import MMR
-from cmr.methods.gmm import GMM
-from cmr.methods.vmm_neural import NeuralVMM
-from cmr.methods.sieve_minimum_distance import SMDHeteroskedastic
-from cmr.methods.generalized_el import GeneralizedEL
-from cmr.methods.kmm_kernel import KMMKernel
-from cmr.methods.kmm_neural import KMMNeural
-from cmr.methods.mmd_el_wasserstein import KMMWasserstein
-from cmr.methods.fgel_kernel import KernelFGEL
-from cmr.methods.kmm import KMM
-from cmr.methods.fgel_neural import NeuralFGEL
-
 
 methods = {
     'OLS':
         {
-            'estimator_class': OrdinaryLeastSquares,
             'estimator_kwargs': {},
             'hyperparams': {},
         },
 
     'GMM':
         {
-            'estimator_class': GMM,
             'estimator_kwargs': {},
             'hyperparams': {'alpha': [1e-8, 1e-6, 1e-4]}
         },
 
     f'GEL':
         {
-            'estimator_class': GeneralizedEL,
             'estimator_kwargs': {
                 "theta_optim": 'lbfgs',
                 "dual_optim": 'lbfgs',
@@ -46,35 +27,30 @@ methods = {
 
     'MMR':
         {
-            'estimator_class': MMR,
             'estimator_kwargs': {},
             'hyperparams': {},
         },
 
     'SMD':
         {
-            'estimator_class': SMDHeteroskedastic,
             'estimator_kwargs': {},
             'hyperparams': {}
         },
 
     'DeepIV':
         {
-            'estimator_class': DeepIV,
             'estimator_kwargs': {},
             'hyperparams': {}
         },
 
     'VMM-kernel':
         {
-            'estimator_class': KernelVMM,
             'estimator_kwargs': {},
             'hyperparams': {'alpha': [1e-8, 1e-6, 1e-4]}
         },
 
     'VMM-neural':
         {
-            'estimator_class': NeuralVMM,
             'estimator_kwargs': {"theta_optim_args": {"lr": 5e-4},
                                  "dual_optim_args": {"lr": 5 * 5e-4},
                                  "batch_size": 200,
@@ -88,7 +64,6 @@ methods = {
 
     f'FGEL-kernel':
         {
-            'estimator_class': KernelFGEL,
             'estimator_kwargs': {
                 "dual_optim": 'lbfgs',
                 "theta_optim": 'lbfgs',
@@ -103,7 +78,6 @@ methods = {
 
     'FGEL-neural':
         {
-            'estimator_class': NeuralFGEL,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -119,7 +93,6 @@ methods = {
 
     'KMM':
         {
-            'estimator_class': KMM,
             'estimator_kwargs': {
                 "dual_optim": 'oadam_gda',
                 "theta_optim": 'oadam_gda',
@@ -132,7 +105,6 @@ methods = {
 
     'KMM-kernel':
         {
-            'estimator_class': KMMKernel,
             'estimator_kwargs': {
                 "dual_optim": 'oadam_gda',
                 "theta_optim": 'oadam_gda',
@@ -147,7 +119,6 @@ methods = {
 
     'KMM-neural':
         {
-            'estimator_class': KMMNeural,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -163,7 +134,6 @@ methods = {
 
     'KMM-kernel-RF-0x':
         {
-            'estimator_class': KMMKernel,
             'estimator_kwargs': {
                 "dual_optim": 'oadam_gda',
                 "theta_optim": 'oadam_gda',
@@ -181,7 +151,6 @@ methods = {
 
     'KMM-kernel-RF-1x':
         {
-            'estimator_class': KMMKernel,
             'estimator_kwargs': {
                 "dual_optim": 'oadam_gda',
                 "theta_optim": 'oadam_gda',
@@ -200,7 +169,6 @@ methods = {
 
     'KMM-FB-kl':
         {
-            'estimator_class': KMMNeural,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -217,7 +185,6 @@ methods = {
 
     'KMM-RF-0x-ref-kl':
         {
-            'estimator_class': KMMNeural,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -235,7 +202,6 @@ methods = {
 
     'KMM-RF-0.5x-ref-kl':
         {
-            'estimator_class': KMMNeural,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -254,7 +220,6 @@ methods = {
 
     'KMM-RF-1x-ref-kl':
         {
-            'estimator_class': KMMNeural,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -273,7 +238,6 @@ methods = {
 
     'KMM-RF-2x-ref-kl':
         {
-            'estimator_class': KMMNeural,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -292,7 +256,6 @@ methods = {
 
     'KMM-FB-log':
         {
-            'estimator_class': KMMNeural,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -310,7 +273,6 @@ methods = {
 
     'KMM-RF-0x-ref-log':
         {
-            'estimator_class': KMMNeural,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -329,7 +291,6 @@ methods = {
 
     'KMM-RF-0.5x-ref-log':
         {
-            'estimator_class': KMMNeural,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -349,7 +310,6 @@ methods = {
 
     'KMM-RF-1x-ref-log':
         {
-            'estimator_class': KMMNeural,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -369,7 +329,6 @@ methods = {
 
     'KMM-RF-2x-ref-log':
         {
-            'estimator_class': KMMNeural,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -389,7 +348,6 @@ methods = {
 
     'KMM-Wasserstein':
         {
-            'estimator_class': KMMWasserstein,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},
@@ -405,7 +363,6 @@ methods = {
 
     'KMM-neural-annealed':
         {
-            'estimator_class': KMMNeural,
             'estimator_kwargs': {
                 "theta_optim_args": {"lr": 5e-4},
                 "dual_optim_args": {"lr": 5 * 5e-4},

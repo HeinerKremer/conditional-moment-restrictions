@@ -4,9 +4,9 @@ from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
 
 
 class MMR(AbstractEstimationMethod):
-    def __init__(self, model, kernel_z_kwargs=None, verbose=False, **kwargs):
-        super().__init__(model=model, kernel_z_kwargs=kernel_z_kwargs, **kwargs)
-        self.verbose = verbose
+    def __init__(self, model, moment_function, kernel_z_kwargs=None, verbose=False, **kwargs):
+        super().__init__(model=model, moment_function=moment_function, kernel_z_kwargs=kernel_z_kwargs, verbose=verbose,
+                         **kwargs)
 
     def _train_internal(self, x, z, x_val, z_val, debugging):
         x_tensor = self._to_tensor(x)

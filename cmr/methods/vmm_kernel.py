@@ -6,11 +6,10 @@ from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
 
 
 class KernelVMM(AbstractEstimationMethod):
-    def __init__(self, model, alpha, kernel_z_kwargs=None, num_iter=2, verbose=False, **kwargs):
+    def __init__(self, model, alpha, kernel_z_kwargs=None, num_iter=2, **kwargs):
         super().__init__(model=model, kernel_z_kwargs=kernel_z_kwargs, **kwargs)
         self.alpha = alpha
         self.num_iter = num_iter
-        self.verbose = verbose
 
     def _train_internal(self, x, z, x_val, z_val, debugging):
         alpha = self.alpha
@@ -19,7 +18,6 @@ class KernelVMM(AbstractEstimationMethod):
                 self._try_fit_internal(x, z, x_val, z_val, alpha)
                 did_succeed = self.model.is_finite()
             except:
-                # print(self.model.get_parameters())
                 did_succeed = False
 
             if did_succeed or alpha > 10:
