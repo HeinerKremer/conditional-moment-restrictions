@@ -2,12 +2,11 @@ import copy
 
 import numpy as np
 import torch
-import torch.nn as nn
 
 from cmr.methods.mmr import MMR
 from cmr.methods.least_squares import OrdinaryLeastSquares
 from cmr.default_config import methods
-from cmr.methods.import_estimator import mr_estimators, cmr_estimators, import_estimator
+from cmr.import_estimator import mr_estimators, cmr_estimators, import_estimator
 
 
 def estimation(model, train_data, moment_function, estimation_method,

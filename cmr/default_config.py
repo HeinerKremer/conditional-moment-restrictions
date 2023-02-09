@@ -132,41 +132,6 @@ methods = {
                         }
         },
 
-    'KMM-kernel-RF-0x':
-        {
-            'estimator_kwargs': {
-                "dual_optim": 'oadam_gda',
-                "theta_optim": 'oadam_gda',
-                "theta_optim_args": {"lr": 5e-4},
-                "dual_optim_args": {"lr": 5 * 5e-4},
-                "batch_size": 200,
-                "n_random_features": 10000,
-                "n_rff_instrument_func": 5000,
-                "eval_freq": 100,
-                "max_num_epochs": 20000, },
-            'hyperparams': {'entropy_reg_param': [1e1, 1e0],
-                            'reg_param': [1e-1, 1e-2, 1e-3, 1e-4, 1e-6, 1e-8],
-                            }
-        },
-
-    'KMM-kernel-RF-1x':
-        {
-            'estimator_kwargs': {
-                "dual_optim": 'oadam_gda',
-                "theta_optim": 'oadam_gda',
-                "theta_optim_args": {"lr": 5e-4},
-                "dual_optim_args": {"lr": 5 * 5e-4},
-                "batch_size": 200,
-                "n_reference_samples": 200,
-                "n_random_features": 10000,
-                "n_rff_instrument_func": 5000,
-                "eval_freq": 100,
-                "max_num_epochs": 20000, },
-            'hyperparams': {'entropy_reg_param': [1e1, 1e0],
-                            'reg_param': [1e-1, 1e-2, 1e-3, 1e-4, 1e-6, 1e-8],
-                            }
-        },
-
     'KMM-FB-kl':
         {
             'estimator_kwargs': {

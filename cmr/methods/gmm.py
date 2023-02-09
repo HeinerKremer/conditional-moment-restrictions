@@ -6,8 +6,8 @@ from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
 
 
 class GMM(AbstractEstimationMethod):
-    def __init__(self, model, alpha, num_iter=2, verbose=False, **kwargs):
-        super().__init__(model=model, **kwargs)
+    def __init__(self, model, moment_function, alpha, num_iter=2, verbose=False, **kwargs):
+        super().__init__(model=model, moment_function=moment_function, **kwargs)
         self.alpha = alpha
         self.num_iter = num_iter
         self.verbose = verbose

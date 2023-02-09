@@ -6,8 +6,8 @@ from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
 
 
 class KernelVMM(AbstractEstimationMethod):
-    def __init__(self, model, alpha, kernel_z_kwargs=None, num_iter=2, **kwargs):
-        super().__init__(model=model, kernel_z_kwargs=kernel_z_kwargs, **kwargs)
+    def __init__(self, model, moment_function, alpha, kernel_z_kwargs=None, num_iter=2, **kwargs):
+        super().__init__(model=model, moment_function=moment_function, kernel_z_kwargs=kernel_z_kwargs, **kwargs)
         self.alpha = alpha
         self.num_iter = num_iter
 

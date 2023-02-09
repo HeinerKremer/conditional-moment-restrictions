@@ -9,8 +9,8 @@ cvx_solver = cvx.MOSEK
 
 class KMMNeural(KMM):
 
-    def __init__(self, model, dual_func_network_kwargs=None, **kwargs):
-        super().__init__(model=model, theta_optim='oadam_gda', **kwargs)
+    def __init__(self, model, moment_function, dual_func_network_kwargs=None, **kwargs):
+        super().__init__(model=model, moment_function=moment_function, theta_optim='oadam_gda', **kwargs)
         self.dual_func_network_kwargs_custom = dual_func_network_kwargs
 
     def _init_dual_params(self):

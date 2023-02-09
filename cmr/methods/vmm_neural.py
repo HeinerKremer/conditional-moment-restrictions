@@ -5,9 +5,8 @@ from cmr.methods.fgel_neural import NeuralFGEL
 
 
 class NeuralVMM(NeuralFGEL):
-    def __init__(self, kernel_lambda=0, **kwargs):
-
-        super().__init__(divergence='off', **kwargs)
+    def __init__(self, model, moment_function, kernel_lambda=0, **kwargs):
+        super().__init__(model=model, moment_function=moment_function, divergence='off', **kwargs)
         self.kernel_lambda = kernel_lambda
 
     def _objective(self, x, z, *args, **kwargs):

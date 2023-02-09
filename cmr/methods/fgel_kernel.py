@@ -10,8 +10,8 @@ cvx_solver = cvx.MOSEK
 
 class KernelFGEL(GeneralizedEL):
 
-    def __init__(self, reg_param=1e-6, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, model, moment_function, reg_param=1e-6, **kwargs):
+        super().__init__(model=model, moment_function=moment_function, **kwargs)
         self.reg_param = reg_param
 
     def _init_dual_params(self):

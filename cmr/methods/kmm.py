@@ -17,9 +17,9 @@ class KMM(GeneralizedEL):
     Maximum mean discrepancy empirical likelihood estimator for unconditional moment restrictions.
     """
 
-    def __init__(self, entropy_reg_param, divergence='kl', n_random_features=None, n_reference_samples=None, kde_bw=0.1,
-                 annealing=False, kernel_x_kwargs=None, **kwargs):
-        super().__init__(divergence=divergence, **kwargs)
+    def __init__(self, model, moment_function, entropy_reg_param, divergence='kl', n_random_features=None,
+                 n_reference_samples=None, kde_bw=0.1, annealing=False, kernel_x_kwargs=None, **kwargs):
+        super().__init__(model=model, moment_function=moment_function, divergence=divergence, **kwargs)
         self.entropy_reg_param = entropy_reg_param
         self.annealing = annealing
 
@@ -31,50 +31,11 @@ class KMM(GeneralizedEL):
         self.kde_bw = kde_bw        # only used for the KDE scheme
         self.n_reference_samples = n_reference_samples
 
-    # def _set_kernel_x(self, x, z):
-    #     """
-    #     Compute the kernel matrix for the data samples and possibly additional samples.
-    #
-    #     Parameters
-    #     ----------
-    #     x: list of two tensors
-    #         Data samples of treatment and effect
-    #     z: tensor
-    #         Data samples of instruments
-    #     """
-    #     if self.kernel_x is None and x is not None:
-    #         if self.n_rff == 0:
-    #             kt, self.sigma_t = get_rbf_kernel(self.x_samples[0].numpy(),
-    #                                               self.x_samples[0].numpy(),
-    #                                               **self.kernel_x_kwargs)
-    #             ky, self.sigma_y = get_rbf_kernel(self.x_samples[1].numpy(),
-    #                                               self.x_samples[1].numpy(),
-    #                                               **self.kernel_x_kwargs)
-    #             if self.z_dependency:
-    #                 kz, self.sigma_z = get_rbf_kernel(self.z_samples.numpy(),
-    #                                                   self.z_samples.numpy(),
-    #                                                   **self.kernel_z_kwargs)
-    #             else:
-    #                 kz = torch.ones(ky.shape)
-    #                 self.sigma_z = 0
-    #             self.kernel_x = (kt.type(torch.float32) * ky.type(torch.float32) * kz.type(torch.float32))
-    #             k_cholesky = torch.tensor(np.transpose(compute_cholesky_factor(self.kernel_x.detach().numpy())))
-    #             self.kernel_x_cholesky = k_cholesky
-    #         elif self.n_rff > 0:
-    #             xz = np_to_tensor(self.x_samples)
-    #             if self.z_dependency:
-    #                 xz.extend(np_to_tensor([self.z_samples]))
-    #             xz = torch.hstack(xz)
-    #             self.kernel_x, self.sigma_rff = get_rff(xz, n_rff=self.n_rff, **self.kernel_x_kwargs)
-    #             self.kernel_x = self.kernel_x.type(torch.float32)
-    #         else:
-    #             raise ValueError("Number of random features must be larger than 0!")
-
     def _set_kernel_x(self, x, z):
         x_np, z_np = tensor_to_np(x), tensor_to_np(z)
         kernel_t, _ = get_rbf_kernel(x_np[0], x_np[0], **self.kernel_x_kwargs)
         kernel_y, _ = get_rbf_kernel(x_np[1], x_np[1], **self.kernel_x_kwargs)
-        kernel_z, _ = get_rbf_kernel(z_np, z_np, **self.kernel_z_kwargs) if z_np is not None else 1.0
+        kernel_z, _ = get_rbf_kernel(z_np, z_np, **self.kernel_z_kwargs) if z_np is not None else (1.0, 1.0)
         self.kernel_x = torch.Tensor(kernel_t * kernel_y * kernel_z)
 
     def _init_rff(self, x, z):
