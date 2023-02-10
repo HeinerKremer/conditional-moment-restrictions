@@ -22,6 +22,7 @@ gel_kwargs = {
 kmm_kwargs = {
     "divergence": 'kl',
     "entropy_reg_param": 10,
+    "reg_param": 0.0,
     "kernel_x_kwargs": {},
     "n_random_features": 10000,
     "n_reference_samples": 0,

@@ -25,9 +25,9 @@ class GeneralizedEL(AbstractEstimationMethod):
     """
 
     def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
-        # Load default kwargs
-        gel_kwargs.update(kwargs)
-        kwargs = gel_kwargs
+        if type(self) == GeneralizedEL:
+            gel_kwargs.update(kwargs)
+            kwargs = gel_kwargs
         super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
                          **kwargs)
 
@@ -352,6 +352,19 @@ class GeneralizedEL(AbstractEstimationMethod):
         """Put all variable used in training on the proper device should return device used."""
         return 'cpu'
 
+    def _to_device(self, x, x_val, z, z_val):
+        if torch.cuda.is_available() and self.batch_size:
+            device = "cuda"
+            x = [x[0].to(device), x[1].to(device)]
+            x_val = [x_val[0].to(device), x_val[1].to(device)]
+
+            if z is not None:
+                z = z.to(device)
+                z_val = z_val.to(device)
+            self.model = self.model.to(device)
+            self.all_dual_params = [param.to(device) for param in self.all_dual_params]
+        return x, x_val, z, z_val
+
     def _train_internal(self, x_train, z_train, x_val, z_val, debugging):
         x_tensor, z_tensor = np_to_tensor(x_train), np_to_tensor(z_train)
         x_val_tensor, z_val_tensor = np_to_tensor(x_val), np_to_tensor(z_val)
@@ -373,15 +386,16 @@ class GeneralizedEL(AbstractEstimationMethod):
         cycle_num = 0
 
         # Put everything on the same device
-        # TODO(Yassine): Make this in appropriate location and not hacky
-        device = self._setup_training()
-
-        x_tensor = [x_tensor[0].to(device), x_tensor[1].to(device)]
-        x_val_tensor = [x_val_tensor[0].to(device), x_val_tensor[1].to(device)]
-
-        if z_tensor is not None:
-            z_tensor = z_tensor.to(device)
-            z_val_tensor = z_val_tensor.to(device)
+        # # TODO(Yassine): Make this in appropriate location and not hacky
+        # device = self._setup_training()
+        #
+        # x_tensor = [x_tensor[0].to(device), x_tensor[1].to(device)]
+        # x_val_tensor = [x_val_tensor[0].to(device), x_val_tensor[1].to(device)]
+        #
+        # if z_tensor is not None:
+        #     z_tensor = z_tensor.to(device)
+        #     z_val_tensor = z_val_tensor.to(device)
+        x_tensor, x_val_tensor, z_tensor, z_val_tensor = self._to_device(x_tensor, x_val_tensor, z_tensor, z_val_tensor)
 
         for epoch_i in range(self.max_num_epochs):
             self.model.train()

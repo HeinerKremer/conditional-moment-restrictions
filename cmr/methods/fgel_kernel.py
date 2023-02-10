@@ -12,8 +12,9 @@ cvx_solver = cvx.MOSEK
 class KernelFGEL(GeneralizedEL):
 
     def __init__(self, model, moment_function, val_loss_func=None, verbose=None, **kwargs):
-        fgel_kernel_kwargs.update(kwargs)
-        kwargs = fgel_kernel_kwargs
+        if type(self) == KernelFGEL:
+            fgel_kernel_kwargs.update(kwargs)
+            kwargs = fgel_kernel_kwargs
         super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
                          **kwargs)
 

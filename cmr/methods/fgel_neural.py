@@ -7,8 +7,9 @@ from cmr.default_config import fgel_neural_kwargs
 
 class NeuralFGEL(GeneralizedEL):
     def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
-        fgel_neural_kwargs.update(kwargs)
-        kwargs = fgel_neural_kwargs
+        if type(self) == NeuralFGEL:
+            fgel_neural_kwargs.update(kwargs)
+            kwargs = fgel_neural_kwargs
         super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
                          **kwargs)
         self.dual_func_network_kwargs_custom = kwargs["dual_func_network_kwargs"]

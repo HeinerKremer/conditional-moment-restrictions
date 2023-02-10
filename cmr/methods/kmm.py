@@ -19,8 +19,9 @@ class KMM(GeneralizedEL):
     """
 
     def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
-        kmm_kwargs.update(kwargs)
-        kwargs = kmm_kwargs
+        if type(self) == KMM:
+            kmm_kwargs.update(kwargs)
+            kwargs = kmm_kwargs
         super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
                          **kwargs)
 
@@ -162,6 +163,12 @@ class KMM(GeneralizedEL):
     #         self.x_samples = [torch.vstack((xx[0], xz_samples[:, :x[0].shape[1]])),
     #                           torch.vstack((xx[1], xz_samples[:, x[0].shape[1]:-z.shape[1]]))]
     #         self.z_samples = torch.vstack((zz, xz_samples[:, -z.shape[1]:]))
+
+    def _to_device(self, x, x_val, z, z_val):
+        x, x_val, z, z_val = super()._to_device(x, x_val, z, z_val)
+        if torch.cuda.is_available() and self.kernel_x:
+            self.kernel_x = self.kernel_x.to("cuda")
+        return x, x_val, z, z_val
 
     """------------- Objective of MMD-GEL ------------"""
     def objective(self, x, z, which_obj='both', *args, **kwargs):

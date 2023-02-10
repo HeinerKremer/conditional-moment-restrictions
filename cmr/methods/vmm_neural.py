@@ -7,8 +7,9 @@ from cmr.default_config import vmm_neural_kwargs
 
 class NeuralVMM(NeuralFGEL):
     def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
-        vmm_neural_kwargs.update(kwargs)
-        kwargs = vmm_neural_kwargs
+        if type(self) == NeuralVMM:
+            vmm_neural_kwargs.update(kwargs)
+            kwargs = vmm_neural_kwargs
         super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
                          **kwargs)
         self.kernel_lambda = kwargs["reg_param_rkhs_norm"]

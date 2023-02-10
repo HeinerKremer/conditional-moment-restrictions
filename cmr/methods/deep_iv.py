@@ -8,11 +8,9 @@ from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
 
 
 class DeepIV(AbstractEstimationMethod):
-    def __init__(self, model, moment_function, kernel_z_kwargs=None, val_loss_func=None, verbose=False):
-        super().__init__(model=model, moment_function=moment_function,
-                         kernel_z_kwargs=kernel_z_kwargs, val_loss_func=val_loss_func)
-        self.verbose = verbose
-
+    def __init__(self, model, moment_function, val_loss_func=None, verbose=False, **kwargs):
+        super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
+                         **kwargs)
         self._estimator = None
         self.treatment_model = lambda input_shape: keras.Sequential([
             keras.layers.Dense(20, activation='relu', input_shape=input_shape),
