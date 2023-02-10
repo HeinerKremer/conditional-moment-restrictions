@@ -8,6 +8,7 @@ from sklearn.neighbors import KernelDensity
 from cmr.utils.rkhs_utils import get_rbf_kernel, calc_sq_dist
 from cmr.utils.torch_utils import Parameter, np_to_tensor, tensor_to_np
 from cmr.methods.generalized_el import GeneralizedEL
+from cmr.default_config import kmm_kwargs
 
 cvx_solver = cvx.MOSEK
 
@@ -17,19 +18,20 @@ class KMM(GeneralizedEL):
     Maximum mean discrepancy empirical likelihood estimator for unconditional moment restrictions.
     """
 
-    def __init__(self, model, moment_function, entropy_reg_param, divergence='kl', n_random_features=None,
-                 n_reference_samples=None, kde_bw=0.1, annealing=False, kernel_x_kwargs=None, **kwargs):
-        super().__init__(model=model, moment_function=moment_function, divergence=divergence, **kwargs)
-        self.entropy_reg_param = entropy_reg_param
-        self.annealing = annealing
+    def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
+        kmm_kwargs.update(kwargs)
+        kwargs = kmm_kwargs
+        super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
+                         **kwargs)
 
-        if kernel_x_kwargs is None:
-            kernel_x_kwargs = {}
-        self.kernel_x_kwargs = kernel_x_kwargs
-        self.n_rff = n_random_features
+        self.entropy_reg_param = kwargs["entropy_reg_param"]
+        self.kernel_x_kwargs = kwargs["kernel_x_kwargs"]
+        self.n_rff = kwargs["n_random_features"]
+        self.n_reference_samples = kwargs["n_reference_samples"]
+        self.kde_bw = kwargs["kde_bandwidth"]
+        self.annealing = ["annealing"]
+
         self.kernel_x = torch.Tensor((1, 1))    # Ugly fix to resolve merge conflict, will clean up later
-        self.kde_bw = kde_bw        # only used for the KDE scheme
-        self.n_reference_samples = n_reference_samples
 
     def _set_kernel_x(self, x, z):
         x_np, z_np = tensor_to_np(x), tensor_to_np(z)
@@ -222,15 +224,15 @@ class KMM(GeneralizedEL):
 
 if __name__ == '__main__':
     from experiments.tests import test_mr_estimator
-    # test_mr_estimator(estimation_method='KMM', n_runs=2, n_train=2000, hyperparams=None)
+    test_mr_estimator(estimation_method='KMM', n_runs=2, n_train=200)
 
-    np.random.seed(123485)
-    torch.random.manual_seed(12345)
-
-    from experiments.exp_heteroskedastic import HeteroskedasticNoiseExperiment
-    exp = HeteroskedasticNoiseExperiment(theta=[1.4], noise=2.0, heteroskedastic=True)
-    exp.prepare_dataset(n_train=100, n_val=100, n_test=20000)
-    estimator = KMM(model=exp.get_model(), moment_function=exp.moment_function, entropy_reg_param=10,
-                    n_random_features=1000, theta_optim='oadam_gda', n_reference_samples=0, verbose=2, batch_size=None)
-    estimator.train(exp.train_data, exp.val_data)
-    print(estimator.get_trained_parameters())
+    # np.random.seed(123485)
+    # torch.random.manual_seed(12345)
+    #
+    # from experiments.exp_heteroskedastic import HeteroskedasticNoiseExperiment
+    # exp = HeteroskedasticNoiseExperiment(theta=[1.4], noise=2.0, heteroskedastic=True)
+    # exp.prepare_dataset(n_train=100, n_val=100, n_test=20000)
+    # estimator = KMM(model=exp.get_model(), moment_function=exp.moment_function, entropy_reg_param=10,
+    #                 n_random_features=1000, theta_optim='oadam_gda', n_reference_samples=0, verbose=2, batch_size=None)
+    # estimator.train(exp.train_data, exp.val_data)
+    # print(estimator.get_trained_parameters())

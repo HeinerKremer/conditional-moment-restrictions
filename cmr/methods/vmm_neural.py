@@ -2,12 +2,16 @@ import numpy as np
 import torch
 
 from cmr.methods.fgel_neural import NeuralFGEL
+from cmr.default_config import vmm_neural_kwargs
 
 
 class NeuralVMM(NeuralFGEL):
-    def __init__(self, model, moment_function, kernel_lambda=0, **kwargs):
-        super().__init__(model=model, moment_function=moment_function, divergence='off', **kwargs)
-        self.kernel_lambda = kernel_lambda
+    def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
+        vmm_neural_kwargs.update(kwargs)
+        kwargs = vmm_neural_kwargs
+        super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
+                         **kwargs)
+        self.kernel_lambda = kwargs["reg_param_rkhs_norm"]
 
     def _objective(self, x, z, *args, **kwargs):
         f_of_z = self.dual_moment_func(z)

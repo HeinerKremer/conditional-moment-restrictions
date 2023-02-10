@@ -3,15 +3,19 @@ import torch
 
 from cmr.methods.kmm import KMM
 from cmr.utils.torch_utils import Parameter, ModularMLPModel
+from cmr.default_config import kmm_neural_kwargs
 
 cvx_solver = cvx.MOSEK
 
 
 class KMMNeural(KMM):
 
-    def __init__(self, model, moment_function, dual_func_network_kwargs=None, **kwargs):
-        super().__init__(model=model, moment_function=moment_function, theta_optim='oadam_gda', **kwargs)
-        self.dual_func_network_kwargs_custom = dual_func_network_kwargs
+    def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
+        kmm_neural_kwargs.update(kwargs)
+        kwargs = kmm_neural_kwargs
+        super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
+                         **kwargs)
+        self.dual_func_network_kwargs_custom = kwargs["dual_func_network_kwargs"]
 
     def _init_dual_params(self):
         super()._init_dual_params()

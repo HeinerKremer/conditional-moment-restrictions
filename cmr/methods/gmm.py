@@ -3,14 +3,17 @@ import scipy.linalg, scipy.sparse
 import torch
 
 from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
+from cmr.default_config import gmm_kwargs
 
 
 class GMM(AbstractEstimationMethod):
-    def __init__(self, model, moment_function, reg_param, num_iter=2, verbose=False, **kwargs):
-        super().__init__(model=model, moment_function=moment_function, **kwargs)
-        self.reg_param = reg_param
-        self.num_iter = num_iter
-        self.verbose = verbose
+    def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
+        gmm_kwargs.update(kwargs)
+        kwargs = gmm_kwargs
+        super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
+                         **kwargs)
+        self.reg_param = kwargs["reg_param"]
+        self.num_iter = kwargs["num_iter"]
 
     def _train_internal(self, x, z, x_val, z_val, debugging):
         alpha = self.reg_param

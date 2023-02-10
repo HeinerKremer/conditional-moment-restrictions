@@ -126,8 +126,11 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
         hparams.append(hyper)
         validation_loss.append(val_loss)
 
-    best_val = np.nanargmin(validation_loss)
-    best_hparams = hparams[best_val]
+    try:
+        best_val = np.nanargmin(validation_loss)
+        best_hparams = hparams[best_val]
+    except ValueError:
+        best_val, best_hparams = -1, None
     if verbose:
         print('Best hyperparams: ', best_hparams)
     return models[best_val], {'models': models, 'val_loss': validation_loss, 'hyperparam': hparams,

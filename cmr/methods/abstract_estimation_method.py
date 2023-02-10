@@ -8,7 +8,7 @@ import torch.nn as nn
 
 
 class AbstractEstimationMethod:
-    def __init__(self, model, moment_function, kernel_z_kwargs=None, val_loss_func=None, verbose=False):
+    def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
         self.model = ModelWrapper(model)
         self.moment_function = self._wrap_moment_function(moment_function)
         self.is_trained = False
@@ -24,9 +24,10 @@ class AbstractEstimationMethod:
         self.dim_y = None
 
         # For validation purposes by default all methods for CMR use the kernel MMR loss and therefore require the kernel Gram matrices
-        if kernel_z_kwargs is None:
-            kernel_z_kwargs = {}
-        self.kernel_z_kwargs = kernel_z_kwargs
+        try:
+            self.kernel_z_kwargs = kwargs["kernel_z_kwargs"]
+        except KeyError:
+            self.kernel_z_kwargs = {}
         self.kernel_z = None
         self.kernel_z_cholesky = None
         self.kernel_z_val = None

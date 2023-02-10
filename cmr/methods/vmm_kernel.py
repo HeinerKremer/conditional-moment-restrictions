@@ -3,13 +3,17 @@ import scipy.linalg
 import torch
 
 from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
+from cmr.default_config import vmm_kernel_kwargs
 
 
 class KernelVMM(AbstractEstimationMethod):
-    def __init__(self, model, moment_function, reg_param, kernel_z_kwargs=None, num_iter=2, **kwargs):
-        super().__init__(model=model, moment_function=moment_function, kernel_z_kwargs=kernel_z_kwargs, **kwargs)
-        self.alpha = reg_param
-        self.num_iter = num_iter
+    def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
+        vmm_kernel_kwargs.update(kwargs)
+        kwargs = vmm_kernel_kwargs
+        super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
+                         **kwargs)
+        self.alpha = kwargs["reg_param"]
+        self.num_iter = kwargs["num_iter"]
 
     def _train_internal(self, x, z, x_val, z_val, debugging):
         alpha = self.alpha

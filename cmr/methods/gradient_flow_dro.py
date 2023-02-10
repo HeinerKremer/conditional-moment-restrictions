@@ -58,7 +58,7 @@ class GradientFlowDRO(GeneralizedEL):
         dual_obj = None
         self._reset_particles()
 
-        for i in range(self.inneriters):
+        for i in range(self.dual_optim_args['inneriters']):
             self.dual_optimizer.zero_grad()
             _, dual_obj = self.objective(x_tensor, z_tensor, which_obj='dual')
             losses.append(float(dual_obj.detach().numpy()))

@@ -2,16 +2,16 @@ import torch
 
 from cmr.methods.generalized_el import GeneralizedEL
 from cmr.utils.torch_utils import ModularMLPModel
+from cmr.default_config import fgel_neural_kwargs
 
 
 class NeuralFGEL(GeneralizedEL):
-    def __init__(self, model, moment_function, reg_param=1e-6, batch_size=200, dual_func_network_kwargs=None, **kwargs):
-        super().__init__(model=model, moment_function=moment_function, theta_optim='oadam_gda', **kwargs)
-
-        self.batch_size = batch_size
-        self.l2_lambda = reg_param
-        self.dual_func_network_kwargs_custom = dual_func_network_kwargs
-        self.batch_training = True
+    def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
+        fgel_neural_kwargs.update(kwargs)
+        kwargs = fgel_neural_kwargs
+        super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
+                         **kwargs)
+        self.dual_func_network_kwargs_custom = kwargs["dual_func_network_kwargs"]
 
     def _init_dual_params(self):
         dual_func_network_kwargs = self._update_default_dual_func_network_kwargs(self.dual_func_network_kwargs_custom)
@@ -19,7 +19,7 @@ class NeuralFGEL(GeneralizedEL):
         self.all_dual_params = list(self.dual_moment_func.parameters())
 
     def _setup_training(self):
-        if self.batch_training:
+        if self.batch_size:
             device = "cuda" if torch.cuda.is_available() else "cpu"
         else:
             device = 'cpu'
@@ -43,8 +43,8 @@ class NeuralFGEL(GeneralizedEL):
 
     def _objective(self, x, z, *args, **kwargs):
         objective, _ = super()._objective(x, z, *args)
-        if self.l2_lambda > 0:
-            l_reg = self.l2_lambda * torch.mean(self.dual_moment_func(z) ** 2)
+        if self.reg_param > 0:
+            l_reg = self.reg_param * torch.mean(self.dual_moment_func(z) ** 2)
         else:
             l_reg = 0
         return objective, -objective + l_reg

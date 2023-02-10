@@ -6,19 +6,22 @@ import rff
 from cmr.methods.kmm import KMM
 from cmr.utils.rkhs_utils import calc_sq_dist
 from cmr.utils.torch_utils import Parameter, tensor_to_np
+from cmr.default_config import kmm_kernel_kwargs
 
 cvx_solver = cvx.MOSEK
 
 
 class KMMKernel(KMM):
-
-    def __init__(self, model, moment_function, n_rff_instrument_func=None, **kwargs):
-        super().__init__(model=model, moment_function=moment_function, **kwargs)
-        if n_rff_instrument_func is None:
+    def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
+        kmm_kernel_kwargs.update(kwargs)
+        kwargs = kmm_kernel_kwargs
+        super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
+                         **kwargs)
+        if kwargs["n_rff_instrument_func"] is None:
             self.n_rff_instrument_func = self.n_rff
         else:
             assert self.n_rff is not None, 'If RFF is used for instrument func, need to use it for RKHS function too.'
-            self.n_rff_instrument_func = n_rff_instrument_func
+            self.n_rff_instrument_func = kwargs["n_rff_instrument_func"]
 
     def _init_dual_params(self):
         super()._init_dual_params()
