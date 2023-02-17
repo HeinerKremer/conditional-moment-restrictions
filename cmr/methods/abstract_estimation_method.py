@@ -81,16 +81,6 @@ class AbstractEstimationMethod:
             self.dim_t = x[0].shape[1]
             self.dim_y = x[1].shape[1]
 
-    # def _to_device(self, x_train, x_val, z_train, z_val):
-    #     if self.device == "cuda":
-    #         x_train = [x_train[0].to(self.device), x_train[1].to(self.device)]
-    #         x_val = [x_val[0].to(self.device), x_val[1].to(self.device)]
-    #
-    #         if z_train is not None:
-    #             z_train = z_train.to(self.device)
-    #             z_val = z_val.to(self.device)
-    #     return x_train, x_val, z_train, z_val
-
     def train(self, train_data, val_data=None, debugging=False):
         x_train = [train_data['t'], train_data['y']]
         z_train = train_data['z']

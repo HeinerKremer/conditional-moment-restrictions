@@ -6,6 +6,7 @@ from run_experiment import experiment_setups
 cpus = 8
 memory = 16000
 bid = 12
+kmm_on_gpu = True
 
 # ---------------- Simulation details ----------------
 experiments = [
@@ -111,6 +112,10 @@ for experiment in experiments:
         st = os.stat(f'{path}/cluster/jobs_{experiment}/'+filename+'.sh')
         os.chmod(f'{path}/cluster/jobs_{experiment}/'+filename+'.sh', st.st_mode | 0o111)
 
+        if kmm_on_gpu and "KMM" in settings['method']:
+            additional_requirements = 'request_gpus = 1\n'
+        else:
+            additional_requirements = ""
         with open(f'{path}/cluster/jobs_{experiment}/'+filename + '.sub', 'w') as subfile:
             subfile.write(f'executable = {path}/cluster/jobs_{experiment}/{filename}.sh\n'
                           + f'error = {path}/cluster/jobs_{experiment}/{filename}.err\n'
@@ -118,6 +123,7 @@ for experiment in experiments:
                           + f'log = {path}/cluster/jobs_{experiment}/{filename}.log\n'
                           + f'request_cpus = {cpus}\n'
                           + f'request_memory = {memory}\n'
+                          + additional_requirements
                           + f'queue')
 
 

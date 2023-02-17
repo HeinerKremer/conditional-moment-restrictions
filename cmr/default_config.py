@@ -185,7 +185,7 @@ methods = {
         {
             'estimator_kwargs': kmm_neural_kwargs,
             'hyperparams': {
-                'entropy_reg_param': [1e0, 1e1],
+                'entropy_reg_param': [1e0, 1e1, 1e2],
                 "reg_param": [0, 1e-4, 1e-2, 1e0],
             }
         },
