@@ -9,10 +9,7 @@ class MMR(AbstractEstimationMethod):
                          **kwargs)
 
     def _train_internal(self, x, z, x_val, z_val, debugging):
-        x_tensor = self._to_tensor(x)
-        z_tensor = self._to_tensor(z)
-        n_sample = z_tensor.shape[0]
-
+        n_sample = x[0].shape[0]
         self._set_kernel_z(z, z_val)
 
         optimizer = torch.optim.LBFGS(self.model.parameters(),
@@ -20,7 +17,7 @@ class MMR(AbstractEstimationMethod):
 
         def closure():
             optimizer.zero_grad()
-            psi = self.moment_function(x_tensor)
+            psi = self.moment_function(x)
             loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z, psi) / (n_sample ** 2)
             loss.backward()
             return loss

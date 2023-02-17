@@ -349,9 +349,6 @@ class GeneralizedEL(AbstractEstimationMethod):
     """---------------------------------------------------------------------------------------------------------"""
 
     def _train_internal(self, x_train, z_train, x_val, z_val, debugging):
-        x_tensor, z_tensor = np_to_tensor(x_train), np_to_tensor(z_train)
-        x_val_tensor, z_val_tensor = np_to_tensor(x_val), np_to_tensor(z_val)
-
         if self.batch_size:
             n = x_train[0].shape[0]
             batch_iter = BatchIter(num=n, batch_size=self.batch_size)
@@ -368,30 +365,26 @@ class GeneralizedEL(AbstractEstimationMethod):
         num_no_improve = 0
         cycle_num = 0
 
-        x_tensor, x_val_tensor, z_tensor, z_val_tensor = self._to_device(x=x_tensor, x_val=x_val_tensor,
-                                                                         z=z_tensor, z_val=z_val_tensor)
-
         for epoch_i in range(self.max_num_epochs):
             self.model.train()
             if self.annealing and epoch_i % 2 == 0:
                 self.entropy_reg_param = self.entropy_reg_param * 0.99
             if self.batch_size:
                 for batch_idx in batch_iter:
-                    x_batch = [x_tensor[0][batch_idx], x_tensor[1][batch_idx]]
-                    z_batch = z_tensor[batch_idx] if z_tensor is not None else None
+                    x_batch = [x_train[0][batch_idx], x_train[1][batch_idx]]
+                    z_batch = z_train[batch_idx] if z_train is not None else None
                     obj = self._optimize_step_theta(x_batch, z_batch)
             else:
-                obj = self._optimize_step_theta(x_tensor, z_tensor)
+                obj = self._optimize_step_theta(x_train, z_train)
 
-            # If optimization failed
             if not obj:
-                break
+                break   # If optimization failed
 
             train_losses.append(obj)
 
             if epoch_i % eval_freq_epochs == 0:
                 cycle_num += 1
-                val_loss = self.calc_validation_metric(x_val_tensor, z_val_tensor)
+                val_loss = self.calc_validation_metric(x_val, z_val)
                 if self.verbose:
                     last_obj = obj[-1] if isinstance(obj, list) else obj
                     print("epoch %d, theta-obj=%f, val-loss=%f"

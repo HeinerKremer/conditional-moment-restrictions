@@ -39,7 +39,7 @@ class KMM(GeneralizedEL):
         kernel_t, _ = get_rbf_kernel(x_np[0], x_np[0], **self.kernel_x_kwargs)
         kernel_y, _ = get_rbf_kernel(x_np[1], x_np[1], **self.kernel_x_kwargs)
         kernel_z, _ = get_rbf_kernel(z_np, z_np, **self.kernel_z_kwargs) if z_np is not None else (1.0, 1.0)
-        self.kernel_x = torch.Tensor(kernel_t * kernel_y * kernel_z)
+        self.kernel_x = torch.Tensor(kernel_t * kernel_y * kernel_z).to(self.device)
 
     def _init_rff(self, x, z):
         x_np, z_np = tensor_to_np(x), tensor_to_np(z)
@@ -83,7 +83,8 @@ class KMM(GeneralizedEL):
             self.rkhs_func = Parameter(shape=(self.n_rff, 1)).to(self.device)
         else:
             self.rkhs_func = Parameter(shape=(self.kernel_x.shape[0], 1)).to(self.device)
-        self.all_dual_params = list(self.dual_moment_func.params) + list(self.dual_normalization.params) + list(self.rkhs_func.params)
+        self.all_dual_params = (list(self.dual_moment_func.parameters()) + list(self.dual_normalization.parameters())
+                                + list(self.rkhs_func.parameters()))
 
     def init_estimator(self, x_tensor, z_tensor):
         self._init_reference_distribution(x_tensor, z_tensor)
@@ -170,12 +171,6 @@ class KMM(GeneralizedEL):
     #                           torch.vstack((xx[1], xz_samples[:, x[0].shape[1]:-z.shape[1]]))]
     #         self.z_samples = torch.vstack((zz, xz_samples[:, -z.shape[1]:]))
 
-    def _to_device(self, x, x_val, z, z_val):
-        x, x_val, z, z_val = super()._to_device(x=x, x_val=x_val, z=z, z_val=z_val)
-        if self.kernel_x is not None:
-            self.kernel_x = self.kernel_x.to(self.device)
-        return x, x_val, z, z_val
-
     """------------- Objective of MMD-GEL ------------"""
     def objective(self, x, z, which_obj='both', *args, **kwargs):
         """Modifies `objective` of base class to include sampling from reference distribution"""
@@ -188,7 +183,6 @@ class KMM(GeneralizedEL):
         rkhs_func_empirical = self.eval_rkhs_func(x, z)
         rkhs_func_reference = self.eval_rkhs_func(x_ref, z_ref)
 
-        # print(z_ref.shape, self._eval_dual_moment_func(z_ref).shape, self.moment_function(x_ref).shape, rkhs_func_reference.shape)
         conj_div_arg = (rkhs_func_reference + self.dual_normalization.params
                         - torch.sum(self._eval_dual_moment_func(z_ref) * self.moment_function(x_ref),
                                     dim=1, keepdim=True))

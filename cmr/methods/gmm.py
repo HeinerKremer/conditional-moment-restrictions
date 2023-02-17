@@ -32,15 +32,13 @@ class GMM(AbstractEstimationMethod):
                 alpha *= 10
 
     def _try_fit_internal(self, x, z, x_val, z_val, alpha):
-        x_tensor = self._to_tensor(x)
-
         for iter_i in range(self.num_iter):
-            weighting_matrix = self._to_tensor(self._get_inverse_covariance_matrix(x_tensor, alpha))
+            weighting_matrix = self._to_tensor(self._get_inverse_covariance_matrix(x, alpha))
             optimizer = torch.optim.LBFGS(self.model.parameters(),
                                           line_search_fn="strong_wolfe")
             def closure():
                 optimizer.zero_grad()
-                psi = self.moment_function(x_tensor)
+                psi = self.moment_function(x)
                 print(psi.shape)
                 loss = torch.einsum('ik, kr, jr -> ', psi, weighting_matrix, psi) / x[0].shape[0]**2
                 loss.backward()

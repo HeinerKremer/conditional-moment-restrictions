@@ -32,20 +32,18 @@ class KernelVMM(AbstractEstimationMethod):
                 alpha *= 10
 
     def _try_fit_internal(self, x, z, x_val, z_val, alpha):
-        x_tensor = self._to_tensor(x)
-
         self._set_kernel_z(z, z_val)
 
         for iter_i in range(self.num_iter):
             # obtain m matrix for this iteration, using current theta parameter
-            m = self._to_tensor(self._calc_m_matrix(x_tensor, alpha))
+            m = self._to_tensor(self._calc_m_matrix(x, alpha))
             # re-optimize rho using LBFGS
             optimizer = torch.optim.LBFGS(self.model.parameters(),
                                           line_search_fn="strong_wolfe")
 
             def closure():
                 optimizer.zero_grad()
-                psi_x = self.moment_function(x_tensor).transpose(1, 0).flatten()
+                psi_x = self.moment_function(x).transpose(1, 0).flatten()
                 m_rho_x = torch.matmul(m, psi_x).detach()
                 loss = 2.0 * torch.matmul(m_rho_x, psi_x)
                 loss.backward()

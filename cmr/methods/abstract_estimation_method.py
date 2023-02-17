@@ -1,7 +1,7 @@
 import functools
 
 from cmr.utils.rkhs_utils import get_rbf_kernel, compute_cholesky_factor
-from cmr.utils.torch_utils import np_to_tensor
+from cmr.utils.torch_utils import np_to_tensor, to_device
 import numpy as np
 import torch
 import torch.nn as nn
@@ -76,21 +76,20 @@ class AbstractEstimationMethod:
                 self._dim_z = z.shape[1]
 
             # Eval moment function once on a single sample to get its dimension
-            single_sample = [torch.Tensor(x[0][0:1]), torch.Tensor(x[1][0:1])]
+            single_sample = [x[0][0:1], x[1][0:1]]
             self._dim_psi = self.moment_function(single_sample).shape[1]
             self.dim_t = x[0].shape[1]
             self.dim_y = x[1].shape[1]
 
-    def _to_device(self, x, x_val, z, z_val):
-        if self.device == "cuda":
-            x = [x[0].to(self.device), x[1].to(self.device)]
-            x_val = [x_val[0].to(self.device), x_val[1].to(self.device)]
-
-            if z is not None:
-                z = z.to(self.device)
-                z_val = z_val.to(self.device)
-            self.model = self.model.to(self.device)
-        return x, x_val, z, z_val
+    # def _to_device(self, x_train, x_val, z_train, z_val):
+    #     if self.device == "cuda":
+    #         x_train = [x_train[0].to(self.device), x_train[1].to(self.device)]
+    #         x_val = [x_val[0].to(self.device), x_val[1].to(self.device)]
+    #
+    #         if z_train is not None:
+    #             z_train = z_train.to(self.device)
+    #             z_val = z_val.to(self.device)
+    #     return x_train, x_val, z_train, z_val
 
     def train(self, train_data, val_data=None, debugging=False):
         x_train = [train_data['t'], train_data['y']]
@@ -103,8 +102,14 @@ class AbstractEstimationMethod:
             x_val = [val_data['t'], val_data['y']]
             z_val = val_data['z']
 
+        x_train, z_train = self._to_tensor_and_device(x_train), self._to_tensor_and_device(z_train)
+        x_val, z_val = self._to_tensor_and_device(x_val), self._to_tensor_and_device(z_val)
+        self.model = self.model.to(self.device)
+
         if not self._is_init:
             self.init_estimator(x_train, z_train)
+        if next(self.model.parameters()).is_cuda:
+            print('Starting training on GPU ...')
         self._train_internal(x_train, z_train, x_val, z_val, debugging=debugging)
         self.model.cpu()
         self.is_trained = True
@@ -123,10 +128,6 @@ class AbstractEstimationMethod:
             self.kernel_z_val, _ = get_rbf_kernel(z_val, z_val, **self.kernel_z_kwargs)
 
     def _calc_val_mmr(self, x_val, z_val):
-        if not isinstance(x_val, torch.Tensor):
-            x_val = self._to_tensor(x_val)
-        if not isinstance(z_val, torch.Tensor):
-            z_val = self._to_tensor(z_val)
         n = z_val.shape[0]
         if n < 5001:
             self._set_kernel_z(z_val=z_val)
@@ -146,8 +147,6 @@ class AbstractEstimationMethod:
         return float(loss)
 
     def _calc_val_moment_violation(self, x_val, z_val=None):
-        if not isinstance(x_val, torch.Tensor):
-            x_val = self._to_tensor(x_val)
         psi = self.moment_function(x_val)
         mse_moment_violation = torch.sum(torch.square(psi)) / psi.shape[0]
         return float(mse_moment_violation.detach().cpu().numpy())
@@ -175,6 +174,9 @@ class AbstractEstimationMethod:
     @staticmethod
     def _to_tensor(data_array):
         return np_to_tensor(data_array)
+
+    def _to_tensor_and_device(self, data_array):
+        return to_device(self._to_tensor(data_array), device=self.device)
 
     def _train_internal(self, x, z, x_val, z_val, debugging):
         raise NotImplementedError()

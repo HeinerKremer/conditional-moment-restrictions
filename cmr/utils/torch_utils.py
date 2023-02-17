@@ -34,10 +34,6 @@ def torch_to_float(tensor):
     return float(tensor.detach().cpu())
 
 
-def torch_to_np(tensor):
-    return tensor.detach().cpu().numpy().astype("float64")
-
-
 def tensor_to_np(tensor_array):
     if type(tensor_array) == list or type(tensor_array) == tuple:
         np_list = []
@@ -73,6 +69,19 @@ def np_to_tensor(data_array):
             data_tensor = data_array
         else:
             data_tensor = torch.from_numpy(data_array).float()
+    return data_tensor
+
+
+def to_device(data_tensor, device):
+    if data_tensor is None:
+        return None
+    if type(data_tensor) == list:
+        tensor_list = []
+        for element in data_tensor:
+            tensor_list.append(element.to(device))
+        data_tensor = tensor_list
+    else:
+        data_tensor = data_tensor.to(device)
     return data_tensor
 
 
