@@ -4,15 +4,19 @@ import torch
 
 from cmr.methods.generalized_el import GeneralizedEL
 from cmr.utils.torch_utils import Parameter
+from cmr.default_config import fgel_kernel_kwargs
 
 cvx_solver = cvx.MOSEK
 
 
 class KernelFGEL(GeneralizedEL):
 
-    def __init__(self, reg_param=1e-6, **kwargs):
-        super().__init__(**kwargs)
-        self.reg_param = reg_param
+    def __init__(self, model, moment_function, val_loss_func=None, verbose=None, **kwargs):
+        if type(self) == KernelFGEL:
+            fgel_kernel_kwargs.update(kwargs)
+            kwargs = fgel_kernel_kwargs
+        super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
+                         **kwargs)
 
     def _init_dual_params(self):
         self.dual_moment_func = Parameter(shape=(self.kernel_z.shape[0], self.dim_psi))

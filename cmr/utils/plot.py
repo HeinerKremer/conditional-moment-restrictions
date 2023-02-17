@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from tabulate import tabulate
+import pandas as pd
 
 
 
@@ -16,20 +17,20 @@ NEURIPS_LINE_WIDTH = 5.5  # Text width: 5.5in (double figure minus spacing 0.2in
 FIG_SIZE_NEURIPS_DOUBLE = (NEURIPS_LINE_WIDTH / 2, NEURIPS_LINE_WIDTH / 2 * 4/6)
 figsize = (LINE_WIDTH*1.4, LINE_WIDTH/2)
 
-labels = {'SMDIdentity': 'SMD',
-          'SMDHeteroskedastic': 'SMD',
-          'KernelFGEL': 'K-FGEL',
-          'NeuralFGEL': 'NN-FGEL',
-          'KernelFGEL-chi2': 'K-FGEL',
-          'NeuralFGEL-chi2': 'NN-FGEL',
-          'KernelFGEL-log': 'K-FGEL',
-          'NeuralFGEL-log': 'NN-FGEL',
-          'KernelFGEL-kl': 'K-FGEL',
-          'NeuralFGEL-kl': 'NN-FGEL',
-          'KernelMMR': 'MMR',
-          'OrdinaryLeastSquares': 'LSQ',
-          'KernelVMM': 'K-VMM',
-          'NeuralVMM': 'NN-VMM'}
+# labels = {'SMDIdentity': 'SMD',
+#           'SMDHeteroskedastic': 'SMD',
+#           'KernelFGEL': 'K-FGEL',
+#           'NeuralFGEL': 'NN-FGEL',
+#           'KernelFGEL-chi2': 'K-FGEL',
+#           'NeuralFGEL-chi2': 'NN-FGEL',
+#           'KernelFGEL-log': 'K-FGEL',
+#           'NeuralFGEL-log': 'NN-FGEL',
+#           'KernelFGEL-kl': 'K-FGEL',
+#           'NeuralFGEL-kl': 'NN-FGEL',
+#           'KernelMMR': 'MMR',
+#           'OrdinaryLeastSquares': 'LSQ',
+#           'KernelVMM': 'K-VMM',
+#           'NeuralVMM': 'NN-VMM'}
 
 
 NEURIPS_RCPARAMS = {
@@ -87,140 +88,93 @@ NEURIPS_RCPARAMS = {
 }
 
 
-def load_and_summarize_results(filename, validation_metric):
-    with open(filename, "r") as fp:
-        results = json.load(fp)
+def load_data_to_df(filepath):
+    with open(filepath, 'rb') as f:
+        res = json.load(f)
+    res = res['results']
 
-    hypervals = []
-    train_risk = []
-    val_risk = []
-    test_risk = []
-    mse = []
-    params = []
-    val_mmr = []
-
-    for stats in results:
-        if len(stats['hyperparam']) > 1:
-            metric = stats[validation_metric]
-            metric = np.nan_to_num(metric, nan=np.inf)
-            i = np.argmin(metric)
-        else:
-            i = 0
-
-        hypervals.append(stats['hyperparam'][i])
-        train_risk.append(stats['train_risk'][i])
-        val_risk.append(stats['val_risk'][i])
-        test_risk.append(stats['test_risk'][i])
-        mse.append(stats['mse'][i])
-        params.append(stats['param'][i])
-        val_mmr.append(stats['val_mmr'][i])
-
-    results_summarized = {
-        "mean_square_error": np.mean(mse),
-        "std_square_error": np.std(mse),
-        "max_square_error": np.max(mse),
-        "mean_risk": np.mean(test_risk),
-        "std_risk": np.std(test_risk),
-        "max_risk": np.max(test_risk),
-        "mean_mmr_loss": np.mean(val_mmr),
-        "std_mmr_loss": np.std(val_mmr),
-        "n_runs": len(results),
-        "hyperparam_values": hypervals,
-        "train_risk": train_risk,
-        "val_risk": val_risk,
-        "test_risk": test_risk,
-        "mse": mse,
-        "val_mmr": val_mmr,
-        "params": params,
-    }
-    return results_summarized
+    df = pd.concat([pd.DataFrame(r) for r in res], axis=0, keys=range(len(res)))
+    df = pd.concat([df, df['hyperparam'].apply(pd.Series)], axis=1).drop(columns='hyperparam')
+    df = df.rename_axis(['rollout', 'config_id'], axis='index')
+    return df
 
 
-def get_result_for_best_divergence(method, n_train, test_metric, validation_metric, func=None, optimizer=None):
+def get_mean_and_sem(df, test_metric='test_risk', val_metric='val_loss', hparam_config=None):
+    # Select results for specific hparams
+    if hparam_config:
+        for key, val in hparam_config.items():
+            df = df[df[key] == val]
+
+    # Select best hparams
+    df = df.loc[df.groupby('rollout')[val_metric].idxmin()]
+    return df[test_metric].mean(), df[test_metric].sem()
+
+
+# Best hparam configs
+def get_best_hparam_results(df, metric='val_loss', num_best=5):
+    best = df.groupby('config_id').mean().sort_values(by=metric)[:num_best]
+    return best
+
+
+# Merge datasets
+def load_and_merge_datasets(filepaths, property_dict=None, merge='hparam_configs'):
+    if merge == 'rollouts':
+        merge_property = 'rollout'
+    elif merge == 'hparam_configs':
+        merge_property = 'config_id'
+    else:
+        raise NotImplementedError
+
+    if not property_dict:
+        prop_name = 'version'
+        vals = range(len(filepaths))
+    else:
+        prop_name = list(property_dict.keys())[0]
+        vals = property_dict[prop_name]
+
+    start_merge_id = 0
+    dfs = []
+
+    for filepath, prop in zip(filepaths, vals):
+        data_frame = load_data_to_df(filepath)
+        data_frame = data_frame.drop(columns=['test_risk_optim', 'parameter_mse_optim', 'best_index'])
+        data_frame[prop_name] = prop
+
+        # Add new config id
+        data_frame = data_frame.reset_index()
+        data_frame[merge_property] += start_merge_id
+        start_merge_id = data_frame[merge_property].max() + 1
+        dfs.append(data_frame)
+
+    df = pd.concat(dfs, ignore_index=True)
+    df = df.set_index(['rollout', 'config_id'])
+    return df
+
+
+def plot_results_over_sample_size(methods, n_samples, labels=None, hparam_config=None, logscale=False):
     base_path = Path(__file__).parent.parent.parent
-    if func is not None:
-        opt = f'_{func}'
-        experiment = base_path / 'results/NetworkIVExperiment/NetworkIVExperiment'
-    else:
-        opt = ''
-        experiment = base_path / 'results/HeteroskedasticNoiseExperiment/HeteroskedasticNoiseExperiment'
-
-    if method == 'KernelFGEL' and optimizer is not None:
-        optimizer = f'-{optimizer}'
-    else:
-        optimizer = ''
-
-    test_metrics = []
-    validation = []
-    for divergence in ['chi2', 'log', 'kl']:
-        filename = f"{experiment}_method={method}-{divergence}{optimizer}_n={n_train}{opt}.json"
-        try:
-            res = load_and_summarize_results(filename, validation_metric)
-            test_metrics.append(res[test_metric])
-            validation.append(res[validation_metric])
-        except FileNotFoundError:
-            print('No such file or directory: "results/NetworkIVExperiment/NetworkIVExperiment_method=KernelFGEL-kl-lbfgs_n=2000_abs.json"')
-    indices = np.argmin(np.asarray(test_metrics), axis=0)
-    validation_metrics = np.min(np.asarray(validation), axis=0)
-    test_metrics = np.asarray(test_metrics)
-    test_metrics = np.asarray([test_metrics[index][i] for i, index in enumerate(indices)])
-    return test_metrics, validation_metrics
-
-def get_result_for_best_optimizer(method, n_train, validation_metric):
-    pass
-    # filename = f"results/HeteroskedasticNoiseExperiment/HeteroskedasticNoiseExperiment_method={method}_n={n_train}.json"
-    # with open(filename, "r") as fp:
-    #     res = json.load(fp)
-    # mean = np.mean(res['mse'])
-    # std = np.std(res['mse'])
-    #     try:
-    #         filename = f"results/HeteroskedasticNoiseExperiment/HeteroskedasticNoiseExperiment_method={method}-oadam_n={n_train}.json"
-    #         with open(filename, "r") as fp:
-    #             res2 = json.load(fp)
-    #             mean2 = np.mean(res2['mse'])
-    #             std2 = np.std(res2['mse'])
-    #             print('OAdam version of KFGEL worked better!')
-    #     except FileNotFoundError:
-    #         mean2 = np.inf
-    #
-    #     mean = min(mean, mean2)
-    #     std = std if mean < mean2 else std2
-
-
-def remove_failed_runs(mses, mmrs, proportion=0.9):
-    """The baseline KernelVMM fails sometimes, so we have to remove a few runs, to keep the comparison fair
-    we simply remove the same proportion of the worst runs from all methods."""
-    indeces = np.argsort(mmrs)
-    best = np.asarray(mses)[indeces]
-    best_mses = best[:int(proportion * len(best))]
-    print('Left out MSE: ', best[int(proportion * len(best)):])
-    return best_mses
-
-
-def plot_results_over_sample_size(methods, n_samples, validation_metric='mmr', logscale=False, remove_failed=False, optimizer='lbfgs'):
     plt.rcParams.update(NEURIPS_RCPARAMS)
     sns.set_theme()
 
-    marker = ['v', 'o', 's', 'd', 'p', '*', 'h']
-    colors = ['tab:blue', 'tab:red', 'tab:orange', 'tab:olive', 'tab:pink', 'tab:cyan', 'tab:purple']
+    if not labels:
+        labels = methods
 
-    results = {method: {'mean': [], 'std': []} for method in methods}
+    marker = ['v', 'o', 's', 'd', 'p', '*', 'h'] * 2
+    colors = ['tab:blue', 'tab:red', 'tab:orange', 'tab:olive', 'tab:pink', 'tab:cyan', 'tab:purple'] * 2
+
+    results = {"".join(method): {'mean': [], 'sem': []} for method in methods}
     n_samples = np.sort(n_samples)
     for n_train in n_samples:
         for method in methods:
-            if method in ['NeuralFGEL', 'KernelFGEL']:
-                mses, mmrs = get_result_for_best_divergence(method, n_train, test_metric='mse',
-                                                            validation_metric=validation_metric,
-                                                            optimizer=optimizer)
-            else:
-                filename = f"results/HeteroskedasticNoiseExperiment/HeteroskedasticNoiseExperiment_method={method}_n={n_train}.json"
-                res = load_and_summarize_results(filename, validation_metric)
-                mses, mmrs = res['mse'], res['val_mmr']
-            if remove_failed:
-                mses = remove_failed_runs(mses, mmrs)
-
-            results[method]['mean'].append(np.mean(mses))
-            results[method]['std'].append(np.std(mses) / np.sqrt(len(mses)))
+            if isinstance(method, str):
+                method = [method]
+            filename = [base_path / f"results/heteroskedastic_one/heteroskedastic_one_method={m}_n={n_train}.json" for m in
+                        method]
+            df = load_and_merge_datasets(filename)
+            mean, sem = get_mean_and_sem(df, test_metric='mse', val_metric='val_loss',
+                                         hparam_config=hparam_config if 'KMM' in method[0] else None)
+            results["".join(method)]['mean'].append(mean)
+            results["".join(method)]['sem'].append(sem)
 
     n_plots = 1
     # figsize = (LINE_WIDTH, LINE_WIDTH / 2)
@@ -230,10 +184,10 @@ def plot_results_over_sample_size(methods, n_samples, validation_metric='mmr', l
     ax = [ax]
 
     for i, (method, res) in enumerate(results.items()):
-        ax[0].plot(n_samples, res['mean'], label=labels[method], color=colors[i], marker=marker[i], ms=10)
+        ax[0].plot(n_samples, res['mean'], label="".join(labels[i]), color=colors[i], marker=marker[i], ms=10)
         ax[0].fill_between(n_samples,
-                        np.subtract(res['mean'], res['std']),
-                        np.add(res['mean'], res['std']),
+                        np.subtract(res['mean'], res['sem']),
+                        np.add(res['mean'], res['sem']),
                         alpha=0.2,
                         color=colors[i])
 
@@ -243,11 +197,11 @@ def plot_results_over_sample_size(methods, n_samples, validation_metric='mmr', l
         ax[0].set_xscale('log')
         ax[0].set_yscale('log')
     #ax[0].set_xlim([1e2, 1e4])
-    ax[0].set_ylim(ymax=1.6, ymin=1e-5) #[1e-5, 1.2e0])
+    # ax[0].set_ylim(ymax=1e0, ymin=1e-6) #[1e-5, 1.2e0])
 
     plt.legend()
     plt.tight_layout()
-    plt.savefig('results/HeteroskedasticNoisePlot.pdf', dpi=200)
+    plt.savefig('exp_heteroskedastic.pdf', dpi=200)
     plt.show()
 
 
@@ -306,17 +260,29 @@ def plot_divergence_comparison(n_samples, validation_metric, logscale=False, rem
     plt.show()
 
 
-def generate_table(n_train, test_metric='test_risk', validation_metric='val_mmr', remove_failed=False, optimizer='lbfgs'):
-    methods = ['DeepIV',
-               'KernelVMM',
-               'NeuralVMM',
-               'KernelELKernel',
-               'KernelELNeural',
-               'RFKernelELNeural',
-               'RFKernelELKernel'
-               ]
-    # methods = ['KernelFGEL-chi2']
+# def generate_table_network_iv(n_train, methods):
+#     funcs = ['abs', 'step', 'sin', 'linear']
+#
+#     base_path = Path(__file__).parent.parent.parent
+#
+#     results = {func: {model: {} for model in methods} for func in funcs}
+#     for func in funcs:
+#         for method in methods:
+#             filename = base_path / f"results/network_iv/network_iv_method={method}_n={n_train}_{func}.json"
+#             res = load_and_summarize_results(filename, 'val_loss')
+#             test, val = res['test_risk'], res['val_loss']
+#
+#             results[func][method]['mean'] = np.mean(test)
+#             results[func][method]['std'] = np.std(test) / np.sqrt(len(test))
+#
+#     row1 = [''] + [f"{model}" for model in methods]
+#     table = [row1]
+#     for func in funcs:
+#         table.append([f'{func}'] + [r"${:.2f}\pm{:.2f}$".format(results[func][model]["mean"] * 1e1, results[func][model]["std"] * 1e1) for model in
+#                       methods])
+#     print(tabulate(table, tablefmt="latex_raw"))
 
+def generate_table_network_iv(n_train, methods, hparam_config=None):
     funcs = ['abs', 'step', 'sin', 'linear']
 
     base_path = Path(__file__).parent.parent.parent
@@ -324,49 +290,108 @@ def generate_table(n_train, test_metric='test_risk', validation_metric='val_mmr'
     results = {func: {model: {} for model in methods} for func in funcs}
     for func in funcs:
         for method in methods:
-            if method in ['NeuralFGEL', 'KernelFGEL']:
-                test, val = get_result_for_best_divergence(method, n_train, test_metric, validation_metric, func, optimizer=optimizer)
-            else:
-                filename =base_path / f"results/NetworkIVExperiment/NetworkIVExperiment_method={method}_n={n_train}_{func}.json"
-                res = load_and_summarize_results(filename, validation_metric)
-                test, val = res[test_metric], res[validation_metric]
-            if remove_failed:
-                test = remove_failed_runs(test, val)
+            if isinstance(method, str):
+                method = [method]
+            filename = [base_path / f"results/network_iv/network_iv_method={m}_n={n_train}_{func}.json" for m in method]
+            df = load_and_merge_datasets(filename)
+            mean, sem = get_mean_and_sem(df, test_metric='test_risk', val_metric='val_loss',
+                                         hparam_config=hparam_config if 'KMM' in method[0] else None)
 
-            results[func][method]['mean'] = np.mean(test)
-            results[func][method]['std'] = np.std(test) / np.sqrt(len(test))
+            results[func][''.join(method)] = {'mean': mean, 'sem': sem}
 
-    row1 = [''] + [f"{labels[model]}" for model in methods] # + ['NN-FGEL'] * 3
-    # row2 = ['']*5 + []
+    row1 = [''] + [f"{''.join(model)}" for model in methods]
     table = [row1]
     for func in funcs:
-        table.append([f'{func}'] + [r"${:.2f}\pm{:.2f}$".format(results[func][model]["mean"] * 1e1, results[func][model]["std"] * 1e1) for model in
-                      methods])
+        table.append([f'{func}'] + [
+            r"${:.2f}\pm{:.2f}$".format(results[func][model]["mean"] * 1e1, results[func][model]["sem"] * 1e1) for
+            model in results[func].keys()])
+    print(tabulate(table, tablefmt="latex_raw"))
+
+# def generate_table_bennett_hetero(n_trains, methods, entropy=None):
+#     base_path = Path(__file__).parent.parent.parent
+#
+#     results = {n_train: {model: {} for model in methods} for n_train in n_trains}
+#     for n_train in n_trains:
+#         for method in methods:
+#             filename = base_path / f"results/bennet_hetero/bennet_hetero_method={method}_n={n_train}.json"
+#             res = load_and_summarize_results(filename, 'val_loss')
+#             print(res)
+#             test, val = res['test_risk'], res['val_loss']
+#
+#             results[n_train][method]['mean'] = np.mean(test)
+#             results[n_train][method]['std'] = np.std(test) / np.sqrt(len(test))
+#
+#     row1 = [''] + [f"{model}" for model in methods]
+#     table = [row1]
+#     for n_train in n_trains:
+#         table.append([f'{n_train}'] + [
+#             r"${:.2f}\pm{:.2f}$".format(results[n_train][model]["mean"], results[n_train][model]["std"]) for
+#             model in
+#             methods])
+#     print(tabulate(table, tablefmt="latex_raw"))
+
+
+def generate_table_bennett_hetero(n_trains, methods, hparam_config):
+    """If the elements in methods are lists, it is assumed that they correspond to the same method with different
+    hyperparams. The results are combined and the best hyperparams are selected automatically."""
+
+    base_path = Path(__file__).parent.parent.parent
+
+    results = {n_train: {''.join(model): {} for model in methods} for n_train in n_trains}
+    for n_train in n_trains:
+        for method in methods:
+            if isinstance(method, str):
+                method = [method]
+            filename = [base_path / f"results/bennet_hetero/bennet_hetero_method={m}_n={n_train}.json" for m in method]
+            df = load_and_merge_datasets(filename)
+            mean, sem = get_mean_and_sem(df, test_metric='test_risk', val_metric='val_loss',
+                                         hparam_config=hparam_config if 'KMM' in method[0] else None)
+
+            results[n_train][''.join(method)] = {'mean': mean, 'sem': sem}
+
+    row1 = [''] + [f"{''.join(model)}" for model in methods]
+    table = [row1]
+    for n_train in n_trains:
+        table.append([f'{n_train}'] + [
+            r"${:.2f}\pm{:.2f}$".format(results[n_train][model]["mean"], results[n_train][model]["sem"]) for
+            model in results[n_train].keys()])
     print(tabulate(table, tablefmt="latex_raw"))
 
 
 if __name__ == "__main__":
-    kernelfgel_optimizer = 'lbfgs'
-    remove_failed = True
+    methods = ['OLS', 'SMD', 'MMR', 'DeepIV', 'VMM-neural', 'FGEL-neural', 'KMM-RF-0x-ref-kl']
+               # 'KMM-RF-0x-ref-log', 'KMM-RF-2x-ref-log']
+               # ['KMM-RF-0x-ref-kl', 'KMM-RF-0.5x-ref-kl', 'KMM-RF-1x-ref-kl', 'KMM-RF-2x-ref-kl',
+               #  'KMM-RF-0x-ref-log', 'KMM-RF-0.5x-ref-log', 'KMM-RF-1x-ref-log', 'KMM-RF-2x-ref-log']]
+    labels = [m for m in methods[:-1]] + ['KMM']
 
-    # plot_results_over_sample_size(['DeepIV', 'KernelVMM', 'NeuralVMM', 'RFKernelELKernel', 'RFKernelELNeural'], # 'OrdinaryLeastSquares', 'KernelMMR', 'KernelVMM', 'KernelFGEL'],
-    #     # methods=['OrdinaryLeastSquares', 'KernelMMR', 'SMDHeteroskedastic', 'KernelFGEL-chi2', 'KernelVMM', 'NeuralFGEL-log', 'NeuralVMM'],
-    #                               n_samples=[2000],   # [50, 100, 200, 500, 1000, 2000],
-    #                               validation_metric='val_risk',
+    # plot_results_over_sample_size(methods=methods,
+    #                               labels=labels,
+    #                               n_samples=[64, 128, 256, 512, 1024, 2048, 4096],
+    #                               hparam_config=None, #{'entropy_reg_param': 100.0},
     #                               logscale=True,
-    #                               remove_failed=remove_failed,
-    #                               optimizer=kernelfgel_optimizer
     #                               )
-    #
+
     # plot_divergence_comparison(n_samples=[64, 128, 256, 512, 1024, 2048, 4096],
     #                            validation_metric='val_risk',
     #                            logscale=True,
     #                            remove_failed=remove_failed,
     #                            optimizer=kernelfgel_optimizer
     #                            )
+    #
+    # methods = ['OLS', 'SMD', 'MMR', 'DeepIV', 'VMM-neural', 'FGEL-neural', 'KMM-FB-kl',
+    #          'KMM-RF-0x-ref-kl', 'KMM-RF-0.5x-ref-kl', 'KMM-RF-1x-ref-kl', 'KMM-RF-2x-ref-kl']
+    # generate_table_network_iv(n_train=2000, methods=methods,)
 
-    generate_table(n_train=2000,
-                   test_metric='test_risk',
-                   validation_metric='val_mmr',
-                   remove_failed=False,
-                   optimizer=None)
+
+    # methods = ['OLS', 'SMD', 'MMR', 'DeepIV', 'VMM-neural', 'FGEL-neural',
+    #            'KMM-RF-0x-ref-kl', 'KMM-RF-0.5x-ref-kl', 'KMM-RF-1x-ref-kl', 'KMM-RF-2x-ref-kl'
+    #            ]# ['KMM-RF-0x-ref-kl', 'KMM-RF-0x-ref-log']]
+    methods = ['OLS', 'SMD', 'DeepIV', 'VMM-neural',
+               ['FGEL-neural-kl', 'FGEL-neural-chi2', 'FGEL-neural-log'],
+               'KMM-RF',]
+
+    generate_table_bennett_hetero(n_trains=[2000, 4000, 10000], methods=methods,
+                                hparam_config=None)#{'entropy_reg_param': 1})
+
+

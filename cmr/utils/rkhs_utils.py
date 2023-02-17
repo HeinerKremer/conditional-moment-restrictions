@@ -57,12 +57,13 @@ def get_rbf_kernel(x_1, x_2=None, sigma=None, numpy=False):
     if x_2 is None:
         x_2 = x_1
 
-    if sigma is None:
+    if sigma is None and numpy:
         sq_dist = calc_sq_dist(x_1, x_2, numpy=False)
         median = np.median(sq_dist.flatten()) ** 0.5
         sigma = median
-    else:
+    elif sigma is None and not numpy:
         sq_dist = calc_sq_dist(x_1, x_2, numpy=False)
+        sigma = torch.median(sq_dist) ** 0.5
 
     kernel_zz = torch.exp((-1 / (2 * sigma ** 2)) * sq_dist)
     if numpy:

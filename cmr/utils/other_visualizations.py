@@ -7,9 +7,9 @@ import cvxpy as cvx
 import seaborn as sns
 
 
-from cmr.methods.mmd_el import MMDEL
+from cmr.methods.kmm import KMM
 from cmr.utils.torch_utils import Parameter, OptimizationError
-from visualize_kel import NEURIPS_RCPARAMS, Model, MMDELAnalysis, LINE_WIDTH
+from visualize_kel import NEURIPS_RCPARAMS, Model, KMMAnalysis, LINE_WIDTH
 from cmr.default_config import methods
 from experiments.exp_heteroskedastic import eval_model, HeteroskedasticNoiseExperiment
 
@@ -28,7 +28,7 @@ def plot_minorizing():
 
     x = [torch.Tensor(np.linspace(-x_lim, x_lim, 500)).reshape((-1, 1)),
          torch.Tensor(np.linspace(-10, 10, 500)).reshape((-1, 1))]
-    estimator = MMDELAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
+    estimator = KMMAnalysis(x=x, ymax=ymax, model=model, kl_reg_param=kl_reg_param, f_divergence_reg='log', **estimator_kwargs)
     estimator._optimize_dual_params_cvxpy(x_tensor=x, z_tensor=x, f_divergence='exact')
     y_exact = estimator.eval_rkhs_func()
 

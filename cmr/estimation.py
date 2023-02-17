@@ -2,18 +2,15 @@ import copy
 
 import numpy as np
 import torch
-import torch.nn as nn
 
 from cmr.methods.mmr import MMR
 from cmr.methods.least_squares import OrdinaryLeastSquares
 from cmr.default_config import methods
-
-mr_estimators = ['OLS', 'GMM', 'GEL', 'MMDEL']
-cmr_estimators = [item for item in methods.keys() if item not in mr_estimators]   # + ['DeepIV']
+from cmr.import_estimator import mr_estimators, cmr_estimators, import_estimator
 
 
 def estimation(model, train_data, moment_function, estimation_method,
-               estimator_kwargs=None, hyperparams=None,
+               estimator_kwargs=None, hyperparams=None, sweep_hparams=True,
                validation_data=None, val_loss_func=None,
                normalize_moment_function=True,
                verbose=True):
@@ -39,7 +36,7 @@ def estimation(model, train_data, moment_function, estimation_method,
         assert np.alltrue([isinstance(h, list) for h in list(hyperparams.values())]), '`hyperparams` arguments must be of the form {key: list}'
 
     method = methods[estimation_method]
-    estimator_class = method['estimator_class']
+    estimator_class = import_estimator(estimation_method)
     estimator_kwargs_default = method['estimator_kwargs']
     hyperparams_default = method['hyperparams']
 
@@ -50,6 +47,9 @@ def estimation(model, train_data, moment_function, estimation_method,
     if hyperparams is not None:
         hyperparams_default.update(hyperparams)
     hyperparams = hyperparams_default
+
+    if not sweep_hparams:
+        hyperparams = {}
 
     if normalize_moment_function:
         model, moment_function = pretrain_model_and_renormalize_moment_function(moment_function, model, train_data,
@@ -80,7 +80,7 @@ def pretrain_model_and_renormalize_moment_function(moment_function, model, train
                                                         torch.Tensor(train_data['y'])).detach().numpy(), axis=0))
 
     def moment_function_normalized(model_evaluation, y):
-        return moment_function(model_evaluation, y) / normalization
+        return moment_function(model_evaluation, y) / normalization.to(y.device)
 
     return pretrained_model, moment_function_normalized
 
@@ -114,8 +114,10 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
     for hyper in iterate_argument_combinations(hyperparams):
         if verbose:
             print('Running hyperparams: ', f'{hyper}')
+        kwargs_and_hyper = copy.deepcopy(estimator_kwargs)
+        kwargs_and_hyper.update(hyper)
         estimator = estimator_class(model=copy.deepcopy(model), moment_function=moment_function,
-                                    val_loss_func=val_loss_func, **hyper, **estimator_kwargs)
+                                    val_loss_func=val_loss_func, verbose=verbose, **kwargs_and_hyper)
         estimator.train(train_data, validation_data)
 
         val_loss = estimator.calc_validation_metric(x_val, z_val)
@@ -124,8 +126,11 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
         hparams.append(hyper)
         validation_loss.append(val_loss)
 
-    best_val = np.nanargmin(validation_loss)
-    best_hparams = hparams[best_val]
+    try:
+        best_val = np.nanargmin(validation_loss)
+        best_hparams = hparams[best_val]
+    except ValueError:
+        best_val, best_hparams = -1, None
     if verbose:
         print('Best hyperparams: ', best_hparams)
     return models[best_val], {'models': models, 'val_loss': validation_loss, 'hyperparam': hparams,

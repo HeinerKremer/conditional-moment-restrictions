@@ -23,14 +23,15 @@ def run_experiment(experiment, exp_params, n_train, estimation_method, estimator
 
     exp = experiment(**exp_params)
     exp.prepare_dataset(n_train=n_train, n_val=n_train, n_test=20000)
-    model = exp.get_model()
 
-    trained_model, full_results = estimation(model=model,
+    trained_model, full_results = estimation(model=exp.get_model(),
                                              train_data=exp.train_data,
                                              moment_function=exp.moment_function,
                                              estimation_method=estimation_method,
-                                             estimator_kwargs=estimator_kwargs, hyperparams=hyperparams,
-                                             validation_data=exp.val_data, val_loss_func=exp.validation_loss,
+                                             estimator_kwargs=estimator_kwargs,
+                                             hyperparams=hyperparams,
+                                             validation_data=exp.val_data,
+                                             val_loss_func=exp.validation_loss if hasattr(exp, 'validation_loss') else None,
                                              verbose=True)
 
     test_risks = []
@@ -91,12 +92,13 @@ def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, 
             return result_dict
     except FileNotFoundError:
         if parallel:
+            estimator_kwargs["gpu"] = False
             results = run_parallel(experiment=experiment, exp_params=exp_params, n_train=n_train,
                                    estimation_method=estimation_method, estimator_kwargs=estimator_kwargs,
                                    hyperparams=hyperparams, repititions=repititions, seed0=seed0)
             results = list(results)
         else:
-            print('Using sequential debugging mode.')
+            print(f'Using sequential debugging mode.')
             results = []
             for i in range(repititions):
                 stats = run_experiment(experiment=experiment, exp_params=exp_params, n_train=n_train,
@@ -105,7 +107,9 @@ def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, 
                 results.append(stats)
 
         results_summarized = summarize_results(results)
-        result_dict = {"results_summarized": results_summarized, "results": results}
+        result_dict = {"results_summarized": results_summarized,
+                       "results": results,
+                       "estimator_kwargs": estimator_kwargs}
         if filename is not None:
             if exp_name is None:
                 exp_name = str(experiment.__name__)
@@ -135,14 +139,17 @@ def summarize_results(result_list):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--run_parallel', action='store_true')
-    parser.add_argument('--overwrite', action='store_true')
-    parser.add_argument('--experiment', type=str, default='heteroskedastic')
-    parser.add_argument('--exp_option', default=None)
-    parser.add_argument('--n_train', type=int, default=100)
-    parser.add_argument('--method', type=str, default='KernelELNeural')
+    parser.add_argument('--overwrite', default=True, action='store_true')
+    parser.add_argument('--experiment', type=str, default='bennet_hetero')
+    parser.add_argument('--exp_option', default=None)  # TODO: Try to fix this since it should be a dict; H: Can just name the different exp versions [1,2,3,4] or something
+    parser.add_argument('--n_train', type=int, default=1000)
+    parser.add_argument('--method', type=str, default='GEL')
     parser.add_argument('--method_option', default=None)
     parser.add_argument('--rollouts', type=int, default=2)
     parser.add_argument('--run_dir', type=str, default='')
+    parser.add_argument('--bw', type=float, default=0.1)
+    parser.add_argument('--n_samples', type=int, default=0)
+    parser.add_argument('--f_div', type=str, default='kl')
 
     args = parser.parse_args()
 
@@ -153,6 +160,15 @@ if __name__ == "__main__":
         filename = '_' + args.exp_option
     else:
         filename = ''
+    # if "KMM" in args.method:
+    #     estimator_kwargs = {
+    #         'n_reference_samples': args.n_samples,
+    #         'kde_bw': args.bw,
+    #         'divergence': args.f_div,
+    #     }
+    # else:
+    #     estimator_kwargs = {}
+
     results = run_experiment_repeated(experiment=exp_info['exp_class'],
                                       exp_params=exp_info['exp_params'],
                                       n_train=args.n_train,
@@ -164,5 +180,4 @@ if __name__ == "__main__":
                                       run_dir=args.run_dir,
                                       overwrite=args.overwrite)
     print(results['results_summarized'])
-    # print('Nachher: ', int(np.random.randint(10000, size=(1,1))), int(torch.randint(high=10000, size=(1, 1)).detach().numpy()))
 

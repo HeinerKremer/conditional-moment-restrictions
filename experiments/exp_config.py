@@ -5,6 +5,11 @@ from experiments.exp_heteroskedastic import HeteroskedasticNoiseExperiment
 from experiments.exp_network_iv import NetworkIVExperiment
 from experiments.exp_poisson_estimation import PoissonExperiment
 
+
+methods = ['OLS', 'SMD', 'MMR', 'VMM-neural', 'DeepIV', 'FGEL-neural',
+           'KMM-FB-kl', 'KMM-RF-0x-ref-kl', 'KMM-RF-0.5x-ref-kl', 'KMM-RF-1x-ref-kl', 'KMM-RF-2x-ref-kl',
+           'KMM-RF-0x-ref-log', 'KMM-RF-0.5x-ref-log', 'KMM-RF-1x-ref-log', 'KMM-RF-2x-ref-log']
+
 experiment_setups = {
     # 'off_policy_evaluation':
     #     {
@@ -20,20 +25,25 @@ experiment_setups = {
     #         'rollouts': 30
     #     },
 
-    'heteroskedastic':
-        {
-            'exp_class': HeteroskedasticNoiseExperiment,
-            'exp_params': {'theta': [1.7],
-                           'noise': 1.0,
-                           'heteroskedastic': True, },
-            'n_train': [64, 128, 256, 512, 1024, 2048, 4096],
-            'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel',
-                        'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
-                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
-                        'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log',
-                        'KernelELKernel-chi2', 'KernelELKernel-kl', 'KernelELKernel-log'],
-            'rollouts': 50,
-        },
+    # 'heteroskedastic':
+    #     {
+    #         'exp_class': HeteroskedasticNoiseExperiment,
+    #         'exp_params': {'theta': [1.7],
+    #                        'noise': 1.0,
+    #                        'heteroskedastic': True, },
+    #         'n_train': [64, 128, 256, 512, 1024, 2048, 4096],
+    #         'methods': [
+    #             'OLS', 'SMD', 'MMR', 'VMM-neural', 'DeepIV', 'FGEL-neural',
+    #                     'KMM-kernel-RF-0x', 'KMM-kernel-RF-1x',
+    #                     'KMM-FB', 'KMM-RF-0x-ref', 'KMM-RF-0.5x-ref', 'KMM-RF-1x-ref', 'KMM-RF-2x-ref',
+    #                     'KMM-RF-0x-ref-log', 'KMM-RF-0.5x-ref-log', 'KMM-RF-1x-ref-log', 'KMM-RF-2x-ref-log'],
+    #             # 'OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel',
+    #             #         'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
+    #             #         'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+    #             #         'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log',
+    #             #         'KernelELKernel-chi2', 'KernelELKernel-kl', 'KernelELKernel-log'],
+    #         'rollouts': 50,
+    #     },
 
     'heteroskedastic_one':
         {
@@ -42,12 +52,13 @@ experiment_setups = {
                            'noise': 1.0,
                            'heteroskedastic': True, },
             'n_train': [64, 128, 256, 512, 1024, 2048, 4096],
-            'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel',
-                        'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
-                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
-                        'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log',
-                        #'KernelELKernel-chi2', 'KernelELKernel-kl', 'KernelELKernel-log'
-                        ],
+            'methods': methods,
+                #       ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel',
+                        # 'KernelFGEL-chi2', 'KernelFGEL-kl', 'KernelFGEL-log',
+                        # 'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+                        # 'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log',
+                        # #'KernelELKernel-chi2', 'KernelELKernel-kl', 'KernelELKernel-log'
+                        # ],
             'rollouts': 50,
         },
 
@@ -83,9 +94,10 @@ experiment_setups = {
             'exp_class': NetworkIVExperiment,
             'exp_params': {'ftype': ['abs', 'step', 'sin', 'linear']},
             'n_train': [2000],
-            'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM',
-                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log', 'RFKernelELNeural-MB',
-                        'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
+            # 'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM',
+            #             'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log', 'RFKernelELNeural-MB',
+            #             'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
+            'methods': methods,
             'rollouts': 50,
         },
 
@@ -114,10 +126,11 @@ experiment_setups = {
             'exp_class': HeteroskedasticIVScenario,
             'exp_params': {},
             'n_train': [2000, 4000, 10000],
-            'methods': ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
-                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
-                        'KernelELNeural-kl', 'KernelELNeural-log',
-                        'RFKernelELNeural-MB'],
+            'methods': methods,
+            # 'methods': ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
+            #             'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+            #             'KernelELNeural-kl', 'KernelELNeural-log',
+            #             'RFKernelELNeural-MB'],
             'rollouts': 20,
         },
 
@@ -126,10 +139,11 @@ experiment_setups = {
             'exp_class': SimpleIVScenario,
             'exp_params': {},
             'n_train': [2000, 4000, 10000],
-            'methods': ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
-                        'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
-                        'KernelELNeural-kl', 'KernelELNeural-log',
-                        'RFKernelELNeural-MB'],
+            'methods': methods,
+            # ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
+            #             'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+            #             'KernelELNeural-kl', 'KernelELNeural-log',
+            #             'RFKernelELNeural-MB'],
             'rollouts': 20,
         },
 

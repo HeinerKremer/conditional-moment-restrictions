@@ -60,14 +60,14 @@ class GradientFlowDRO(GeneralizedEL):
         losses = []
         self._reset_particles()
 
-        assert np.allclose(self.print_var(self.x[0]), self.print_var(self.x_previous[0]))
-        assert np.allclose(self.print_var(self.x[0]), self.print_var(self.x_original[0]))
-        print('Reset: ', self.print_var(self.x[0]), self.print_var(self.x_previous[0]), self.print_var(self.x_original[0]))
-        # For each of the `self.t_max` proximal steps use `self.inneriters` iterations
-        for _ in range(self.t_max):
-            losses.append(super()._optimize_dual_params_gd(x_tensor, z_tensor))
-            print('After one opt: ', self.print_var(self.x[0]), self.print_var(self.x_previous[0]),
-                  self.print_var(self.x_original[0]))
+        for i in range(self.dual_optim_args['inneriters']):
+            self.dual_optimizer.zero_grad()
+            _, dual_obj = self.objective(x_tensor, z_tensor, which_obj='dual')
+            losses.append(float(dual_obj.detach().numpy()))
+            dual_obj.backward()
+            self.dual_optimizer.step()
+            if not self.are_dual_params_finite():
+                raise OptimizationError('Dual variables are NaN or inf.')
             with torch.no_grad():
                 self.x_previous = [copy.deepcopy(self.x[0].detach()), copy.deepcopy(self.x[1].detach())]
         return losses

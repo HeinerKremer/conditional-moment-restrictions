@@ -3,16 +3,17 @@ import os
 from run_experiment import experiment_setups
 
 # ---------------- Cluster resources
-cpus = 32
-memory = 128000
+cpus = 8
+memory = 16000
 bid = 12
 
 # ---------------- Simulation details ----------------
 experiments = [
-    # ('bennet_multi', {'n_train': experiment_setups['bennet_multi']['n_train'],
-    #                   'method': experiment_setups['bennet_multi']["methods"],
-    #                   'rollouts': [experiment_setups['bennet_multi']['rollouts']],
-    #                   }),
+    ('network_iv', {'n_train': [2000],
+                    'method': experiment_setups['network_iv']["methods"],
+                    'rollouts': [50],
+                    'exp_option': ['abs', 'sin', 'linear', 'step']}),
+
     ('bennet_simple', {'n_train': experiment_setups['bennet_simple']['n_train'],
                       'method': experiment_setups['bennet_simple']["methods"],
                       'rollouts': [experiment_setups['bennet_simple']['rollouts']],
@@ -21,33 +22,24 @@ experiments = [
                       'method': experiment_setups['bennet_hetero']["methods"],
                       'rollouts': [experiment_setups['bennet_hetero']['rollouts']],
                       }),
-
+    #
     ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
                          'method': experiment_setups['heteroskedastic_one']["methods"],
                          'rollouts': [50],}),
+
+    # ('heteroskedastic_three', {'n_train': experiment_setups['heteroskedastic_three']['n_train'],
+    #                      'method': experiment_setups['heteroskedastic_three']["methods"],
+    #                      'rollouts': [50], }),
     #
-    ('heteroskedastic_three', {'n_train': experiment_setups['heteroskedastic_three']['n_train'],
-                         'method': experiment_setups['heteroskedastic_three']["methods"],
-                         'rollouts': [50], }),
-
-    # ('heteroskedastic_reg_params', {'n_train': experiment_setups['heteroskedastic_reg_params']['n_train'],
-    #                      'method': experiment_setups['heteroskedastic_reg_params']["methods"],
-    #                      'rollouts': [5], }),
-
-    ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
-                    'method': experiment_setups['network_iv']["methods"],
-                    'rollouts': [experiment_setups['network_iv']['rollouts']],
-                    'exp_option': ['abs', 'step', 'sin', 'linear']}),
-
-    ('network_iv_large', {'n_train': experiment_setups['network_iv_large']['n_train'],
-                    'method': experiment_setups['network_iv_large']["methods"],
-                    'rollouts': [experiment_setups['network_iv_large']['rollouts']],
-                    'exp_option': ['abs', 'step', 'sin', 'linear']}),
-
-    # ('poisson', {'n_train': experiment_setups['poisson']['n_train'],
-    #                 'method': experiment_setups['poisson']["methods"],
-    #                 'rollouts': [experiment_setups['poisson']['rollouts']],}
-    #  ),
+    # ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
+    #                 'method': experiment_setups['network_iv']["methods"],
+    #                 'rollouts': [experiment_setups['network_iv']['rollouts']],
+    #                 'exp_option': ['abs', 'step', 'sin', 'linear']}),
+    #
+    # ('network_iv_large', {'n_train': experiment_setups['network_iv_large']['n_train'],
+    #                 'method': experiment_setups['network_iv_large']["methods"],
+    #                 'rollouts': [experiment_setups['network_iv_large']['rollouts']],
+    #                 'exp_option': ['abs', 'step', 'sin', 'linear']}),
 ]
 
 max_parallel_rollouts = None
@@ -63,13 +55,13 @@ max_parallel_rollouts = None
 def get_run_path():
     path = os.path.realpath(__file__)
     path, file = os.path.split(path)
-    while file != 'Kernel-EL' and path != '/':
+    while file != 'wasserstein-method-of-moments' and path != '/':
         path, file = os.path.split(path)
-    return path + '/Kernel-EL'
+    return path + '/wasserstein-method-of-moments'
 
 path = get_run_path()
 # path = '/lustre/work/hkremer/Kernel-EL'
-venvpath = path + '/kel_venv'
+venvpath = path + '/kmm_env'
 
 # ----------------
 
