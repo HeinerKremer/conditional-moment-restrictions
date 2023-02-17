@@ -8,15 +8,16 @@ import torch.nn as nn
 
 
 class AbstractEstimationMethod:
-    def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
+    def __init__(self, model, moment_function, val_loss_func=None, verbose=0, gpu=False, **kwargs):
         self.model = ModelWrapper(model)
         self.moment_function = self._wrap_moment_function(moment_function)
         self.is_trained = False
         self._custom_val_loss_func = val_loss_func
         self._val_loss_func = None   # To be set in _set_val_loss_func
         self.verbose = verbose
+        self.device = "cuda" if (gpu and torch.cuda.is_available()) else "cpu"
 
-        # Set by `set_data_dependent_attributes`
+        # Set by `_init_data_dependent_attributes`
         self._dim_psi = None
         self._dim_z = None
         self._is_init = False
@@ -80,6 +81,17 @@ class AbstractEstimationMethod:
             self.dim_t = x[0].shape[1]
             self.dim_y = x[1].shape[1]
 
+    def _to_device(self, x, x_val, z, z_val):
+        if self.device == "cuda":
+            x = [x[0].to(self.device), x[1].to(self.device)]
+            x_val = [x_val[0].to(self.device), x_val[1].to(self.device)]
+
+            if z is not None:
+                z = z.to(self.device)
+                z_val = z_val.to(self.device)
+            self.model = self.model.to(self.device)
+        return x, x_val, z, z_val
+
     def train(self, train_data, val_data=None, debugging=False):
         x_train = [train_data['t'], train_data['y']]
         z_train = train_data['z']
@@ -94,7 +106,7 @@ class AbstractEstimationMethod:
         if not self._is_init:
             self.init_estimator(x_train, z_train)
         self._train_internal(x_train, z_train, x_val, z_val, debugging=debugging)
-        self.model.to('cpu')
+        self.model.cpu()
         self.is_trained = True
 
     def get_trained_parameters(self):

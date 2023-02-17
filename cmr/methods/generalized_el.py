@@ -348,23 +348,6 @@ class GeneralizedEL(AbstractEstimationMethod):
 
     """---------------------------------------------------------------------------------------------------------"""
 
-    def _setup_training(self):
-        """Put all variable used in training on the proper device should return device used."""
-        return 'cpu'
-
-    def _to_device(self, x, x_val, z, z_val):
-        if torch.cuda.is_available() and self.batch_size:
-            device = "cuda"
-            x = [x[0].to(device), x[1].to(device)]
-            x_val = [x_val[0].to(device), x_val[1].to(device)]
-
-            if z is not None:
-                z = z.to(device)
-                z_val = z_val.to(device)
-            self.model = self.model.to(device)
-            self.all_dual_params = [param.to(device) for param in self.all_dual_params]
-        return x, x_val, z, z_val
-
     def _train_internal(self, x_train, z_train, x_val, z_val, debugging):
         x_tensor, z_tensor = np_to_tensor(x_train), np_to_tensor(z_train)
         x_val_tensor, z_val_tensor = np_to_tensor(x_val), np_to_tensor(z_val)
@@ -385,17 +368,8 @@ class GeneralizedEL(AbstractEstimationMethod):
         num_no_improve = 0
         cycle_num = 0
 
-        # Put everything on the same device
-        # # TODO(Yassine): Make this in appropriate location and not hacky
-        # device = self._setup_training()
-        #
-        # x_tensor = [x_tensor[0].to(device), x_tensor[1].to(device)]
-        # x_val_tensor = [x_val_tensor[0].to(device), x_val_tensor[1].to(device)]
-        #
-        # if z_tensor is not None:
-        #     z_tensor = z_tensor.to(device)
-        #     z_val_tensor = z_val_tensor.to(device)
-        x_tensor, x_val_tensor, z_tensor, z_val_tensor = self._to_device(x_tensor, x_val_tensor, z_tensor, z_val_tensor)
+        x_tensor, x_val_tensor, z_tensor, z_val_tensor = self._to_device(x=x_tensor, x_val=x_val_tensor,
+                                                                         z=z_tensor, z_val=z_val_tensor)
 
         for epoch_i in range(self.max_num_epochs):
             self.model.train()
@@ -437,25 +411,6 @@ class GeneralizedEL(AbstractEstimationMethod):
 
         if self.verbose:
             print("time taken:", time.time() - time_0)
-        # if debugging:
-        #     import matplotlib
-        #     matplotlib.use('Qt5Agg')
-        #     # print rkhs lagrangian function:
-        #     x = np.linspace(-20, 20, 500).reshape((-1, 1))
-        #     from cmr.utils.rkhs_utils import get_rbf_kernel, get_rff
-        #     if self.n_rff > 0:
-        #         k = get_rff(x, self.n_rff, sigma=self.sigma_rff)[0]
-        #     else:
-        #         k = (get_rbf_kernel(x_tensor[0].double(), torch.from_numpy(x), sigma=self.sigma_t)[0] *
-        #              get_rbf_kernel(x_tensor[1].double(), torch.from_numpy(x), sigma=self.sigma_y)[0])
-        #     rkhs_func = torch.einsum('ij, ik -> k', self.rkhs_func.params.double(), k)
-        #     plt.plot(x, rkhs_func.detach().cpu().numpy())
-        #     plt.show()
-        #     try:
-        #         plt.plot(val_losses)
-        #         plt.show()
-        #     except:
-        #         pass
 
 
 if __name__ == '__main__':

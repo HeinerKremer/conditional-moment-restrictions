@@ -30,6 +30,7 @@ kmm_kwargs = {
     "annealing": False,
     "kernel_z_kwargs": {},
     "pretrain": False,
+    "gpu": True,
 
     # Optimization params
     "theta_optim_args": {"optimizer": "oadam_gda", "lr": 5e-4},

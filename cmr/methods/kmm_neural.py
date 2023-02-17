@@ -21,7 +21,7 @@ class KMMNeural(KMM):
     def _init_dual_params(self):
         super()._init_dual_params()
         dual_func_network_kwargs = self._update_default_dual_func_network_kwargs(self.dual_func_network_kwargs_custom)
-        self.dual_moment_func = ModularMLPModel(**dual_func_network_kwargs)
+        self.dual_moment_func = ModularMLPModel(**dual_func_network_kwargs).to(self.device)
         self.all_dual_params = list(self.dual_moment_func.parameters()) + list(self.dual_normalization.parameters()) + list(self.rkhs_func.parameters())
 
     # def _setup_training(self):

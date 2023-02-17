@@ -32,7 +32,7 @@ class KMM(GeneralizedEL):
         self.kde_bw = kwargs["kde_bandwidth"]
         self.annealing = ["annealing"]
 
-        self.kernel_x = torch.Tensor((1, 1))    # Ugly fix to resolve merge conflict, will clean up later
+        self.kernel_x = None
 
     def _set_kernel_x(self, x, z):
         x_np, z_np = tensor_to_np(x), tensor_to_np(z)
@@ -47,10 +47,13 @@ class KMM(GeneralizedEL):
         sigma_y = np.sqrt(0.5 * np.median(calc_sq_dist(x_np[1], x_np[1], numpy=True)))
         sigma_z = np.sqrt(0.5 * np.median(calc_sq_dist(z_np, z_np, numpy=True))) if z_np is not None else 1.0
 
-        self._eval_rff_t = rff.layers.GaussianEncoding(sigma=sigma_t, input_size=x[0].shape[1], encoded_size=self.n_rff // 2)
-        self._eval_rff_y = rff.layers.GaussianEncoding(sigma=sigma_y, input_size=x[1].shape[1], encoded_size=self.n_rff // 2)
+        self._eval_rff_t = rff.layers.GaussianEncoding(sigma=sigma_t, input_size=x[0].shape[1],
+                                                       encoded_size=self.n_rff // 2).to(self.device)
+        self._eval_rff_y = rff.layers.GaussianEncoding(sigma=sigma_y, input_size=x[1].shape[1],
+                                                       encoded_size=self.n_rff // 2).to(self.device)
         if z is not None:
-            self._eval_rff_z = rff.layers.GaussianEncoding(sigma=sigma_z, input_size=z.shape[1], encoded_size=self.n_rff // 2)
+            self._eval_rff_z = rff.layers.GaussianEncoding(sigma=sigma_z, input_size=z.shape[1],
+                                                           encoded_size=self.n_rff // 2).to(self.device)
         else:
             self._eval_rff_z = lambda arg: 1.0
 
@@ -62,6 +65,7 @@ class KMM(GeneralizedEL):
 
     def eval_rkhs_func(self, x, z):
         if self.n_rff:
+            # print([param.is_cuda for param in self.all_dual_params], self.rkhs_func.params.is_cuda, x[0].is_cuda, z.is_cuda, self.eval_rff(x, z).is_cuda)
             return torch.einsum('ij, ki -> kj', self.rkhs_func.params, self.eval_rff(x, z))
         else:
             return torch.einsum('ij, ki -> kj', self.rkhs_func.params, self.kernel_x)
@@ -73,13 +77,13 @@ class KMM(GeneralizedEL):
             return torch.einsum('ir, ij, jr ->', self.rkhs_func.params, self.kernel_x, self.rkhs_func.params)
 
     def _init_dual_params(self):
-        self.dual_moment_func = Parameter(shape=(1, self.dim_psi))
-        self.dual_normalization = Parameter(shape=(1, 1))
+        self.dual_moment_func = Parameter(shape=(1, self.dim_psi)).to(self.device)
+        self.dual_normalization = Parameter(shape=(1, 1)).to(self.device)
         if self.n_rff:
-            self.rkhs_func = Parameter(shape=(self.n_rff, 1))
+            self.rkhs_func = Parameter(shape=(self.n_rff, 1)).to(self.device)
         else:
-            self.rkhs_func = Parameter(shape=(self.kernel_x.shape[0], 1))
-        self.all_dual_params = list(self.dual_moment_func.parameters()) + list(self.dual_normalization.parameters()) + list(self.rkhs_func.parameters())
+            self.rkhs_func = Parameter(shape=(self.kernel_x.shape[0], 1)).to(self.device)
+        self.all_dual_params = list(self.dual_moment_func.params) + list(self.dual_normalization.params) + list(self.rkhs_func.params)
 
     def init_estimator(self, x_tensor, z_tensor):
         self._init_reference_distribution(x_tensor, z_tensor)
@@ -106,6 +110,8 @@ class KMM(GeneralizedEL):
         t_sampled = np_to_tensor(xz_sampled[:, :self.dim_t])
         y_sampled = np_to_tensor(xz_sampled[:, self.dim_t:(self.dim_t + self.dim_y)])
         z_sampled = np_to_tensor(xz_sampled[:, (self.dim_t + self.dim_y):])
+
+        t_sampled, y_sampled, z_sampled = t_sampled.to(self.device), y_sampled.to(self.device), z_sampled.to(self.device)
 
         t_total = torch.concat((x[0], t_sampled), dim=0)
         y_total = torch.concat((x[1], y_sampled), dim=0)
@@ -165,9 +171,9 @@ class KMM(GeneralizedEL):
     #         self.z_samples = torch.vstack((zz, xz_samples[:, -z.shape[1]:]))
 
     def _to_device(self, x, x_val, z, z_val):
-        x, x_val, z, z_val = super()._to_device(x, x_val, z, z_val)
-        if torch.cuda.is_available() and self.kernel_x:
-            self.kernel_x = self.kernel_x.to("cuda")
+        x, x_val, z, z_val = super()._to_device(x=x, x_val=x_val, z=z, z_val=z_val)
+        if self.kernel_x is not None:
+            self.kernel_x = self.kernel_x.to(self.device)
         return x, x_val, z, z_val
 
     """------------- Objective of MMD-GEL ------------"""

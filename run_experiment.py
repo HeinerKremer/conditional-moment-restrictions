@@ -92,12 +92,13 @@ def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, 
             return result_dict
     except FileNotFoundError:
         if parallel:
+            estimator_kwargs["gpu"] = False
             results = run_parallel(experiment=experiment, exp_params=exp_params, n_train=n_train,
                                    estimation_method=estimation_method, estimator_kwargs=estimator_kwargs,
                                    hyperparams=hyperparams, repititions=repititions, seed0=seed0)
             results = list(results)
         else:
-            print('Using sequential debugging mode.')
+            print(f'Using sequential debugging mode.')
             results = []
             for i in range(repititions):
                 stats = run_experiment(experiment=experiment, exp_params=exp_params, n_train=n_train,
@@ -142,7 +143,7 @@ if __name__ == "__main__":
     parser.add_argument('--experiment', type=str, default='bennet_hetero')
     parser.add_argument('--exp_option', default=None)  # TODO: Try to fix this since it should be a dict; H: Can just name the different exp versions [1,2,3,4] or something
     parser.add_argument('--n_train', type=int, default=1000)
-    parser.add_argument('--method', type=str, default='DeepIV')
+    parser.add_argument('--method', type=str, default='GEL')
     parser.add_argument('--method_option', default=None)
     parser.add_argument('--rollouts', type=int, default=2)
     parser.add_argument('--run_dir', type=str, default='')
