@@ -7,6 +7,7 @@ from cmr.methods.mmr import MMR
 from cmr.methods.least_squares import OrdinaryLeastSquares
 from cmr.default_config import methods
 from cmr.import_estimator import mr_estimators, cmr_estimators, import_estimator
+from cmr.utils.torch_utils import to_device, np_to_tensor
 
 
 def estimation(model, train_data, moment_function, estimation_method,
@@ -101,11 +102,12 @@ def iterate_argument_combinations(argument_dict):
 def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwargs, hyperparams,
                          train_data, validation_data=None, val_loss_func=None, verbose=True):
     if validation_data is not None:
-        x_val = [validation_data['t'], validation_data['y']]
-        z_val = validation_data['z']
-    else:
-        x_val = [train_data['t'], train_data['y']]
-        z_val = train_data['z']
+        validation_data = train_data
+    #     x_val = [validation_data['t'], validation_data['y']]
+    #     z_val = validation_data['z']
+    # else:
+    x_val = np_to_tensor([validation_data['t'], validation_data['y']])
+    z_val = np_to_tensor(validation_data['z'])
 
     models = []
     hparams = []
@@ -119,7 +121,6 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
         estimator = estimator_class(model=copy.deepcopy(model), moment_function=moment_function,
                                     val_loss_func=val_loss_func, verbose=verbose, **kwargs_and_hyper)
         estimator.train(train_data, validation_data)
-
         val_loss = estimator.calc_validation_metric(x_val, z_val)
 
         models.append(estimator.model.cpu())

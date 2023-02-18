@@ -10,7 +10,6 @@ class AbstractExperiment:
         self.val_data = None
         self.test_data = None
 
-
     def get_true_parameters(self):
         """If method not specified with signature `get_true_parameters(self) -> np.array` then assume there are no true
          parameters and the model we want to train is non-parametric or a NN"""

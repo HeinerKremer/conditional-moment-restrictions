@@ -2,17 +2,17 @@ import torch
 import torch.nn as nn
 import numpy as np
 from experiments.abstract_experiment import AbstractExperiment
-from cmr.utils.torch_utils import np_to_tensor
+from cmr.utils.torch_utils import np_to_tensor, tensor_to_np
 
 
 def eval_model(t, theta, numpy=False):
     if not numpy:
         if not torch.is_tensor(t):
-            t = torch.tensor(t)
+            t = torch.Tensor(t)
         return torch.sum(t * theta.reshape(1, -1), dim=1, keepdim=True).float()
     else:
         if torch.is_tensor(t):
-            t = t.detach().numpy()
+            t = t.detach().cpu().numpy()
         return np.sum(t * theta.reshape(1, -1), axis=1, keepdims=True)
 
 
@@ -20,8 +20,6 @@ class LinearModel(nn.Module):
     def __init__(self, dim_theta):
         super().__init__()
         self.theta = nn.Parameter(torch.FloatTensor([[0.5] * dim_theta]))
-        # self.dim_psi = 1
-        # self.dim_z = 1
 
     def forward(self, t):
         return eval_model(t, torch.reshape(self.theta, [1, -1]))
@@ -33,7 +31,7 @@ class LinearModel(nn.Module):
 class HeteroskedasticNoiseExperiment(AbstractExperiment):
     def __init__(self, theta, noise=1.0, heteroskedastic=False):
         self.theta0 = np.asarray(theta).reshape(1, -1)
-        self.dim_theta = np.shape(self.theta0)[1]
+        super().__init__(dim_psi=1, dim_theta=self.theta0.shape[1], dim_z=self.theta0.shape[1])
         self.noise = noise
         self.heteroskedastic = heteroskedastic
 
@@ -44,7 +42,7 @@ class HeteroskedasticNoiseExperiment(AbstractExperiment):
     def moment_function(model_evaluation, y):
         return model_evaluation - y
 
-    def generate_data(self, num_data):
+    def generate_data(self, num_data, **kwargs):
         if num_data is None:
             return None, None
         t = np.exp(np.random.uniform(-1.5, 1.5, (num_data, self.dim_theta)))
@@ -62,13 +60,12 @@ class HeteroskedasticNoiseExperiment(AbstractExperiment):
         return np.array(self.theta0)
 
     def eval_true_model(self, t):
-        return eval_model(t, self.theta0)
+        return eval_model(tensor_to_np(t), self.theta0, numpy=True)
 
     def eval_risk(self, model, data):
-        t_test = data['t']
-        y_test = eval_model(t_test, self.theta0, numpy=True)
-        y_pred = model.forward(np_to_tensor(data['t'])).detach().numpy()
-        return float(((y_test - y_pred) ** 2).mean())
+        y_test = np_to_tensor(data['y'])
+        y_pred = model.forward(np_to_tensor(data['t'])).detach()
+        return float(((y_test - y_pred) ** 2).detach().cpu().numpy().mean())
 
     def validation_loss(self, model, val_data):
         return self.eval_risk(model, val_data)

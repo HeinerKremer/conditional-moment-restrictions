@@ -13,7 +13,7 @@ from experiments.exp_config import experiment_setups
 
 
 def run_experiment(experiment, exp_params, n_train, estimation_method, estimator_kwargs=None,
-                   hyperparams=None, seed0=12345):
+                   hyperparams=None, sweep_hparams=True,seed0=12345):
     """
     Runs experiment with specified estimator and choice of hyperparams and returns the best model and the
     corresponding error measures.
@@ -30,6 +30,7 @@ def run_experiment(experiment, exp_params, n_train, estimation_method, estimator
                                              estimation_method=estimation_method,
                                              estimator_kwargs=estimator_kwargs,
                                              hyperparams=hyperparams,
+                                             sweep_hparams=sweep_hparams,
                                              validation_data=exp.val_data,
                                              val_loss_func=exp.validation_loss if hasattr(exp, 'validation_loss') else None,
                                              verbose=True)
@@ -58,23 +59,25 @@ def run_experiment(experiment, exp_params, n_train, estimation_method, estimator
     return result
 
 
-def run_parallel(experiment, exp_params, n_train, estimation_method, estimator_kwargs, hyperparams, repititions, seed0):
+def run_parallel(experiment, exp_params, n_train, estimation_method, estimator_kwargs, hyperparams, sweep_hparams,
+                 repititions, seed0):
     experiment_list = [copy.deepcopy(experiment) for _ in range(repititions)]
     exp_params_list = [copy.deepcopy(exp_params) for _ in range(repititions)]
     n_train_list = [copy.deepcopy(n_train) for _ in range(repititions)]
     estimator_method_list = [copy.deepcopy(estimation_method) for _ in range(repititions)]
     estimator_kwargs_list = [copy.deepcopy(estimator_kwargs) for _ in range(repititions)]
     hyperparams_list = [copy.deepcopy(hyperparams) for _ in range(repititions)]
+    sweep_hparams_list = [sweep_hparams] * repititions
     seeds = [seed0+i for i in range(repititions)]
 
     with ProcessPoolExecutor(min(multiprocessing.cpu_count(), repititions)) as ex:
         results = ex.map(run_experiment, experiment_list, exp_params_list, n_train_list, estimator_method_list,
-                         estimator_kwargs_list, hyperparams_list, seeds)
+                         estimator_kwargs_list, hyperparams_list, sweep_hparams_list, seeds)
     return results
 
 
 def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, estimator_kwargs=None, hyperparams=None,
-                            repititions=2, seed0=12345, parallel=True, filename=None, exp_name=None,
+                            sweep_hparams=True, repititions=2, seed0=12345, parallel=True, filename=None, exp_name=None,
                             run_dir=None, overwrite=False):
     """
     Runs the same experiment `repititions` times and computes statistics.
@@ -95,7 +98,8 @@ def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, 
             estimator_kwargs["gpu"] = False
             results = run_parallel(experiment=experiment, exp_params=exp_params, n_train=n_train,
                                    estimation_method=estimation_method, estimator_kwargs=estimator_kwargs,
-                                   hyperparams=hyperparams, repititions=repititions, seed0=seed0)
+                                   hyperparams=hyperparams, sweep_hparams=sweep_hparams, repititions=repititions,
+                                   seed0=seed0)
             results = list(results)
         else:
             print(f'Using sequential debugging mode.')
@@ -103,7 +107,7 @@ def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, 
             for i in range(repititions):
                 stats = run_experiment(experiment=experiment, exp_params=exp_params, n_train=n_train,
                                        estimation_method=estimation_method, estimator_kwargs=estimator_kwargs,
-                                       hyperparams=hyperparams, seed0=seed0+i)
+                                       hyperparams=hyperparams, sweep_hparams=sweep_hparams, seed0=seed0+i)
                 results.append(stats)
 
         results_summarized = summarize_results(results)
@@ -140,10 +144,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--run_parallel', action='store_true')
     parser.add_argument('--overwrite', default=True, action='store_true')
-    parser.add_argument('--experiment', type=str, default='bennet_hetero')
+    parser.add_argument('--no_sweep', default=False, action='store_true')
+    parser.add_argument('--experiment', type=str, default='heteroskedastic_one')
     parser.add_argument('--exp_option', default=None)  # TODO: Try to fix this since it should be a dict; H: Can just name the different exp versions [1,2,3,4] or something
     parser.add_argument('--n_train', type=int, default=1000)
-    parser.add_argument('--method', type=str, default='GEL')
+    parser.add_argument('--method', type=str, default='KMM-RF-0.5x-ref-log')
     parser.add_argument('--method_option', default=None)
     parser.add_argument('--rollouts', type=int, default=2)
     parser.add_argument('--run_dir', type=str, default='')
@@ -171,6 +176,7 @@ if __name__ == "__main__":
 
     results = run_experiment_repeated(experiment=exp_info['exp_class'],
                                       exp_params=exp_info['exp_params'],
+                                      sweep_hparams=not args.no_sweep,
                                       n_train=args.n_train,
                                       estimation_method=args.method,
                                       repititions=args.rollouts,
