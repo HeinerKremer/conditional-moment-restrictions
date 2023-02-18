@@ -159,3 +159,12 @@ experiment_setups = {
             'rollouts': 20,
         },
 }
+
+for func in ['sin', 'linear', 'step', 'abs']:
+    experiment_setups[f"network_iv_{func}"] = {
+            'exp_class': NetworkIVExperiment,
+            'exp_params': {'ftype': func},
+            'n_train': [2000],
+            'methods': methods,
+            'rollouts': 50,
+        }

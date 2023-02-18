@@ -143,9 +143,9 @@ def summarize_results(result_list):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--run_parallel', action='store_true')
-    parser.add_argument('--overwrite', default=True, action='store_true')
-    parser.add_argument('--no_sweep', default=False, action='store_true')
-    parser.add_argument('--experiment', type=str, default='heteroskedastic_one')
+    parser.add_argument('--no_overwrite', action='store_true')
+    parser.add_argument('--no_sweep', action='store_true')
+    parser.add_argument('--experiment', type=str, default='network_iv_sin')
     parser.add_argument('--exp_option', default=None)  # TODO: Try to fix this since it should be a dict; H: Can just name the different exp versions [1,2,3,4] or something
     parser.add_argument('--n_train', type=int, default=1000)
     parser.add_argument('--method', type=str, default='KMM-RF-0.5x-ref-log')
@@ -184,6 +184,6 @@ if __name__ == "__main__":
                                       filename=filename,
                                       exp_name=args.experiment,
                                       run_dir=args.run_dir,
-                                      overwrite=args.overwrite)
+                                      overwrite=not args.no_overwrite)
     print(results['results_summarized'])
 

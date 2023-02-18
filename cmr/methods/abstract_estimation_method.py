@@ -142,10 +142,6 @@ class AbstractEstimationMethod:
         return float(mse_moment_violation.detach().cpu().numpy())
 
     def calc_validation_metric(self, x_val, z_val):
-        # if next(self.model.parameters()).is_cuda:
-        #     x_val, z_val = x_val.to("cuda"), z_val.to("cuda")
-        # else:
-        #     x_val, z_val = x_val.to("cpu"), z_val.to("cpu")
         if not self._val_loss_func:
             self._val_loss_func = self._get_val_loss_func(z_val)
         return self._val_loss_func(x_val, z_val)
@@ -153,9 +149,6 @@ class AbstractEstimationMethod:
     def _get_val_loss_func(self, z_val):
         if self._custom_val_loss_func:
             def func(x, z):
-                # val_data = {'t': self._to_tensor_and_device(x[0]),
-                #             'y': self._to_tensor_and_device(x[1]),
-                #             'z': self._to_tensor_and_device(z)}
                 val_data = {'t': x[0],
                             'y': x[1],
                             'z': z}

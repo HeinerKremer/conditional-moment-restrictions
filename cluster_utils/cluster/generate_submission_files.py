@@ -6,7 +6,8 @@ from run_experiment import experiment_setups
 cpus = 8
 memory = 16000
 bid = 12
-kmm_on_gpu = True
+kmm_on_gpu = False
+no_overwrite = True
 
 # ---------------- Simulation details ----------------
 experiments = [
@@ -100,6 +101,9 @@ for experiment in experiments:
         for arg, param_value in settings.items():
             runline += f' --{arg} {param_value}'
             filename += f'_{arg}_{param_value}'
+
+        if no_overwrite:
+            runline += ' --no_overwrite'
 
         os.makedirs(f'{path}/cluster/jobs_{experiment}', exist_ok=True)
         with open(f'{path}/cluster/jobs_{experiment}/'+filename+'.sh', 'w') as shfile:
