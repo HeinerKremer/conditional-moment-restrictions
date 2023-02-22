@@ -118,22 +118,27 @@ class AbstractEstimationMethod:
             self.kernel_z_val, _ = get_rbf_kernel(z_val, z_val, **self.kernel_z_kwargs)
 
     def _calc_val_mmr(self, x_val, z_val):
-        n = z_val.shape[0]
-        if n < 5001:
-            self._set_kernel_z(z_val=z_val)
-            psi = self.moment_function(x_val)
-            loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z_val, psi) / (n ** 2)
-        else:
-            # Calculate MMR batchwise (this is quite inefficient because kernel matrices are computed everytime again)
-            val_loss_list = []
-            for i in range(0, z_val.shape[0], 5000):
-                x_val_batch = [x_val[0][i:i + 5000, :], x_val[1][i:i + 5000, :]]
-                z_val_batch = z_val[i:i + 5000, :]
-                self._set_kernel_z(z_val=z_val_batch)
-                psi = self.moment_function(x_val_batch)
-                loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z_val, psi) / (n ** 2)
-                val_loss_list.append(loss.detach().numpy())
-            loss = np.mean(val_loss_list)
+        max_num_val_data = 5000
+        self._set_kernel_z(z_val=z_val[:max_num_val_data])
+        psi = self.moment_function([x_val[0][:max_num_val_data], x_val[1][:max_num_val_data]])
+        loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z_val, psi) / (z_val[:max_num_val_data].shape[0] ** 2)
+
+        # n = z_val.shape[0]
+        # if n < 5001:
+        #     self._set_kernel_z(z_val=z_val)
+        #     psi = self.moment_function(x_val)
+        #     loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z_val, psi) / (n ** 2)
+        # else:
+        #     # Calculate MMR batchwise (this is quite inefficient because kernel matrices are computed everytime again)
+        #     val_loss_list = []
+        #     for i in range(0, z_val.shape[0], 5000):
+        #         x_val_batch = [x_val[0][i:i + 5000, :], x_val[1][i:i + 5000, :]]
+        #         z_val_batch = z_val[i:i + 5000, :]
+        #         self._set_kernel_z(z_val=z_val_batch)
+        #         psi = self.moment_function(x_val_batch)
+        #         loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z_val, psi) / (n ** 2)
+        #         val_loss_list.append(loss.detach().cpu().numpy())
+        #     loss = np.mean(val_loss_list)
         return float(loss)
 
     def _calc_val_moment_violation(self, x_val, z_val=None):

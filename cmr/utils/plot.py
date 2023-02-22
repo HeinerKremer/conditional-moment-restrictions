@@ -17,22 +17,6 @@ NEURIPS_LINE_WIDTH = 5.5  # Text width: 5.5in (double figure minus spacing 0.2in
 FIG_SIZE_NEURIPS_DOUBLE = (NEURIPS_LINE_WIDTH / 2, NEURIPS_LINE_WIDTH / 2 * 4/6)
 figsize = (LINE_WIDTH*1.4, LINE_WIDTH/2)
 
-# labels = {'SMDIdentity': 'SMD',
-#           'SMDHeteroskedastic': 'SMD',
-#           'KernelFGEL': 'K-FGEL',
-#           'NeuralFGEL': 'NN-FGEL',
-#           'KernelFGEL-chi2': 'K-FGEL',
-#           'NeuralFGEL-chi2': 'NN-FGEL',
-#           'KernelFGEL-log': 'K-FGEL',
-#           'NeuralFGEL-log': 'NN-FGEL',
-#           'KernelFGEL-kl': 'K-FGEL',
-#           'NeuralFGEL-kl': 'NN-FGEL',
-#           'KernelMMR': 'MMR',
-#           'OrdinaryLeastSquares': 'LSQ',
-#           'KernelVMM': 'K-VMM',
-#           'NeuralVMM': 'NN-VMM'}
-
-
 NEURIPS_RCPARAMS = {
     "figure.autolayout": False,         # Makes sure nothing the feature is neat & tight.
     "figure.figsize": FIG_SIZE_NEURIPS_DOUBLE,
@@ -260,28 +244,6 @@ def plot_divergence_comparison(n_samples, validation_metric, logscale=False, rem
     plt.show()
 
 
-# def generate_table_network_iv(n_train, methods):
-#     funcs = ['abs', 'step', 'sin', 'linear']
-#
-#     base_path = Path(__file__).parent.parent.parent
-#
-#     results = {func: {model: {} for model in methods} for func in funcs}
-#     for func in funcs:
-#         for method in methods:
-#             filename = base_path / f"results/network_iv/network_iv_method={method}_n={n_train}_{func}.json"
-#             res = load_and_summarize_results(filename, 'val_loss')
-#             test, val = res['test_risk'], res['val_loss']
-#
-#             results[func][method]['mean'] = np.mean(test)
-#             results[func][method]['std'] = np.std(test) / np.sqrt(len(test))
-#
-#     row1 = [''] + [f"{model}" for model in methods]
-#     table = [row1]
-#     for func in funcs:
-#         table.append([f'{func}'] + [r"${:.2f}\pm{:.2f}$".format(results[func][model]["mean"] * 1e1, results[func][model]["std"] * 1e1) for model in
-#                       methods])
-#     print(tabulate(table, tablefmt="latex_raw"))
-
 def generate_table_network_iv(n_train, methods, hparam_config=None):
     funcs = ['abs', 'step', 'sin', 'linear']
 
@@ -306,29 +268,6 @@ def generate_table_network_iv(n_train, methods, hparam_config=None):
             r"${:.2f}\pm{:.2f}$".format(results[func][model]["mean"] * 1e1, results[func][model]["sem"] * 1e1) for
             model in results[func].keys()])
     print(tabulate(table, tablefmt="latex_raw"))
-
-# def generate_table_bennett_hetero(n_trains, methods, entropy=None):
-#     base_path = Path(__file__).parent.parent.parent
-#
-#     results = {n_train: {model: {} for model in methods} for n_train in n_trains}
-#     for n_train in n_trains:
-#         for method in methods:
-#             filename = base_path / f"results/bennet_hetero/bennet_hetero_method={method}_n={n_train}.json"
-#             res = load_and_summarize_results(filename, 'val_loss')
-#             print(res)
-#             test, val = res['test_risk'], res['val_loss']
-#
-#             results[n_train][method]['mean'] = np.mean(test)
-#             results[n_train][method]['std'] = np.std(test) / np.sqrt(len(test))
-#
-#     row1 = [''] + [f"{model}" for model in methods]
-#     table = [row1]
-#     for n_train in n_trains:
-#         table.append([f'{n_train}'] + [
-#             r"${:.2f}\pm{:.2f}$".format(results[n_train][model]["mean"], results[n_train][model]["std"]) for
-#             model in
-#             methods])
-#     print(tabulate(table, tablefmt="latex_raw"))
 
 
 def generate_table_bennett_hetero(n_trains, methods, hparam_config):
@@ -387,11 +326,16 @@ if __name__ == "__main__":
     # methods = ['OLS', 'SMD', 'MMR', 'DeepIV', 'VMM-neural', 'FGEL-neural',
     #            'KMM-RF-0x-ref-kl', 'KMM-RF-0.5x-ref-kl', 'KMM-RF-1x-ref-kl', 'KMM-RF-2x-ref-kl'
     #            ]# ['KMM-RF-0x-ref-kl', 'KMM-RF-0x-ref-log']]
-    methods = ['OLS', 'SMD', 'DeepIV', 'VMM-neural',
-               ['FGEL-neural-kl', 'FGEL-neural-chi2', 'FGEL-neural-log'],
-               'KMM-RF',]
+    methods = ['OLS', 'SMD', "MMR", 'DeepIV', 'VMM-neural', 'FGEL-neural',
+               ["KMM-RF-0.5x-ref-kl", "KMM-RF-2x-ref-kl",
+                "KMM-RF-0.5x-ref-log", "KMM-RF-1x-ref-log", "KMM-RF-2x-ref-log"],
+               'KMM-FB-kl'
+               ]
 
-    generate_table_bennett_hetero(n_trains=[2000, 4000, 10000], methods=methods,
-                                hparam_config=None)#{'entropy_reg_param': 1})
+    generate_table_bennett_hetero(n_trains=[2000, 4000], methods=methods,
+                                  hparam_config=None)     # {'entropy_reg_param': 1})
+
+
+    # TODO: Comparison different reference samples and bandwidth
 
 
