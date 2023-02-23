@@ -405,6 +405,10 @@ class GeneralizedEL(AbstractEstimationMethod):
         if self.verbose:
             print("time taken:", time.time() - time_0)
 
+    def calc_validation_metric(self, x_val, z_val):
+        return self._calc_val_moment_violation(x_val)
+
+
 
 if __name__ == '__main__':
     from experiments.tests import test_mr_estimator

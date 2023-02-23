@@ -181,10 +181,11 @@ class AbstractEstimationMethod:
                                       line_search_fn="strong_wolfe")
 
         if mmr and z is not None and z.shape[0] < 5000:
+            self._set_kernel_z(z=z)
+
             def closure():
                 optimizer.zero_grad()
                 psi = self.moment_function(x)
-                self._set_kernel_z(z=z)
                 loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z, psi) / (x[0].shape[0] ** 2)
                 loss.backward()
                 return loss

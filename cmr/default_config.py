@@ -22,23 +22,23 @@ gel_kwargs = {
 kmm_kwargs = {
     "divergence": 'kl',
     "entropy_reg_param": 10,
-    "reg_param": 0.0,
+    "reg_param": 1.0,
     "kernel_x_kwargs": {},
     "n_random_features": 10000,
     "n_reference_samples": 0,
     "kde_bandwidth": 0.1,
     "annealing": False,
     "kernel_z_kwargs": {},
-    "pretrain": False,
+    "pretrain": True,
     "gpu": False,
 
     # Optimization params
     "theta_optim_args": {"optimizer": "oadam_gda", "lr": 5e-4},
     "dual_optim_args": {"optimizer": "oadam_gda", "lr": 5 * 5e-4},
-    "max_num_epochs": 20000,
+    "max_num_epochs": 30000,
     "batch_size": 200,
     "eval_freq": 100,
-    "max_no_improve": 3,
+    "max_no_improve": 20,
     "burn_in_cycles": 5,
 }
 
@@ -68,15 +68,15 @@ fgel_neural_kwargs = {
     "divergence": 'chi2',
     "reg_param": 0,
     "dual_func_network_kwargs": {},
-    "pretrain": False,
+    "pretrain": True,
 
     # Optimization params
     "theta_optim_args": {"optimizer": "oadam_gda", "lr": 5e-4},
     "dual_optim_args": {"optimizer": "oadam_gda", "lr": 5 * 5e-4},
-    "max_num_epochs": 20000,
+    "max_num_epochs": 30000,
     "batch_size": 200,
     "eval_freq": 100,
-    "max_no_improve": 3,
+    "max_no_improve": 20,
     "burn_in_cycles": 5,
 }
 
@@ -143,7 +143,7 @@ methods = {
     'VMM-neural':
         {
             'estimator_kwargs': vmm_neural_kwargs,
-            'hyperparams': {"reg_param": [0, 1e-4, 1e-2, 1e0]}
+            'hyperparams': {"reg_param":[1,1]},# [0, 1e-4, 1e-2, 1e0]}
         },
 
     f'FGEL-kernel':
@@ -222,7 +222,7 @@ experimental_methods = {
                 "n_reference_samples": [100],
                 "entropy_reg_param": [1, 1e1, 1e2],
                 "reg_param":  [0, 1e-4, 1e-2, 1e0],
-                "kde_bw": [0.1, 0.5],
+                "kde_bw": [0.1],
             }
         },
 
@@ -234,7 +234,7 @@ experimental_methods = {
                 "n_reference_samples": [200],
                 "entropy_reg_param": [1, 1e1, 1e2],
                 "reg_param":  [0, 1e-4, 1e-2, 1e0],
-                "kde_bw": [0.1, 0.5],
+                "kde_bw": [0.1],
             }
         },
 
@@ -246,7 +246,7 @@ experimental_methods = {
                 "n_reference_samples": [200],
                 "entropy_reg_param": [1, 1e1, 1e2],
                 "reg_param":  [0, 1e-4, 1e-2, 1e0],
-                "kde_bw": [0.1, 0.5],
+                "kde_bw": [0.1],
             }
         },
 
