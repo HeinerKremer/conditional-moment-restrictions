@@ -143,7 +143,7 @@ methods = {
     'VMM-neural':
         {
             'estimator_kwargs': vmm_neural_kwargs,
-            'hyperparams': {"reg_param":[1,1]},# [0, 1e-4, 1e-2, 1e0]}
+            'hyperparams': {"reg_param": [0, 1e-4, 1e-2, 1e0]}
         },
 
     f'FGEL-kernel':
