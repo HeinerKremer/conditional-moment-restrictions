@@ -7,11 +7,10 @@ from cmr.default_config import vmm_kernel_kwargs
 
 
 class KernelVMM(AbstractEstimationMethod):
-    def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
+    def __init__(self, model, moment_function, verbose=0, **kwargs):
         vmm_kernel_kwargs.update(kwargs)
         kwargs = vmm_kernel_kwargs
-        super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
-                         **kwargs)
+        super().__init__(model=model, moment_function=moment_function, verbose=verbose, **kwargs)
         self.alpha = kwargs["reg_param"]
         self.num_iter = kwargs["num_iter"]
 

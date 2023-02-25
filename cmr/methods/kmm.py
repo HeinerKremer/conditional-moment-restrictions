@@ -18,12 +18,11 @@ class KMM(GeneralizedEL):
     Maximum mean discrepancy empirical likelihood estimator for unconditional moment restrictions.
     """
 
-    def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
+    def __init__(self, model, moment_function, verbose=0, **kwargs):
         if type(self) == KMM:
             kmm_kwargs.update(kwargs)
             kwargs = kmm_kwargs
-        super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
-                         **kwargs)
+        super().__init__(model=model, moment_function=moment_function, verbose=verbose, **kwargs)
 
         self.entropy_reg_param = kwargs["entropy_reg_param"]
         self.kernel_x_kwargs = kwargs["kernel_x_kwargs"]
@@ -53,7 +52,6 @@ class KMM(GeneralizedEL):
         self._eval_rff_y = rff.layers.GaussianEncoding(sigma=sigma_y, input_size=x[1].shape[1],
                                                        encoded_size=self.n_rff // 2).to(self.device)
         if z is not None and self.rkhs_func_z_dependent:
-            print('halloo')
             self._eval_rff_z = rff.layers.GaussianEncoding(sigma=sigma_z, input_size=z.shape[1],
                                                            encoded_size=self.n_rff // 2).to(self.device)
         else:

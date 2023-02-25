@@ -11,12 +11,11 @@ cvx_solver = cvx.MOSEK
 
 class KernelFGEL(GeneralizedEL):
 
-    def __init__(self, model, moment_function, val_loss_func=None, verbose=None, **kwargs):
+    def __init__(self, model, moment_function, verbose=None, **kwargs):
         if type(self) == KernelFGEL:
             fgel_kernel_kwargs.update(kwargs)
             kwargs = fgel_kernel_kwargs
-        super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
-                         **kwargs)
+        super().__init__(model=model, moment_function=moment_function, verbose=verbose, **kwargs)
 
     def _init_dual_params(self):
         self.dual_moment_func = Parameter(shape=(self.kernel_z.shape[0], self.dim_psi))

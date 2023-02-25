@@ -4,9 +4,8 @@ from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
 
 
 class MMR(AbstractEstimationMethod):
-    def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
-        super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
-                         **kwargs)
+    def __init__(self, model, moment_function, verbose=0, **kwargs):
+        super().__init__(model=model, moment_function=moment_function, verbose=verbose, **kwargs)
 
     def _train_internal(self, x, z, x_val, z_val, debugging):
         n_sample = x[0].shape[0]

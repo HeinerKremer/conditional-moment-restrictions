@@ -12,11 +12,11 @@ cvx_solver = cvx.MOSEK
 
 
 class KMMKernel(KMM):
-    def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
+    def __init__(self, model, moment_function, verbose=0, **kwargs):
         if type(self) == KMMKernel:
             kmm_kernel_kwargs.update(kwargs)
             kwargs = kmm_kernel_kwargs
-        super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
+        super().__init__(model=model, moment_function=moment_function, verbose=verbose,
                          **kwargs)
         if kwargs["n_rff_instrument_func"] is None:
             self.n_rff_instrument_func = self.n_rff

@@ -8,11 +8,12 @@ gel_kwargs = {
     "reg_param": 0.0,
     "kernel_z_kwargs": {},
     "pretrain": False,
+    "val_loss_func": 'moment_violation',
 
     # Optimization params
     "theta_optim_args": {"optimizer": "lbfgs", "lr": 5e-4},
     "dual_optim_args": {"optimizer": "lbfgs", "lr": 5 * 5e-4, "inneriters": 100},
-    "max_num_epochs": 50000,
+    "max_num_epochs": 30000,
     "batch_size": None,
     "eval_freq": 2000,
     "max_no_improve": 3,
@@ -31,6 +32,7 @@ kmm_kwargs = {
     "kernel_z_kwargs": {},
     "pretrain": True,
     "rkhs_func_z_dependent": True,
+    "val_loss_func": 'moment_violation',
     "gpu": False,
 
     # Optimization params
@@ -53,12 +55,13 @@ fgel_kernel_kwargs = {
     "divergence": 'chi2',
     "reg_param": 1e-6,
     "kernel_z_kwargs": {},
-    "pretrain": False,
+    "pretrain": True,
+    "val_loss_func": 'moment_violation',
 
     # Optimization params
     "theta_optim_args": {"optimizer": "lbfgs", "lr": 5e-4},
     "dual_optim_args": {"optimizer": "lbfgs", "lr": 5 * 5e-4},
-    "max_num_epochs": 50000,
+    "max_num_epochs": 30000,
     "batch_size": None,
     "eval_freq": 2000,
     "max_no_improve": 3,
@@ -70,11 +73,12 @@ fgel_neural_kwargs = {
     "reg_param": 0,
     "dual_func_network_kwargs": {},
     "pretrain": True,
+    "val_loss_func": 'moment_violation',
 
     # Optimization params
     "theta_optim_args": {"optimizer": "oadam_gda", "lr": 5e-4},
     "dual_optim_args": {"optimizer": "oadam_gda", "lr": 5 * 5e-4},
-    "max_num_epochs": 50000,
+    "max_num_epochs": 30000,
     "batch_size": 200,
     "eval_freq": 100,
     "max_no_improve": 20,
@@ -84,13 +88,13 @@ fgel_neural_kwargs = {
 gmm_kwargs = {
     "reg_param": 1e-6,
     "num_iter": 2,
-    "pretrain": False,
+    "pretrain": True,
 }
 
 vmm_kernel_kwargs = {
     "reg_param": 1e-6,
     "num_iter": 2,
-    "pretrain": False,
+    "pretrain": True,
 }
 
 vmm_neural_kwargs = copy.deepcopy(fgel_neural_kwargs)
@@ -344,6 +348,7 @@ kmm_hyperparams = {"n_reference_samples": [0, 100, 200],
                    "kde_bw": [0.1, 0.5],
                    "divergence": ['kl', 'log'],
                    "rkhs_func_z_dependent": [True, False],
+                   "val_loss_func": ['mmr', 'moment_violation'],
                    }
 
 

@@ -13,8 +13,8 @@ class AbstractEstimationMethod:
         self.moment_function = self._wrap_moment_function(moment_function)
         self.is_trained = False
         self.train_stats = {}
-        self._custom_val_loss_func = val_loss_func
-        self._val_loss_func = None   # To be set in _set_val_loss_func
+        # self._custom_val_loss_func = val_loss_func
+        self._val_loss_func = val_loss_func
         self.verbose = verbose
         self.device = "cuda" if (gpu and torch.cuda.is_available()) else "cpu"
 
@@ -119,6 +119,7 @@ class AbstractEstimationMethod:
             self.kernel_z_val, _ = get_rbf_kernel(z_val, z_val, **self.kernel_z_kwargs)
 
     def _calc_val_mmr(self, x_val, z_val):
+        assert z_val is not None, 'MMR cannot be used as validation loss without specifying instrument data `z`.'
         max_num_val_data = 5000
         self._set_kernel_z(z_val=z_val[:max_num_val_data])
         psi = self.moment_function([x_val[0][:max_num_val_data], x_val[1][:max_num_val_data]])
@@ -148,24 +149,42 @@ class AbstractEstimationMethod:
         return float(mse_moment_violation.detach().cpu().numpy())
 
     def calc_validation_metric(self, x_val, z_val):
-        if not self._val_loss_func:
-            self._val_loss_func = self._get_val_loss_func(z_val)
-        return self._val_loss_func(x_val, z_val)
-
-    def _get_val_loss_func(self, z_val):
-        if self._custom_val_loss_func:
-            def func(x, z):
-                val_data = {'t': x[0],
-                            'y': x[1],
-                            'z': z}
-                return self._custom_val_loss_func(self.model, val_data)
-
-            return func
+        if self._val_loss_func is None:
+            return None
+        elif self._val_loss_func == 'mmr':
+            return self._calc_val_mmr(x_val, z_val)
+        elif self._val_loss_func == 'moment_violation':
+            return self._calc_val_moment_violation(x_val, z_val)
+        elif not isinstance(self._val_loss_func, str):
+            val_data = {'t': x_val[0], 'y': x_val[1], 'z': z_val}
+            return self._val_loss_func(self.model, val_data)
         else:
-            if z_val is None:
-                return self._calc_val_moment_violation
-            else:
-                return self._calc_val_mmr
+            raise NotImplementedError(f"Input `val_loss_func`` must be either a function or in "
+                                      f"['mmr', 'moment_violation']. Currently is {self._val_loss_func}")
+
+    #     if not self._val_loss_func:
+    #         self._val_loss_func = self._get_val_loss_func()
+    #     return self._val_loss_func(x_val, z_val)
+    #
+    # def _get_val_loss_func(self):
+    #     if self._custom_val_loss_func and not isinstance(self._custom_val_loss_func, str):
+    #         print('Using custom loss function as validation loss.')
+    #         def func(x, z):
+    #             val_data = {'t': x[0],
+    #                         'y': x[1],
+    #                         'z': z}
+    #             return self._custom_val_loss_func(self.model, val_data)
+    #
+    #         return func
+    #     else:
+    #         if self._custom_val_loss_func == 'mmr':
+    #             print('Using MMR as validation loss.')
+    #             return self._calc_val_mmr
+    #         elif self._custom_val_loss_func == 'moment_violation':
+    #             print('Using `moment_violation` as validation loss.')
+    #             return self._calc_val_moment_violation
+    #         else:
+    #             raise NotImplementedError(f"Input `val_loss_func`` must be either a function or in ['mmr', 'moment_violation']. Currently is {self._c}")
 
     @staticmethod
     def _to_tensor(data_array):

@@ -24,12 +24,11 @@ class GeneralizedEL(AbstractEstimationMethod):
     quantities (and if desired a cvxpy optimization method for the optimization over the dual functions).
     """
 
-    def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
+    def __init__(self, model, moment_function, verbose=0, **kwargs):
         if type(self) == GeneralizedEL:
             gel_kwargs.update(kwargs)
             kwargs = gel_kwargs
-        super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
-                         **kwargs)
+        super().__init__(model=model, moment_function=moment_function, verbose=verbose, **kwargs)
 
         # Method specific kwargs
         self.divergence_type = kwargs["divergence"]
@@ -399,7 +398,7 @@ class GeneralizedEL(AbstractEstimationMethod):
                     break
 
         plt.plot(val_losses)
-        plt.savefig('cmr/val_losses.pdf')
+        plt.savefig('val_losses.pdf')
         plt.close()
         # plt.plot(train_losses)
         # plt.title('Theta loss')
@@ -412,8 +411,6 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.train_stats['epochs'] = epoch_i
         self.train_stats['val_loss'] = val_losses
 
-    def calc_validation_metric(self, x_val, z_val):
-        return self._calc_val_moment_violation(x_val)
 
 
 if __name__ == '__main__':

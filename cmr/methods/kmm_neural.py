@@ -10,11 +10,11 @@ cvx_solver = cvx.MOSEK
 
 class KMMNeural(KMM):
 
-    def __init__(self, model, moment_function, val_loss_func=None, verbose=0, **kwargs):
+    def __init__(self, model, moment_function, verbose=0, **kwargs):
         if type(self) == KMMNeural:
             kmm_neural_kwargs.update(kwargs)
             kwargs = kmm_neural_kwargs
-        super().__init__(model=model, moment_function=moment_function, val_loss_func=val_loss_func, verbose=verbose,
+        super().__init__(model=model, moment_function=moment_function, verbose=verbose,
                          **kwargs)
         self.dual_func_network_kwargs_custom = kwargs["dual_func_network_kwargs"]
 
