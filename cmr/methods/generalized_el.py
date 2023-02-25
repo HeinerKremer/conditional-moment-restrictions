@@ -389,7 +389,7 @@ class GeneralizedEL(AbstractEstimationMethod):
                     print("epoch %d, theta-obj=%f, val-loss=%f"
                           % (epoch_i, last_obj, val_loss))
                 val_losses.append(float(val_loss))
-                if val_loss < min_val_loss and abs((val_loss - min_val_loss) / min_val_loss) > 1e-4:
+                if val_loss < min_val_loss:     # and abs((val_loss - min_val_loss) / min_val_loss) > 1e-4:
                     min_val_loss = val_loss
                     num_no_improve = 0
                 elif cycle_num > self.burn_in_cycles:
