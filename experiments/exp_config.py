@@ -1,3 +1,4 @@
+from cmr.default_config import kmm_methods
 from experiments.exp_bennett_heteroskedastic_iv import HeteroskedasticIVScenario
 from experiments.exp_bennett_multi import MultiOutputIVScenario
 from experiments.exp_bennett_simple_iv import SimpleIVScenario
@@ -6,9 +7,9 @@ from experiments.exp_network_iv import NetworkIVExperiment
 from experiments.exp_poisson_estimation import PoissonExperiment
 
 
-methods = ['OLS', 'SMD', 'MMR', 'VMM-neural', 'DeepIV', 'FGEL-neural',
-           'KMM-FB-kl', 'KMM-RF-0x-ref-kl', 'KMM-RF-0.5x-ref-kl', 'KMM-RF-1x-ref-kl', 'KMM-RF-2x-ref-kl',
-           'KMM-RF-0x-ref-log', 'KMM-RF-0.5x-ref-log', 'KMM-RF-1x-ref-log', 'KMM-RF-2x-ref-log']
+methods = ['OLS', 'SMD', 'MMR', 'VMM-neural', 'DeepIV', 'FGEL-neural'] + list(kmm_methods.keys())
+           #'KMM-FB-kl', 'KMM-RF-0x-ref-kl', 'KMM-RF-0.5x-ref-kl', 'KMM-RF-1x-ref-kl', 'KMM-RF-2x-ref-kl',
+           #'KMM-RF-0x-ref-log', 'KMM-RF-0.5x-ref-log', 'KMM-RF-1x-ref-log', 'KMM-RF-2x-ref-log']
 
 experiment_setups = {
     # 'off_policy_evaluation':
@@ -125,13 +126,13 @@ experiment_setups = {
         {
             'exp_class': HeteroskedasticIVScenario,
             'exp_params': {},
-            'n_train': [2000, 4000, 10000],
+            'n_train': [2000], #, 4000, 10000],
             'methods': methods,
             # 'methods': ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
             #             'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
             #             'KernelELNeural-kl', 'KernelELNeural-log',
             #             'RFKernelELNeural-MB'],
-            'rollouts': 20,
+            'rollouts': 10,
         },
 
     'bennet_simple':
@@ -168,3 +169,7 @@ for func in ['sin', 'linear', 'step', 'abs']:
             'methods': methods,
             'rollouts': 50,
         }
+
+
+if __name__ == '__main__':
+    print(methods)

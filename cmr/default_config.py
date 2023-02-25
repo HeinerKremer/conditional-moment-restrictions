@@ -25,7 +25,7 @@ kmm_kwargs = {
     "reg_param": 1.0,
     "kernel_x_kwargs": {},
     "n_random_features": 10000,
-    "n_reference_samples": 0,
+    "n_reference_samples": None,
     "kde_bandwidth": 0.1,
     "annealing": False,
     "kernel_z_kwargs": {},
@@ -73,7 +73,7 @@ fgel_neural_kwargs = {
     # Optimization params
     "theta_optim_args": {"optimizer": "oadam_gda", "lr": 5e-4},
     "dual_optim_args": {"optimizer": "oadam_gda", "lr": 5 * 5e-4},
-    "max_num_epochs": 30000,
+    "max_num_epochs": 50000,
     "batch_size": 200,
     "eval_freq": 100,
     "max_no_improve": 20,
@@ -143,7 +143,7 @@ methods = {
     'VMM-neural':
         {
             'estimator_kwargs': vmm_neural_kwargs,
-            'hyperparams': {"reg_param": [0, 1e-4, 1e-2, 1e0]}
+            'hyperparams': {"reg_param": [0, 1e-4, 1e-2, 1e0],}
         },
 
     f'FGEL-kernel':
@@ -200,6 +200,29 @@ experimental_methods = {
                 "n_reference_samples": [None],
                 "entropy_reg_param": [1e0, 1e1, 1e2],
                 "reg_param": [0, 1e-4, 1e-2, 1e0],
+            }
+        },
+
+    'KMM-FB':
+        {
+            'estimator_kwargs': kmm_neural_kwargs,
+            'hyperparams': {
+                "batch_size": [None],
+                "n_reference_samples": [None],
+                "entropy_reg_param": [1e1],
+                "reg_param": [1e0, 1e0, 1e0],
+                "n_random_features": [None],
+            }
+        },
+
+    'KMM-MB':
+        {
+            'estimator_kwargs': kmm_neural_kwargs,
+            'hyperparams': {
+                "batch_size": [200],
+                "n_reference_samples": [0],
+                "entropy_reg_param": [1e1],
+                "reg_param": [1, 1, 1],
             }
         },
 
@@ -314,6 +337,35 @@ experimental_methods = {
         },
 }
 
+kmm_hyperparams = {"n_reference_samples": [0, 200],
+                   "entropy_reg_param": [1, 1e1, 1e2],
+                   "reg_param": [0, 1e-4, 1e-2, 1e0],
+                   "kde_bw": [0.1, 0.5],
+                   "divergence": ['kl', 'log']
+                   }
+
+
+def iterate_argument_combinations(argument_dict):
+    args = list(argument_dict.values())
+    pools = [tuple(pool) for pool in args]
+    result = [[]]
+    for pool in pools:
+        result = [x + [y] for x in result for y in pool]
+    for prod in result:
+        yield {key: [val] for key, val in zip(list(argument_dict.keys()), prod)}
+
+
+kmm_methods = {}
+for hparam in iterate_argument_combinations(kmm_hyperparams):
+    name = 'KMM'
+    for key, val in hparam.items():
+        name += f'_{key}={val}'
+    kmm_methods[name] = {'estimator_kwargs': kmm_neural_kwargs,
+                         'hyperparams': hparam, }
+
+methods.update(kmm_methods)
+
+
 future_methods = {
     # 'KMM-Wasserstein':
     #     {
@@ -340,6 +392,10 @@ future_methods = {
     #         }
     #     },
 }
+#
+# methods.update(experimental_methods)
+# methods.update(future_methods)
 
-methods.update(experimental_methods)
-methods.update(future_methods)
+
+if __name__ == '__main__':
+    print(kmm_methods)

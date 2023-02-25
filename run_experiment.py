@@ -8,12 +8,13 @@ import torch
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 
+from cmr.default_config import methods
 from cmr.estimation import estimation
 from experiments.exp_config import experiment_setups
 
 
 def run_experiment(experiment, exp_params, n_train, estimation_method, estimator_kwargs=None,
-                   hyperparams=None, sweep_hparams=True,seed0=12345):
+                   hyperparams=None, sweep_hparams=True, seed0=12345):
     """
     Runs experiment with specified estimator and choice of hyperparams and returns the best model and the
     corresponding error measures.
@@ -110,16 +111,20 @@ def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, 
                                        hyperparams=hyperparams, sweep_hparams=sweep_hparams, seed0=seed0+i)
                 results.append(stats)
 
+        estimator_kwargs_updated = copy.deepcopy(methods[estimation_method])
+        if estimator_kwargs_updated and estimator_kwargs:
+            estimator_kwargs_updated.update(estimator_kwargs)
+
         results_summarized = summarize_results(results)
         result_dict = {"results_summarized": results_summarized,
                        "results": results,
-                       "estimator_kwargs": estimator_kwargs}
+                       "estimator_kwargs": estimator_kwargs_updated}
         if filename is not None:
             if exp_name is None:
                 exp_name = str(experiment.__name__)
             if run_dir != '':
                 run_dir = run_dir + '/'
-            prefix = f"results/{exp_name}/{run_dir}{exp_name}_method={estimation_method}_n={n_train}"
+            prefix = f"results/{exp_name}/{run_dir}{exp_name}_method={estimation_method}_n={n_train}_seed0={seed0}"
             os.makedirs(os.path.dirname(prefix), exist_ok=True)
             print('Filepath: ', prefix + str(filename) + ".json")
             with open(prefix + filename + ".json", "w") as fp:
@@ -147,11 +152,12 @@ if __name__ == "__main__":
     parser.add_argument('--no_sweep', action='store_true')
     parser.add_argument('--experiment', type=str, default='bennet_hetero')
     parser.add_argument('--exp_option', default=None)  # TODO: Try to fix this since it should be a dict; H: Can just name the different exp versions [1,2,3,4] or something
-    parser.add_argument('--n_train', type=int, default=2000)
-    parser.add_argument('--method', type=str, default='VMM-neural')
+    parser.add_argument('--n_train', type=int, default=200)
+    parser.add_argument('--method', type=str, default="KMM_n_reference_samples=[0]_entropy_reg_param=[1]_reg_param=[0]_kde_bw=[0.1]_divergence=['kl']")
     parser.add_argument('--method_option', default=None)
     parser.add_argument('--rollouts', type=int, default=1)
     parser.add_argument('--run_dir', type=str, default='')
+    parser.add_argument('--seed0', type=int, default=12345)
     # parser.add_argument('--bw', type=float, default=0.1)
     # parser.add_argument('--n_samples', type=int, default=0)
     # parser.add_argument('--f_div', type=str, default='kl')
@@ -180,6 +186,7 @@ if __name__ == "__main__":
                                       n_train=args.n_train,
                                       estimation_method=args.method,
                                       repititions=args.rollouts,
+                                      seed0=args.seed0,
                                       parallel=args.run_parallel,
                                       filename=filename,
                                       exp_name=args.experiment,

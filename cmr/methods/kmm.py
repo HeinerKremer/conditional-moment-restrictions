@@ -91,7 +91,9 @@ class KMM(GeneralizedEL):
         if self.n_rff:
             self._init_rff(x_tensor, z_tensor)
         else:
-            assert self.batch_size is None, 'Cannot use mini-batch optimization with representer theorem version'
+            print('Using full batch kernel Gram matrix version ...')
+            assert self.batch_size is None, 'Cannot use mini-batch optimization with representer theorem version.'
+            assert self.n_reference_samples is None, 'Cannot use reference samples with representer theorem version.'
             self._set_kernel_x(x_tensor, z_tensor)
         super().init_estimator(x_tensor=x_tensor, z_tensor=z_tensor)
 

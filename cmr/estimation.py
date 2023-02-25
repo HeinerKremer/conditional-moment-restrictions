@@ -114,6 +114,9 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
     validation_loss = []
 
     for hyper in iterate_argument_combinations(hyperparams):
+        # np.random.seed(123456)
+        # torch.random.manual_seed(123456)
+
         if verbose:
             print('Running hyperparams: ', f'{hyper}')
         kwargs_and_hyper = copy.deepcopy(estimator_kwargs)
