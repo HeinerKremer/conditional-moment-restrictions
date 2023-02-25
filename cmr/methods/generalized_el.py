@@ -390,7 +390,7 @@ class GeneralizedEL(AbstractEstimationMethod):
                     print("epoch %d, theta-obj=%f, val-loss=%f"
                           % (epoch_i, last_obj, val_loss))
                 val_losses.append(float(val_loss))
-                if val_loss < min_val_loss:
+                if val_loss < min_val_loss and abs((val_loss - min_val_loss) / min_val_loss) > 1e-4:
                     min_val_loss = val_loss
                     num_no_improve = 0
                 elif cycle_num > self.burn_in_cycles:
@@ -408,9 +408,12 @@ class GeneralizedEL(AbstractEstimationMethod):
         if self.verbose:
             print("time taken:", time.time() - time_0)
 
+        print(f'Trained for {epoch_i} epochs.')
+        self.train_stats['epochs'] = epoch_i
+        self.train_stats['val_loss'] = val_losses
+
     def calc_validation_metric(self, x_val, z_val):
         return self._calc_val_moment_violation(x_val)
-
 
 
 if __name__ == '__main__':

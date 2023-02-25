@@ -12,6 +12,7 @@ class AbstractEstimationMethod:
         self.model = ModelWrapper(model)
         self.moment_function = self._wrap_moment_function(moment_function)
         self.is_trained = False
+        self.train_stats = {}
         self._custom_val_loss_func = val_loss_func
         self._val_loss_func = None   # To be set in _set_val_loss_func
         self.verbose = verbose

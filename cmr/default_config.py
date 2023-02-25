@@ -30,6 +30,7 @@ kmm_kwargs = {
     "annealing": False,
     "kernel_z_kwargs": {},
     "pretrain": True,
+    "rkhs_func_z_dependent": True,
     "gpu": False,
 
     # Optimization params
@@ -337,11 +338,12 @@ experimental_methods = {
         },
 }
 
-kmm_hyperparams = {"n_reference_samples": [0, 200],
-                   "entropy_reg_param": [1, 1e1, 1e2],
-                   "reg_param": [0, 1e-4, 1e-2, 1e0],
+kmm_hyperparams = {"n_reference_samples": [0, 100, 200],
+                   "entropy_reg_param": [1, 1e1, 1e2, 1e3],
+                   "reg_param": [0, 1e-4, 1e-2, 1e0, 1e1],
                    "kde_bw": [0.1, 0.5],
-                   "divergence": ['kl', 'log']
+                   "divergence": ['kl', 'log'],
+                   "rkhs_func_z_dependent": [True, False],
                    }
 
 

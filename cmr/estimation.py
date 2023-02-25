@@ -112,6 +112,7 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
     models = []
     hparams = []
     validation_loss = []
+    train_stats = []
 
     for hyper in iterate_argument_combinations(hyperparams):
         # np.random.seed(123456)
@@ -129,6 +130,7 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
         models.append(estimator.model.cpu())
         hparams.append(hyper)
         validation_loss.append(val_loss)
+        train_stats.append(estimator.train_stats)
 
     try:
         best_val = np.nanargmin(validation_loss)
@@ -138,7 +140,7 @@ def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwar
     if verbose:
         print('Best hyperparams: ', best_hparams)
     return models[best_val], {'models': models, 'val_loss': validation_loss, 'hyperparam': hparams,
-                              'best_index': int(best_val)}
+                              'best_index': int(best_val), 'train_stats': train_stats}
 
 
 if __name__ == "__main__":

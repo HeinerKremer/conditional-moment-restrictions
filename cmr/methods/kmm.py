@@ -30,7 +30,8 @@ class KMM(GeneralizedEL):
         self.n_rff = kwargs["n_random_features"]
         self.n_reference_samples = kwargs["n_reference_samples"]
         self.kde_bw = kwargs["kde_bandwidth"]
-        self.annealing = ["annealing"]
+        self.annealing = kwargs["annealing"]
+        self.rkhs_func_z_dependent = kwargs["rkhs_func_z_dependent"]
 
         self.kernel_x = None
 
@@ -51,7 +52,8 @@ class KMM(GeneralizedEL):
                                                        encoded_size=self.n_rff // 2).to(self.device)
         self._eval_rff_y = rff.layers.GaussianEncoding(sigma=sigma_y, input_size=x[1].shape[1],
                                                        encoded_size=self.n_rff // 2).to(self.device)
-        if z is not None:
+        if z is not None and self.rkhs_func_z_dependent:
+            print('halloo')
             self._eval_rff_z = rff.layers.GaussianEncoding(sigma=sigma_z, input_size=z.shape[1],
                                                            encoded_size=self.n_rff // 2).to(self.device)
         else:

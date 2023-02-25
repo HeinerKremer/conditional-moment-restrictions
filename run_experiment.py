@@ -118,7 +118,7 @@ def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, 
         results_summarized = summarize_results(results)
         result_dict = {"results_summarized": results_summarized,
                        "results": results,
-                       "estimator_kwargs": estimator_kwargs_updated}
+                       "training_config": estimator_kwargs_updated}
         if filename is not None:
             if exp_name is None:
                 exp_name = str(experiment.__name__)
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     parser.add_argument('--experiment', type=str, default='bennet_hetero')
     parser.add_argument('--exp_option', default=None)  # TODO: Try to fix this since it should be a dict; H: Can just name the different exp versions [1,2,3,4] or something
     parser.add_argument('--n_train', type=int, default=200)
-    parser.add_argument('--method', type=str, default="KMM_n_reference_samples=[0]_entropy_reg_param=[1]_reg_param=[0]_kde_bw=[0.1]_divergence=['kl']")
+    parser.add_argument('--method', type=str, default="KMM-neural")
     parser.add_argument('--method_option', default=None)
     parser.add_argument('--rollouts', type=int, default=1)
     parser.add_argument('--run_dir', type=str, default='')
