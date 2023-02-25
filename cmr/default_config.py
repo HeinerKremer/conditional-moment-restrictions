@@ -359,7 +359,7 @@ kmm_methods = {}
 for hparam in iterate_argument_combinations(kmm_hyperparams):
     name = 'KMM'
     for key, val in hparam.items():
-        name += f'_{key}={val[0]}'
+        name += f'_{key}_{val[0]}'
     kmm_methods[name] = {'estimator_kwargs': kmm_neural_kwargs,
                          'hyperparams': hparam, }
 
