@@ -93,7 +93,7 @@ experiment_setups = {
     'network_iv':
         {
             'exp_class': NetworkIVExperiment,
-            'exp_params': {'ftype': ['abs', 'step', 'sin', 'linear']},
+            'exp_params': {'ftype': ['abs', 'step', 'sin']},
             'n_train': [2000],
             # 'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM',
             #             'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log', 'RFKernelELNeural-MB',
