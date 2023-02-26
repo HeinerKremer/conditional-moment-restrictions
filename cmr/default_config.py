@@ -70,7 +70,7 @@ fgel_kernel_kwargs = {
 
 fgel_neural_kwargs = {
     "divergence": 'chi2',
-    "reg_param": 0,
+    "reg_param": 1.0,
     "dual_func_network_kwargs": {},
     "pretrain": True,
     "val_loss_func": 'moment_violation',
@@ -145,29 +145,31 @@ methods = {
             'hyperparams': {'reg_param': [1e-8, 1e-6, 1e-4]}
         },
 
-    'VMM-neural':
-        {
-            'estimator_kwargs': vmm_neural_kwargs,
-            'hyperparams': {"reg_param": [0, 1e-4, 1e-2, 1e0],}
-        },
-
-    f'FGEL-kernel':
-        {
-            'estimator_kwargs': fgel_kernel_kwargs,
-            'hyperparams': {
-                'reg_param': [1e-1, 1e-2, 1e-3, 1e-4, 1e-6, 1e-8],
-                "divergence": ['chi2', 'kl', 'log'],
-            }
-        },
-
-    'FGEL-neural':
-        {
-            'estimator_kwargs': fgel_neural_kwargs,
-            'hyperparams': {
-                "reg_param": [0, 1e-4, 1e-2, 1e0],
-                "divergence": ['chi2', 'kl', 'log'],
-            }
-        },
+    # 'VMM-neural':
+    #     {
+    #         'estimator_kwargs': vmm_neural_kwargs,
+    #         'hyperparams': {"reg_param": [0, 1e-4, 1e-2, 1e0, 1e1],
+    #         "val_loss_func": ['mmr', 'moment_violation'],}
+    #     },
+    #
+    # f'FGEL-kernel':
+    #     {
+    #         'estimator_kwargs': fgel_kernel_kwargs,
+    #         'hyperparams': {
+    #             'reg_param': [1e-1, 1e-2, 1e-3, 1e-4, 1e-6, 1e-8],
+    #             "divergence": ['chi2', 'kl', 'log'],
+    #         }
+    #     },
+    #
+    # 'FGEL-neural':
+    #     {
+    #         'estimator_kwargs': fgel_neural_kwargs,
+    #         'hyperparams': {
+    #             "reg_param": [0, 1e-4, 1e-2, 1e0, 1e1],
+    #             "divergence": ['chi2', 'kl', 'log'],
+    #             "val_loss_func": ['mmr', 'moment_violation'],
+    #         }
+    #     },
 
     'KMM':
         {
@@ -342,12 +344,13 @@ experimental_methods = {
         },
 }
 
-kmm_hyperparams = {"n_reference_samples": [0, 100, 200],
+kmm_hyperparams = {"n_reference_samples": [0, 100, 200, 400],
                    "entropy_reg_param": [1, 1e1, 1e2, 1e3],
-                   "reg_param": [0, 1e-4, 1e-2, 1e0, 1e1],
-                   "kde_bw": [0.1, 0.5],
-                   "divergence": ['kl', 'log'],
-                   "rkhs_func_z_dependent": [True, False],
+                   "reg_param": [1e-2, 1e-1, 1e0, 1e1],
+                   "kde_bw": [0.1, 1],
+                   "n_random_features": [5000, 10000],
+                   # "divergence": ['kl', 'log'],
+                   # "rkhs_func_z_dependent": [True, False],
                    "val_loss_func": ['mmr', 'moment_violation'],
                    }
 
@@ -371,6 +374,36 @@ for hparam in iterate_argument_combinations(kmm_hyperparams):
                          'hyperparams': hparam, }
 
 methods.update(kmm_methods)
+
+
+vmm_hyperparams = {"reg_param": [0, 1e-4, 1e-2, 1e0, 1e1],
+                   "val_loss_func": ['mmr', 'moment_violation'], }
+
+fgel_hyperparams = {
+        "reg_param": [0, 1e-4, 1e-2, 1e0, 1e1],
+        "divergence": ['chi2', 'kl', 'log'],
+        "val_loss_func": ['mmr', 'moment_violation'],}
+
+vmm_methods = {}
+for hparam in iterate_argument_combinations(vmm_hyperparams):
+    name = 'VMM-neural'
+    for key, val in hparam.items():
+        name += f'_{key}_{val[0]}'
+    vmm_methods[name] = {'estimator_kwargs': vmm_neural_kwargs,
+                         'hyperparams': hparam, }
+
+methods.update(vmm_methods)
+
+fgel_methods = {}
+for hparam in iterate_argument_combinations(fgel_hyperparams):
+    name = 'FGEL-neural'
+    for key, val in hparam.items():
+        name += f'_{key}_{val[0]}'
+    fgel_methods[name] = {'estimator_kwargs': fgel_neural_kwargs,
+                         'hyperparams': hparam, }
+
+methods.update(fgel_methods)
+
 
 
 future_methods = {
@@ -405,4 +438,4 @@ future_methods = {
 
 
 if __name__ == '__main__':
-    print(kmm_methods)
+    print(fgel_methods)

@@ -34,13 +34,13 @@ def import_estimator(estimation_method):
     elif estimation_method == 'VMM-kernel':
         from cmr.methods.vmm_kernel import KernelVMM
         estimator_class = KernelVMM
-    elif estimation_method == 'VMM-neural':
+    elif 'VMM-neural' in estimation_method:
         from cmr.methods.vmm_neural import NeuralVMM
         estimator_class = NeuralVMM
     elif estimation_method == 'FGEL-kernel':
         from cmr.methods.fgel_kernel import KernelFGEL
         estimator_class = KernelFGEL
-    elif estimation_method == 'FGEL-neural':
+    elif 'FGEL-neural' in estimation_method:
         from cmr.methods.fgel_neural import NeuralFGEL
         estimator_class = NeuralFGEL
     elif estimation_method == 'KMM-kernel':

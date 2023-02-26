@@ -33,11 +33,11 @@ experiments = [
     #                      'method': experiment_setups['heteroskedastic_three']["methods"],
     #                      'rollouts': [50], }),
     #
-    # ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
-    #                 'method': experiment_setups['network_iv']["methods"],
-    #                 'rollouts': [experiment_setups['network_iv']['rollouts']],
-    #                 'exp_option': ['abs', 'step', 'sin', 'linear']}),
-    #
+    ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
+                    'method': experiment_setups['network_iv']["methods"],
+                    'rollouts': [experiment_setups['network_iv']['rollouts']],
+                    'exp_option': ['abs', 'step', 'sin', 'linear']}),
+
     # ('network_iv_large', {'n_train': experiment_setups['network_iv_large']['n_train'],
     #                 'method': experiment_setups['network_iv_large']["methods"],
     #                 'rollouts': [experiment_setups['network_iv_large']['rollouts']],
@@ -98,12 +98,12 @@ for experiment in experiments:
         runline = f'python3 {path}/run_experiment.py --experiment {experiment}'
         filename = experiment
 
+        if no_overwrite:
+            runline += ' --no_overwrite'
+
         for arg, param_value in settings.items():
             runline += f' --{arg} {param_value}'
             filename += f'_{arg}_{param_value}'
-
-        if no_overwrite:
-            runline += ' --no_overwrite'
 
         os.makedirs(f'{path}/cluster/jobs_{experiment}', exist_ok=True)
         with open(f'{path}/cluster/jobs_{experiment}/'+filename+'.sh', 'w') as shfile:
