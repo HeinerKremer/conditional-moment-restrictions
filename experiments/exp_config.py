@@ -7,9 +7,9 @@ from experiments.exp_network_iv import NetworkIVExperiment
 from experiments.exp_poisson_estimation import PoissonExperiment
 
 
-methods = ['OLS', 'SMD', 'MMR', 'DeepIV'] + list(kmm_methods.keys()) + list(fgel_methods.keys()) + list(vmm_methods.keys())
-           #'KMM-FB-kl', 'KMM-RF-0x-ref-kl', 'KMM-RF-0.5x-ref-kl', 'KMM-RF-1x-ref-kl', 'KMM-RF-2x-ref-kl',
-           #'KMM-RF-0x-ref-log', 'KMM-RF-0.5x-ref-log', 'KMM-RF-1x-ref-log', 'KMM-RF-2x-ref-log']
+methods = list(kmm_methods.keys())
+    # ['OLS', 'SMD', 'MMR', 'DeepIV'] + list(kmm_methods.keys()) + list(fgel_methods.keys()) + list(vmm_methods.keys())
+
 
 experiment_setups = {
     # 'off_policy_evaluation':

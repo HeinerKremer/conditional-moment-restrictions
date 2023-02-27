@@ -31,6 +31,7 @@ class KMM(GeneralizedEL):
         self.kde_bw = kwargs["kde_bandwidth"]
         self.annealing = kwargs["annealing"]
         self.rkhs_func_z_dependent = kwargs["rkhs_func_z_dependent"]
+        self.rkhs_reg_param = kwargs["rkhs_reg_param"]
 
         self.kernel_x = None
 
@@ -121,6 +122,9 @@ class KMM(GeneralizedEL):
         z_total = torch.concat((z, z_sampled), dim=0)
         return [t_total, y_total], z_total
 
+    # def plot_rkhs_func(self):
+    #
+
     #
     #
     # def _get_samples(self, x, z):
@@ -188,7 +192,7 @@ class KMM(GeneralizedEL):
         conj_div_arg = (rkhs_func_reference + self.dual_normalization.params
                         - torch.sum(self._eval_dual_moment_func(z_ref) * self.moment_function(x_ref),
                                     dim=1, keepdim=True))
-        objective = (torch.mean(rkhs_func_empirical) + self.dual_normalization.params - 1 / 2 * self.rkhs_norm_sq()
+        objective = (torch.mean(rkhs_func_empirical) + self.dual_normalization.params - 1 / 2 * self.rkhs_reg_param * self.rkhs_norm_sq()
                      - self.entropy_reg_param * torch.mean(self.conj_divergence(1 / self.entropy_reg_param * conj_div_arg)))
         return objective, -objective
 

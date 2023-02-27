@@ -24,7 +24,7 @@ experiments = [
                       'method': experiment_setups['bennet_hetero']["methods"],
                       'rollouts': [experiment_setups['bennet_hetero']['rollouts']],
                       }),
-    #
+    # #
     # ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
     #                      'method': experiment_setups['heteroskedastic_one']["methods"],
     #                      'rollouts': [50],}),
@@ -36,7 +36,7 @@ experiments = [
     # ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
     #                 'method': experiment_setups['network_iv']["methods"],
     #                 'rollouts': [experiment_setups['network_iv']['rollouts']],
-    #                 'exp_option': ['abs', 'step', 'sin', 'linear']}),
+    #                 'exp_option': ['abs', 'step', 'sin']}),
 
     # ('network_iv_large', {'n_train': experiment_setups['network_iv_large']['n_train'],
     #                 'method': experiment_setups['network_iv_large']["methods"],
