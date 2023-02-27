@@ -378,6 +378,26 @@ for hparam in iterate_argument_combinations(kmm_hyperparams):
 methods.update(kmm_methods)
 
 
+kmm_representer_hyperparams = {
+    "batch_size": [None],
+    "n_random_features": [None],
+    "entropy_reg_param": [1e-1, 1, 1e1, 1e2],
+    "reg_param": [1e-2, 1e-1, 1e0, 1e1],
+    "rkhs_reg_param": [1e-6, 1e-4, 1e-3, 1e-2, 1e-1],
+    "val_loss_func": ['mmr', 'moment_violation'],
+}
+
+kmm_representer_methods = {}
+for hparam in iterate_argument_combinations(kmm_representer_hyperparams):
+    name = 'KMM'
+    for key, val in hparam.items():
+        name += f'_{key}_{val[0]}'
+    kmm_representer_methods[name] = {'estimator_kwargs': kmm_neural_kwargs,
+                                     'hyperparams': hparam, }
+
+methods.update(kmm_representer_methods)
+
+
 vmm_hyperparams = {"reg_param": [0, 1e-4, 1e-2, 1e0, 1e1],
                    "val_loss_func": ['mmr', 'moment_violation'], }
 

@@ -1,4 +1,4 @@
-from cmr.default_config import kmm_methods, fgel_methods, vmm_methods
+from cmr.default_config import kmm_methods, fgel_methods, vmm_methods, kmm_representer_methods
 from experiments.exp_bennett_heteroskedastic_iv import HeteroskedasticIVScenario
 from experiments.exp_bennett_multi import MultiOutputIVScenario
 from experiments.exp_bennett_simple_iv import SimpleIVScenario
@@ -7,7 +7,7 @@ from experiments.exp_network_iv import NetworkIVExperiment
 from experiments.exp_poisson_estimation import PoissonExperiment
 
 
-methods = list(kmm_methods.keys())
+methods = list(kmm_representer_methods.keys()) #list(kmm_methods.keys())
     # ['OLS', 'SMD', 'MMR', 'DeepIV'] + list(kmm_methods.keys()) + list(fgel_methods.keys()) + list(vmm_methods.keys())
 
 
