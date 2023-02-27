@@ -138,4 +138,5 @@ experiments/.DS_Store
 results/*
 cluster
 kmm_env
+val_losses.pdf
 
