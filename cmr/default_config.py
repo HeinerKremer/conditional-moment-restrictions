@@ -33,6 +33,7 @@ kmm_kwargs = {
     "pretrain": True,
     "rkhs_func_z_dependent": True,
     "rkhs_reg_param": 1.0,
+    "t_as_instrument": False,
     "val_loss_func": 'moment_violation',
     "gpu": False,
 
@@ -345,12 +346,14 @@ experimental_methods = {
         },
 }
 
-kmm_hyperparams = {"n_reference_samples": [0, 200], # [0, 100, 200, 400],
-                   "entropy_reg_param": [1e-1, 1, 1e1, 1e2],
-                   "reg_param": [1e-2, 1e-1, 1e0, 1e1],
-                   "kde_bw": [0.1], # [0.1, 1],
+kmm_hyperparams = {"n_reference_samples": [0, 100, 200], # [0, 100, 200, 400],
+                   "entropy_reg_param": [1e-1, 1, 1e1],
+                   "reg_param": [1e-1, 1e0, 1e1],
+                   "kde_bw": [0.1, 1.0], # [0.1, 1],
                    "n_random_features": [10000],    # [5000, 10000],
-                   "rkhs_reg_param": [1e-6, 1e-4, 1e-3, 1e-2, 1e-1],
+                   # "rkhs_reg_param": [1e-6, 1e-3, 1e-2, 1e-1, 1e0],
+                   "rkhs_func_z_dependent": [False],
+                   "t_as_instrument": [True],
                    # "divergence": ['kl', 'log'],
                    # "rkhs_func_z_dependent": [True, False],
                    "val_loss_func": ['mmr', 'moment_violation'],
@@ -383,7 +386,7 @@ kmm_representer_hyperparams = {
     "n_random_features": [None],
     "entropy_reg_param": [1e-1, 1, 1e1, 1e2],
     "reg_param": [1e-2, 1e-1, 1e0, 1e1],
-    "rkhs_reg_param": [1e-6, 1e-4, 1e-3, 1e-2, 1e-1],
+    "rkhs_reg_param": [1e-6, 1e-4, 1e-3, 1e-2, 1e-1, 1e0],
     "val_loss_func": ['mmr', 'moment_violation'],
 }
 
@@ -460,4 +463,4 @@ future_methods = {
 
 
 if __name__ == '__main__':
-    print(kmm_methods)
+    print(kmm_representer_methods)

@@ -67,8 +67,8 @@ class HeteroskedasticNoiseExperiment(AbstractExperiment):
         y_pred = model.forward(np_to_tensor(data['t'])).detach()
         return float(((y_test - y_pred) ** 2).detach().cpu().numpy().mean())
 
-    def validation_loss(self, model, val_data):
-        return self.eval_risk(model, val_data)
+    # def validation_loss(self, model, val_data):
+    #     return self.eval_risk(model, val_data)
 
 
 if __name__ == '__main__':

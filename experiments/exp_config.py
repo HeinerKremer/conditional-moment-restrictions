@@ -7,7 +7,8 @@ from experiments.exp_network_iv import NetworkIVExperiment
 from experiments.exp_poisson_estimation import PoissonExperiment
 
 
-methods = list(kmm_representer_methods.keys()) #list(kmm_methods.keys())
+methods = ['OLS', 'SMD', 'MMR', 'DeepIV'] + list(kmm_methods.keys()) + list(fgel_methods.keys()) + list(vmm_methods.keys()) # + list(kmm_representer_methods.keys())
+    #list(kmm_representer_methods.keys()) #list(kmm_methods.keys())
     # ['OLS', 'SMD', 'MMR', 'DeepIV'] + list(kmm_methods.keys()) + list(fgel_methods.keys()) + list(vmm_methods.keys())
 
 
@@ -60,7 +61,7 @@ experiment_setups = {
                         # 'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log',
                         # #'KernelELKernel-chi2', 'KernelELKernel-kl', 'KernelELKernel-log'
                         # ],
-            'rollouts': 50,
+            'rollouts': 10,
         },
 
     'heteroskedastic_three':
@@ -95,6 +96,18 @@ experiment_setups = {
             'exp_class': NetworkIVExperiment,
             'exp_params': {'ftype': ['abs', 'step', 'sin']},
             'n_train': [2000],
+            # 'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM',
+            #             'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log', 'RFKernelELNeural-MB',
+            #             'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],
+            'methods': methods,
+            'rollouts': 10,
+        },
+
+    'network_iv_small':
+        {
+            'exp_class': NetworkIVExperiment,
+            'exp_params': {'ftype': ['abs', 'step', 'sin']},
+            'n_train': [400],
             # 'methods': ['OLS', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM',
             #             'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log', 'RFKernelELNeural-MB',
             #             'KernelELNeural-chi2', 'KernelELNeural-kl', 'KernelELNeural-log'],

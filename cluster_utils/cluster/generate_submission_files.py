@@ -3,8 +3,8 @@ import os
 from run_experiment import experiment_setups
 
 # ---------------- Cluster resources
-cpus = 16
-memory = 64000
+cpus = 8
+memory = 32000
 bid = 12
 kmm_on_gpu = False
 no_overwrite = True
@@ -25,18 +25,23 @@ experiments = [
     #                   'rollouts': [experiment_setups['bennet_hetero']['rollouts']],
     #                   }),
     # #
-    # ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
-    #                      'method': experiment_setups['heteroskedastic_one']["methods"],
-    #                      'rollouts': [50],}),
+    ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
+                         'method': experiment_setups['heteroskedastic_one']["methods"],
+                         'rollouts': [10],}),
 
     # ('heteroskedastic_three', {'n_train': experiment_setups['heteroskedastic_three']['n_train'],
     #                      'method': experiment_setups['heteroskedastic_three']["methods"],
     #                      'rollouts': [50], }),
     #
-    ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
-                    'method': experiment_setups['network_iv']["methods"],
-                    'rollouts': [experiment_setups['network_iv']['rollouts']],
-                    'exp_option': ['abs', 'step', 'sin']}),
+    # ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
+    #                 'method': experiment_setups['network_iv']["methods"],
+    #                 'rollouts': [experiment_setups['network_iv']['rollouts']],
+    #                 'exp_option': ['abs', 'step', 'sin']}),
+
+    # ('network_iv_small', {'n_train': experiment_setups['network_iv_small']['n_train'],
+    #                 'method': experiment_setups['network_iv_small']["methods"],
+    #                 'rollouts': [experiment_setups['network_iv_small']['rollouts']],
+    #                 'exp_option': ['abs', 'step', 'sin']}),
 
     # ('network_iv_large', {'n_train': experiment_setups['network_iv_large']['n_train'],
     #                 'method': experiment_setups['network_iv_large']["methods"],
@@ -86,6 +91,7 @@ def iterate_argument_combinations(argument_dict):
 
 
 # ------ Generate experiment scripts, bash and sub files -----
+counter = 0
 for experiment in experiments:
     sh_filenames = []
 
@@ -128,7 +134,9 @@ for experiment in experiments:
                           + f'request_cpus = {cpus}\n'
                           + f'request_memory = {memory}\n'
                           + additional_requirements
+                          + "max_materialize = 2000\n"
                           + f'queue')
+        counter += 1
 
 
     sub_file_experiment = f'submit_jobs_{experiment}.sh'
@@ -148,3 +156,5 @@ with open(f'{path}/cluster/submit_experiments.sh', 'w') as shfile:
 
 st = os.stat(f'{path}/cluster/submit_experiments.sh')
 os.chmod(f'{path}/cluster/submit_experiments.sh', st.st_mode | 0o111)
+
+print(f'Generated files for {counter} jobs.')

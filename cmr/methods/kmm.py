@@ -32,6 +32,7 @@ class KMM(GeneralizedEL):
         self.annealing = kwargs["annealing"]
         self.rkhs_func_z_dependent = kwargs["rkhs_func_z_dependent"]
         self.rkhs_reg_param = kwargs["rkhs_reg_param"]
+        self.t_as_instrument = kwargs["t_as_instrument"]
 
         self.kernel_x = None
 
@@ -113,7 +114,10 @@ class KMM(GeneralizedEL):
         xz_sampled = self.kde.sample(n_samples=self.n_reference_samples)
         t_sampled = np_to_tensor(xz_sampled[:, :self.dim_t])
         y_sampled = np_to_tensor(xz_sampled[:, self.dim_t:(self.dim_t + self.dim_y)])
-        z_sampled = np_to_tensor(xz_sampled[:, (self.dim_t + self.dim_y):])
+        if self.t_as_instrument:
+            z_sampled = t_sampled
+        else:
+            z_sampled = np_to_tensor(xz_sampled[:, (self.dim_t + self.dim_y):])
 
         t_sampled, y_sampled, z_sampled = t_sampled.to(self.device), y_sampled.to(self.device), z_sampled.to(self.device)
 

@@ -23,7 +23,7 @@ def run_experiment(experiment, exp_params, n_train, estimation_method, estimator
     torch.random.manual_seed(seed0+1)
 
     exp = experiment(**exp_params)
-    exp.prepare_dataset(n_train=n_train, n_val=n_train, n_test=20000)
+    exp.prepare_dataset(n_train=n_train, n_val=max(n_train, 1000), n_test=20000)
 
     trained_model, full_results = estimation(model=exp.get_model(),
                                              train_data=exp.train_data,
