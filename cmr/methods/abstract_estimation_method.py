@@ -1,7 +1,7 @@
 import functools
 
-from cmr.utils.rkhs_utils import get_rbf_kernel, compute_cholesky_factor
-from cmr.utils.torch_utils import np_to_tensor, to_device
+from cmr.utils.rkhs_utils import get_rbf_kernel, compute_cholesky_factor, get_sigma_median_heuristic, hsic
+from cmr.utils.torch_utils import np_to_tensor, to_device, tensor_to_np
 import numpy as np
 import torch
 import torch.nn as nn
@@ -115,12 +115,20 @@ class AbstractEstimationMethod:
             self.kernel_z, _ = get_rbf_kernel(z, z, **self.kernel_z_kwargs)
             self.kernel_z = self.kernel_z.type(torch.float32)
             self.kernel_z_cholesky = torch.tensor(np.transpose(compute_cholesky_factor(self.kernel_z.detach().numpy())))
-        if z_val is not None:
+        if self.kernel_z_val is None and z_val is not None:
             self.kernel_z_val, _ = get_rbf_kernel(z_val, z_val, **self.kernel_z_kwargs)
+
+    def _calc_val_hsic(self, x_val, z_val):
+        assert z_val is not None, 'MMR cannot be used as validation loss without specifying instrument data `z`.'
+        max_num_val_data = 4001
+        self._set_kernel_z(z_val=z_val[:max_num_val_data])
+        residue = self.model(x_val[0][:max_num_val_data]) - x_val[1][:max_num_val_data]
+        kernel_residue, _ = get_rbf_kernel(residue, residue)
+        return float(hsic(kernel_matrix_x=kernel_residue, kernel_matrix_y=self.kernel_z_val).detach().cpu().numpy()) * 100
 
     def _calc_val_mmr(self, x_val, z_val):
         assert z_val is not None, 'MMR cannot be used as validation loss without specifying instrument data `z`.'
-        max_num_val_data = 5000
+        max_num_val_data = 4001
         self._set_kernel_z(z_val=z_val[:max_num_val_data])
         psi = self.moment_function([x_val[0][:max_num_val_data], x_val[1][:max_num_val_data]])
         loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z_val, psi) / (z_val[:max_num_val_data].shape[0] ** 2)
@@ -141,7 +149,7 @@ class AbstractEstimationMethod:
         #         loss = torch.einsum('ir, ij, jr -> ', psi, self.kernel_z_val, psi) / (n ** 2)
         #         val_loss_list.append(loss.detach().cpu().numpy())
         #     loss = np.mean(val_loss_list)
-        return float(loss)
+        return float(loss.detach().cpu().numpy())
 
     def _calc_val_moment_violation(self, x_val, z_val=None):
         psi = self.moment_function(x_val)
@@ -155,6 +163,8 @@ class AbstractEstimationMethod:
             return self._calc_val_mmr(x_val, z_val)
         elif self._val_loss_func == 'moment_violation':
             return self._calc_val_moment_violation(x_val, z_val)
+        elif self._val_loss_func == 'hsic':
+            return self._calc_val_hsic(x_val, z_val)
         elif not isinstance(self._val_loss_func, str):
             val_data = {'t': x_val[0], 'y': x_val[1], 'z': z_val}
             return self._val_loss_func(self.model, val_data)

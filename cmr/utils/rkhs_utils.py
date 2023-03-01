@@ -69,3 +69,32 @@ def get_rbf_kernel(x_1, x_2=None, sigma=None, numpy=False):
     if numpy:
         kernel_zz = kernel_zz.detach().numpy()
     return kernel_zz, sigma
+
+
+def get_sigma_median_heuristic(x, numpy=False):
+    if numpy:
+        sq_dist = calc_sq_dist(x, x, numpy=False)
+        sigma = np.median(sq_dist.flatten()) ** 0.5
+    else:
+        sq_dist = calc_sq_dist(x, x, numpy=False)
+        sigma = torch.median(sq_dist) ** 0.5
+    return sigma
+
+
+# HSIC stuff
+def pairwise_distances(x):
+    # x should be two dimensional
+    instances_norm = torch.sum(x**2, -1).reshape((-1, 1))
+    return -2 * torch.mm(x, x.t()) + instances_norm + instances_norm.t()
+
+
+def gaussian_kernel_matrix(x, sigma=1):
+    pairwise_distances_ = pairwise_distances(x)
+    return torch.exp(-pairwise_distances_ / sigma)
+
+
+def hsic(kernel_matrix_x, kernel_matrix_y):
+    m = kernel_matrix_x.shape[0]   # batch size
+    centering_matrix = torch.eye(m) - 1.0/m * torch.ones((m, m))
+    hsic_ = torch.trace(torch.mm(kernel_matrix_y, torch.mm(centering_matrix, torch.mm(kernel_matrix_x, centering_matrix)))) / ((m-1)**2)
+    return hsic_

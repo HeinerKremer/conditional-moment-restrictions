@@ -3,8 +3,8 @@ import os
 from run_experiment import experiment_setups
 
 # ---------------- Cluster resources
-cpus = 8
-memory = 32000
+cpus = 12
+memory = 48000
 bid = 12
 kmm_on_gpu = False
 no_overwrite = True
@@ -20,14 +20,14 @@ experiments = [
     #                   'method': experiment_setups['bennet_simple']["methods"],
     #                   'rollouts': [experiment_setups['bennet_simple']['rollouts']],
     #                   }),
-    # ('bennet_hetero', {'n_train': experiment_setups['bennet_hetero']['n_train'],
-    #                   'method': experiment_setups['bennet_hetero']["methods"],
-    #                   'rollouts': [experiment_setups['bennet_hetero']['rollouts']],
-    #                   }),
+    ('bennet_hetero', {'n_train': experiment_setups['bennet_hetero']['n_train'],
+                      'method': experiment_setups['bennet_hetero']["methods"],
+                      'rollouts': [experiment_setups['bennet_hetero']['rollouts']],
+                      }),
     # #
-    ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
-                         'method': experiment_setups['heteroskedastic_one']["methods"],
-                         'rollouts': [10],}),
+    # ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
+    #                      'method': experiment_setups['heteroskedastic_one']["methods"],
+    #                      'rollouts': [10],}),
 
     # ('heteroskedastic_three', {'n_train': experiment_setups['heteroskedastic_three']['n_train'],
     #                      'method': experiment_setups['heteroskedastic_three']["methods"],

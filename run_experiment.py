@@ -150,10 +150,10 @@ if __name__ == "__main__":
     parser.add_argument('--run_parallel', action='store_true')
     parser.add_argument('--no_overwrite', action='store_true')
     parser.add_argument('--no_sweep', action='store_true')
-    parser.add_argument('--experiment', type=str, default='bennet_hetero')
+    parser.add_argument('--experiment', type=str, default='network_iv_sin')
     parser.add_argument('--exp_option', default=None)  # TODO: Try to fix this since it should be a dict; H: Can just name the different exp versions [1,2,3,4] or something
-    parser.add_argument('--n_train', type=int, default=200)
-    parser.add_argument('--method', type=str, default='KMM_n_reference_samples_0_entropy_reg_param_1_reg_param_0.0001_kde_bw_0.1_divergence_log_rkhs_func_z_dependent_True_val_loss_func_moment_violation')
+    parser.add_argument('--n_train', type=int, default=1000)
+    parser.add_argument('--method', type=str, default='VMM-neural')
     parser.add_argument('--method_option', default=None)
     parser.add_argument('--rollouts', type=int, default=1)
     parser.add_argument('--run_dir', type=str, default='')
