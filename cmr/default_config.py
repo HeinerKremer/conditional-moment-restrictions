@@ -1,5 +1,7 @@
 import copy
 
+import numpy as np
+
 """Default configurations and hyperparameter search spaces for all methods"""
 
 
@@ -346,17 +348,19 @@ experimental_methods = {
         },
 }
 
-kmm_hyperparams = {"n_reference_samples": [0, 100, 200, 400], # [0, 100, 200, 400],
-                   "entropy_reg_param": [1, 1e1, 1e2],
-                   "reg_param": [1e-1, 1e0, 1e1],
-                   "kde_bw": [0.1, 1.0], # [0.1, 1],
+kmm_hyperparams = {"n_reference_samples": [0, 200], # [0, 100, 200, 400],
+                   "entropy_reg_param": [1],
+                   "reg_param": [1],
+                   "kde_bw": [0.1],  # [0.1, 1],
                    "n_random_features": [10000],    # [5000, 10000],
-                   # "rkhs_reg_param": [1e-6, 1e-3, 1e-2, 1e-1, 1e0],
-                   # "rkhs_func_z_dependent": [False],
-                   # "t_as_instrument": [True],
-                   # "divergence": ['kl', 'log'],
-                   # "rkhs_func_z_dependent": [True, False],
-                   "val_loss_func": ['mmr', 'moment_violation', 'hsic'],
+                   # "val_loss_func": ['mmr', 'moment_violation', 'hsic'],
+                   'theta_lr': [5e-4, 1e-4, 5e-5],
+                   'dual_lr': [5*5e-4, 5e-4, 1e-4, 5e-5],
+                   'batch_size': [200, 1000],
+                   'max_num_epochs': [3],
+                   # "theta_optim_args": [{"optimizer": "oadam_gda", "lr": 5e-4}],
+                   # "dual_optim_args": [{"optimizer": "oadam_gda", "lr": 5 * 5e-4}],
+                   "max_no_improve": [np.inf],
                    }
 
 
@@ -370,12 +374,25 @@ def iterate_argument_combinations(argument_dict):
         yield {key: [val] for key, val in zip(list(argument_dict.keys()), prod)}
 
 
+# kmm_methods = {}
+# for hparam in iterate_argument_combinations(kmm_hyperparams):
+#     name = 'KMM'
+#     for key, val in hparam.items():
+#         name += f'_{key}_{val[0]}'
+#     kmm_methods[name] = {'estimator_kwargs': kmm_neural_kwargs,
+#                          'hyperparams': hparam, }
+
+# FOR OPTIMIZATION TUNING ONLY
 kmm_methods = {}
-for hparam in iterate_argument_combinations(kmm_hyperparams):
+for config_id, hparam in enumerate(iterate_argument_combinations(kmm_hyperparams)):
     name = 'KMM'
     for key, val in hparam.items():
         name += f'_{key}_{val[0]}'
-    kmm_methods[name] = {'estimator_kwargs': kmm_neural_kwargs,
+    estimator_kwargs = copy.deepcopy(kmm_neural_kwargs)
+    estimator_kwargs.update({"theta_optim_args": {"optimizer": "oadam_gda", "lr": hparam['theta_lr'][0]},
+                            "dual_optim_args": {"optimizer": "oadam_gda", "lr": hparam['dual_lr'][0]},})
+    hparam['config'] = [config_id]
+    kmm_methods[name] = {'estimator_kwargs': estimator_kwargs,
                          'hyperparams': hparam, }
 
 methods.update(kmm_methods)
@@ -463,4 +480,4 @@ future_methods = {
 
 
 if __name__ == '__main__':
-    print(kmm_representer_methods)
+    print(kmm_methods)

@@ -7,7 +7,7 @@ from experiments.exp_network_iv import NetworkIVExperiment
 from experiments.exp_poisson_estimation import PoissonExperiment
 
 
-methods = ['OLS', 'SMD', 'MMR', 'DeepIV'] + list(kmm_methods.keys()) + list(fgel_methods.keys()) + list(vmm_methods.keys()) # + list(kmm_representer_methods.keys())
+methods = list(kmm_methods.keys()) # ['OLS', 'SMD', 'MMR', 'DeepIV'] + list(kmm_methods.keys()) + list(fgel_methods.keys()) + list(vmm_methods.keys()) # + list(kmm_representer_methods.keys())
     #list(kmm_representer_methods.keys()) #list(kmm_methods.keys())
     # ['OLS', 'SMD', 'MMR', 'DeepIV'] + list(kmm_methods.keys()) + list(fgel_methods.keys()) + list(vmm_methods.keys())
 
@@ -140,6 +140,19 @@ experiment_setups = {
             'exp_class': HeteroskedasticIVScenario,
             'exp_params': {},
             'n_train': [2000, 4000, 10000],
+            'methods': methods,
+            # 'methods': ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
+            #             'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',
+            #             'KernelELNeural-kl', 'KernelELNeural-log',
+            #             'RFKernelELNeural-MB'],
+            'rollouts': 10,
+        },
+
+    'bennet_hetero_opt':
+        {
+            'exp_class': HeteroskedasticIVScenario,
+            'exp_params': {},
+            'n_train': [2000, 10000],
             'methods': methods,
             # 'methods': ['OLS', 'SMD', 'NeuralVMM', 'DeepIV',
             #             'NeuralFGEL-chi2', 'NeuralFGEL-kl', 'NeuralFGEL-log',

@@ -20,9 +20,11 @@ experiments = [
     #                   'method': experiment_setups['bennet_simple']["methods"],
     #                   'rollouts': [experiment_setups['bennet_simple']['rollouts']],
     #                   }),
-    ('bennet_hetero', {'n_train': experiment_setups['bennet_hetero']['n_train'],
-                      'method': experiment_setups['bennet_hetero']["methods"],
-                      'rollouts': [experiment_setups['bennet_hetero']['rollouts']],
+    ('bennet_hetero_opt', {'n_train': experiment_setups['bennet_hetero_opt']['n_train'],
+                           'method': experiment_setups['bennet_hetero_opt']["methods"],
+                           'rollouts': [2],
+                           'seed0': [12345 + 2*i for i in range(5)]
+                       #[experiment_setups['bennet_hetero']['rollouts']],
                       }),
     # #
     # ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],

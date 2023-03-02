@@ -358,6 +358,9 @@ class GeneralizedEL(AbstractEstimationMethod):
 
         train_losses = []
         val_losses = []
+        val_moment = []
+        val_mmr = []
+        val_hsic = []
 
         min_val_loss = float("inf")
         time_0 = time.time()
@@ -384,6 +387,9 @@ class GeneralizedEL(AbstractEstimationMethod):
             if epoch_i % eval_freq_epochs == 0:
                 cycle_num += 1
                 val_loss = self.calc_validation_metric(x_val, z_val)
+                val_moment.append(self._calc_val_moment_violation(x_val, z_val))
+                val_mmr.append(self._calc_val_mmr(x_val, z_val))
+                val_hsic.append(self._calc_val_hsic(x_val, z_val))
                 if self.verbose:
                     last_obj = obj[-1] if isinstance(obj, list) else obj
                     print("epoch %d, theta-obj=%f, val-loss=%f"
@@ -410,6 +416,9 @@ class GeneralizedEL(AbstractEstimationMethod):
         print(f'Trained for {epoch_i} epochs.')
         self.train_stats['epochs'] = epoch_i
         self.train_stats['val_loss'] = val_losses
+        self.train_stats['val_moment'] = val_moment
+        self.train_stats['val_mmr'] = val_mmr
+        self.train_stats['val_hsic'] = val_hsic
 
 
 
