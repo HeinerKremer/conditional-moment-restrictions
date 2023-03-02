@@ -11,6 +11,7 @@ from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
 from cmr.utils.oadam import OAdam
 from cmr.utils.torch_utils import Parameter, BatchIter, OptimizationError, np_to_tensor
 from cmr.default_config import gel_kwargs
+from experiments.exp_bennett_heteroskedastic_iv import HeteroskedasticIVScenario
 
 cvx_solver = cvx.MOSEK
 
@@ -361,11 +362,14 @@ class GeneralizedEL(AbstractEstimationMethod):
         val_moment = []
         val_mmr = []
         val_hsic = []
+        val_risk = []
 
         min_val_loss = float("inf")
         time_0 = time.time()
         num_no_improve = 0
         cycle_num = 0
+
+        exp = HeteroskedasticIVScenario()
 
         for epoch_i in range(self.max_num_epochs):
             self.model.train()
@@ -390,6 +394,7 @@ class GeneralizedEL(AbstractEstimationMethod):
                 val_moment.append(self._calc_val_moment_violation(x_val, z_val))
                 val_mmr.append(self._calc_val_mmr(x_val, z_val))
                 val_hsic.append(self._calc_val_hsic(x_val, z_val))
+                val_risk.append(exp.eval_risk(self.model, {'t': x_val[0], 'y': x_val[1], 'z': z_val}))
                 if self.verbose:
                     last_obj = obj[-1] if isinstance(obj, list) else obj
                     print("epoch %d, theta-obj=%f, val-loss=%f"
@@ -419,7 +424,7 @@ class GeneralizedEL(AbstractEstimationMethod):
         self.train_stats['val_moment'] = val_moment
         self.train_stats['val_mmr'] = val_mmr
         self.train_stats['val_hsic'] = val_hsic
-
+        self.train_stats['bennett_val_risk'] = val_risk
 
 
 if __name__ == '__main__':
