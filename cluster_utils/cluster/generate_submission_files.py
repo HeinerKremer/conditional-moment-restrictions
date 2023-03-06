@@ -3,8 +3,8 @@ import os
 from run_experiment import experiment_setups
 
 # ---------------- Cluster resources
-cpus = 12
-memory = 48000
+cpus = 8
+memory = 32000
 bid = 12
 kmm_on_gpu = False
 no_overwrite = True
@@ -20,10 +20,10 @@ experiments = [
     #                   'method': experiment_setups['bennet_simple']["methods"],
     #                   'rollouts': [experiment_setups['bennet_simple']['rollouts']],
     #                   }),
-    ('bennet_hetero_opt', {'n_train': experiment_setups['bennet_hetero_opt']['n_train'],
-                           'method': experiment_setups['bennet_hetero_opt']["methods"],
-                           'rollouts': [2],
-                           'seed0': [12345 + 2*i for i in range(5)]
+    ('bennet_hetero_new', {'n_train': experiment_setups['bennet_hetero']['n_train'],
+                           'method': experiment_setups['bennet_hetero']["methods"],
+                           'rollouts': [1],
+                           'seed0': [12345 + i for i in range(10)]
                        #[experiment_setups['bennet_hetero']['rollouts']],
                       }),
     # #

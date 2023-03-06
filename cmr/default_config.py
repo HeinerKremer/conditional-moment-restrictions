@@ -41,12 +41,12 @@ kmm_kwargs = {
 
     # Optimization params
     "theta_optim_args": {"optimizer": "oadam_gda", "lr": 5e-4},
-    "dual_optim_args": {"optimizer": "oadam_gda", "lr": 5 * 5e-4},
-    "max_num_epochs": 30000,
+    "dual_optim_args": {"optimizer": "oadam_gda", "lr": 1e-4},
+    "max_num_epochs": 10000,
     "batch_size": 200,
     "eval_freq": 100,
-    "max_no_improve": 20,
-    "burn_in_cycles": 5,
+    "max_no_improve": 10,
+    "burn_in_cycles": 10,
 }
 
 kmm_kernel_kwargs = copy.deepcopy(kmm_kwargs)
@@ -348,19 +348,17 @@ experimental_methods = {
         },
 }
 
-kmm_hyperparams = {"n_reference_samples": [0, 200], # [0, 100, 200, 400],
-                   "entropy_reg_param": [1],
-                   "reg_param": [1],
-                   "kde_bw": [0.1],  # [0.1, 1],
+kmm_hyperparams = {"n_reference_samples": [0, 200, 400], # [0, 100, 200, 400],
+                   "entropy_reg_param": [1, 10, 100],
+                   "reg_param": [1e-1, 1, 10],
+                   "kde_bw": [0.1, 1],  # [0.1, 1],
                    "n_random_features": [10000],    # [5000, 10000],
-                   # "val_loss_func": ['mmr', 'moment_violation', 'hsic'],
-                   'theta_lr': [5e-4, 1e-4, 5e-5],
-                   'dual_lr': [5*5e-4, 5e-4, 1e-4, 5e-5],
-                   'batch_size': [200, 1000],
-                   'max_num_epochs': [30000],
-                   # "theta_optim_args": [{"optimizer": "oadam_gda", "lr": 5e-4}],
-                   # "dual_optim_args": [{"optimizer": "oadam_gda", "lr": 5 * 5e-4}],
-                   "max_no_improve": [np.inf],
+                   "val_loss_func": ['hsic'],
+                   'theta_lr': [5e-4],
+                   'dual_lr': [1e-4],
+                   'batch_size': [200],
+                   'max_num_epochs': [3],
+                   #"max_no_improve": [15],
                    }
 
 

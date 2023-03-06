@@ -353,9 +353,9 @@ class GeneralizedEL(AbstractEstimationMethod):
             n = x_train[0].shape[0]
             batch_iter = BatchIter(num=n, batch_size=self.batch_size)
             batches_per_epoch = np.ceil(n / self.batch_size)
-            eval_freq_epochs = np.ceil(self.eval_freq / batches_per_epoch)
-        else:
-            eval_freq_epochs = self.eval_freq
+        #     eval_freq_epochs = np.ceil(self.eval_freq / batches_per_epoch)
+        # else:
+        eval_freq_epochs = self.eval_freq
 
         train_losses = []
         val_losses = []
