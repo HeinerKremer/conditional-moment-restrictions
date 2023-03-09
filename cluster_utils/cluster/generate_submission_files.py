@@ -20,20 +20,22 @@ experiments = [
     #                   'method': experiment_setups['bennet_simple']["methods"],
     #                   'rollouts': [experiment_setups['bennet_simple']['rollouts']],
     #                   }),
-    ('bennet_hetero_new', {'n_train': experiment_setups['bennet_hetero']['n_train'],
+
+    ('network_iv', {'n_train': [2000],
+                    'method': experiment_setups['network_iv']["methods"],
+                    'rollouts': [1],
+                    'seed0': [12345 + i for i in range(10)],
+                    'exp_option': ['linear', 'abs', 'step', 'sin']}),
+
+    ('bennet_hetero_new', {'n_train': [2000, 4000],     # experiment_setups['bennet_hetero']['n_train'],
                            'method': experiment_setups['bennet_hetero']["methods"],
                            'rollouts': [1],
-                           'seed0': [12345 + i for i in range(10)]
-                       #[experiment_setups['bennet_hetero']['rollouts']],
+                           'seed0': [12345 + i for i in range(10)],
                       }),
     # #
     # ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
     #                      'method': experiment_setups['heteroskedastic_one']["methods"],
     #                      'rollouts': [10],}),
-
-    # ('heteroskedastic_three', {'n_train': experiment_setups['heteroskedastic_three']['n_train'],
-    #                      'method': experiment_setups['heteroskedastic_three']["methods"],
-    #                      'rollouts': [50], }),
     #
     # ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
     #                 'method': experiment_setups['network_iv']["methods"],
@@ -136,7 +138,7 @@ for experiment in experiments:
                           + f'request_cpus = {cpus}\n'
                           + f'request_memory = {memory}\n'
                           + additional_requirements
-                          + "max_materialize = 2000\n"
+                          + "max_materialize = 150\n"
                           + f'queue')
         counter += 1
 
