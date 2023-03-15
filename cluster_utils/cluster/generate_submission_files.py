@@ -25,7 +25,7 @@ experiments = [
                     'method': experiment_setups['network_iv']["methods"],
                     'rollouts': [1],
                     'seed0': [12345 + i for i in range(10)],
-                    'exp_option': ['linear', 'abs', 'step', 'sin']}),
+                    'exp_option': ['step', 'sin']}),
 
     # ('bennet_hetero_new', {'n_train': [2000, 4000],     # experiment_setups['bennet_hetero']['n_train'],
     #                        'method': experiment_setups['bennet_hetero']["methods"],
