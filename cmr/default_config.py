@@ -370,7 +370,7 @@ kmm_hyperparams = {"n_reference_samples": [0, 200, 400], # [0, 100, 200, 400],
                    'theta_lr': [5e-4, 1e-4, 5e-5],
                    # 'dual_lr': [1e-4],
                    # 'batch_size': [200],
-                   # 'max_num_epochs': [10000],
+                   'max_num_epochs': [15000],
                    # "max_no_improve": [5],
                    }
 

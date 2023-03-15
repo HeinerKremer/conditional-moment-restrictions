@@ -12,6 +12,7 @@ from cmr.utils.oadam import OAdam
 from cmr.utils.torch_utils import Parameter, BatchIter, OptimizationError, np_to_tensor
 from cmr.default_config import gel_kwargs
 from experiments.exp_bennett_heteroskedastic_iv import HeteroskedasticIVScenario
+from experiments.exp_network_iv import NetworkIVExperiment
 
 cvx_solver = cvx.MOSEK
 
@@ -369,7 +370,8 @@ class GeneralizedEL(AbstractEstimationMethod):
         num_no_improve = 0
         cycle_num = 0
 
-        exp = HeteroskedasticIVScenario()
+        # exp = HeteroskedasticIVScenario()
+        exp = NetworkIVExperiment()
 
         for epoch_i in range(self.max_num_epochs):
             self.model.train()
