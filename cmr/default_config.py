@@ -365,9 +365,9 @@ kmm_hyperparams = {"n_reference_samples": [0, 200, 400], # [0, 100, 200, 400],
                    "entropy_reg_param": [1, 10, 100],
                    "reg_param": [0.01, 0.1, 1],
                    # "kde_bandwidth": [0.1, 0.5, 1],  # [0.1, 1],
-                   # #"n_random_features": [10000],    # [5000, 10000],
+                   "n_random_features": [2000],    # [5000, 10000],
                    # #"val_loss_func": ['hsic'],
-                   # 'theta_lr': [5e-4],
+                   'theta_lr': [5e-4, 1e-4, 5e-5],
                    # 'dual_lr': [1e-4],
                    # 'batch_size': [200],
                    # 'max_num_epochs': [10000],
@@ -400,8 +400,8 @@ for config_id, hparam in enumerate(iterate_argument_combinations(kmm_hyperparams
     for key, val in hparam.items():
         name += f'_{key}_{val[0]}'
     estimator_kwargs = copy.deepcopy(kmm_neural_kwargs)
-    # estimator_kwargs.update({"theta_optim_args": {"optimizer": "oadam_gda", "lr": hparam['theta_lr'][0]},
-    #                         "dual_optim_args": {"optimizer": "oadam_gda", "lr": hparam['dual_lr'][0]},})
+    estimator_kwargs.update({"theta_optim_args": {"optimizer": "oadam_gda", "lr": hparam['theta_lr'][0]},})
+                            #"dual_optim_args": {"optimizer": "oadam_gda", "lr": hparam['dual_lr'][0]},})
     hparam['config'] = [config_id]
     kmm_methods[name] = {'estimator_kwargs': estimator_kwargs,
                          'hyperparams': hparam, }

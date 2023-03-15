@@ -27,11 +27,11 @@ experiments = [
                     'seed0': [12345 + i for i in range(10)],
                     'exp_option': ['linear', 'abs', 'step', 'sin']}),
 
-    ('bennet_hetero_new', {'n_train': [2000, 4000],     # experiment_setups['bennet_hetero']['n_train'],
-                           'method': experiment_setups['bennet_hetero']["methods"],
-                           'rollouts': [1],
-                           'seed0': [12345 + i for i in range(10)],
-                      }),
+    # ('bennet_hetero_new', {'n_train': [2000, 4000],     # experiment_setups['bennet_hetero']['n_train'],
+    #                        'method': experiment_setups['bennet_hetero']["methods"],
+    #                        'rollouts': [1],
+    #                        'seed0': [12345 + i for i in range(10)],
+    #                   }),
     # #
     # ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
     #                      'method': experiment_setups['heteroskedastic_one']["methods"],
