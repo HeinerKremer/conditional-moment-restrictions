@@ -361,13 +361,13 @@ experimental_methods = {
 #                    #"max_no_improve": [15],
 #                    }
 
-kmm_hyperparams = {"n_reference_samples": [0, 200, 400], # [0, 100, 200, 400],
-                   "entropy_reg_param": [1, 10, 100],
+kmm_hyperparams = {"n_reference_samples": [200],    # [0, 100, 200, 400],
+                   "entropy_reg_param": [1, 10],
                    "reg_param": [0.01, 0.1, 1],
                    # "kde_bandwidth": [0.1, 0.5, 1],  # [0.1, 1],
                    "n_random_features": [2000],    # [5000, 10000],
                    # #"val_loss_func": ['hsic'],
-                   'theta_lr': [5e-4, 1e-4, 5e-5],
+                   'theta_lr': [5e-4, 1e-4, 5e-5, 1e-5],
                    # 'dual_lr': [1e-4],
                    # 'batch_size': [200],
                    'max_num_epochs': [15000],

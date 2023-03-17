@@ -114,6 +114,15 @@ experiment_setups = {
             'rollouts': 10,
         },
 
+    'bennet_hetero_new2':
+        {
+            'exp_class': HeteroskedasticIVScenario,
+            'exp_params': {},
+            'n_train': [2000, 4000, 10000],
+            'methods': methods,
+            'rollouts': 10,
+        },
+
     'bennet_hetero_opt':
         {
             'exp_class': HeteroskedasticIVScenario,
