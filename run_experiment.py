@@ -7,6 +7,8 @@ import numpy as np
 import torch
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
+from threadpoolctl import threadpool_limits
+
 
 from cmr.default_config import methods
 from cmr.estimation import estimation
@@ -71,9 +73,10 @@ def run_parallel(experiment, exp_params, n_train, estimation_method, estimator_k
     sweep_hparams_list = [sweep_hparams] * repititions
     seeds = [seed0+i for i in range(repititions)]
 
-    with ProcessPoolExecutor(min(multiprocessing.cpu_count(), repititions)) as ex:
-        results = ex.map(run_experiment, experiment_list, exp_params_list, n_train_list, estimator_method_list,
-                         estimator_kwargs_list, hyperparams_list, sweep_hparams_list, seeds)
+    with threadpool_limits(limits=1, user_api="blas"):
+        with ProcessPoolExecutor(min(multiprocessing.cpu_count(), repititions)) as ex:
+            results = ex.map(run_experiment, experiment_list, exp_params_list, n_train_list, estimator_method_list,
+                             estimator_kwargs_list, hyperparams_list, sweep_hparams_list, seeds)
     return results
 
 
