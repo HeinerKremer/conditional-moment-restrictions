@@ -2,17 +2,20 @@ import numpy as np
 import torch
 
 from cmr.methods.fgel_neural import NeuralFGEL
+from cmr.default_config import vmm_neural_kwargs
 
 
 class NeuralVMM(NeuralFGEL):
-    def __init__(self, kernel_lambda=0, **kwargs):
+    def __init__(self, model, moment_function, verbose=0, **kwargs):
+        if type(self) == NeuralVMM:
+            vmm_neural_kwargs.update(kwargs)
+            kwargs = vmm_neural_kwargs
+        super().__init__(model=model, moment_function=moment_function, verbose=verbose, **kwargs)
+        self.kernel_lambda = kwargs["reg_param_rkhs_norm"]
 
-        super().__init__(divergence='off', **kwargs)
-        self.kernel_lambda = kernel_lambda
-
-    def objective(self, x, z, *args):
+    def _objective(self, x, z, *args, **kwargs):
         f_of_z = self.dual_moment_func(z)
-        m_vector = (self.model.psi(x) * f_of_z).sum(1)
+        m_vector = (self.moment_function(x) * f_of_z).sum(1)
         moment = m_vector.mean()
         ow_reg = 0.25 * (m_vector ** 2).mean()
         if self.kernel_lambda > 0:
@@ -25,8 +28,8 @@ class NeuralVMM(NeuralFGEL):
             k_reg = 2 * self.kernel_lambda * torch.cat(k_reg_list, dim=0).sum()
         else:
             k_reg = 0
-        if self.l2_lambda > 0:
-            l_reg = self.l2_lambda * (f_of_z ** 2).mean()
+        if self.reg_param > 0:
+            l_reg = self.reg_param * (f_of_z ** 2).mean()
         else:
             l_reg = 0
         return moment, -moment + ow_reg + k_reg + l_reg
@@ -34,4 +37,4 @@ class NeuralVMM(NeuralFGEL):
 
 if __name__ == "__main__":
     from experiments.tests import test_cmr_estimator
-    test_cmr_estimator(estimation_method='NeuralVMM', n_runs=2)
+    test_cmr_estimator(estimation_method='VMM-neural', n_runs=2)

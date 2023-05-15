@@ -6,24 +6,28 @@ import torch.nn as nn
 
 from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
 from cmr.utils.sieve_basis import MultiOutputPolynomialSplineBasis
-from cmr.utils.torch_utils import torch_softplus, BatchIter
+from cmr.utils.torch_utils import torch_softplus, BatchIter, tensor_to_np
 
 
 class SMDIdentity(AbstractEstimationMethod):
     # Implements SMD algorithm using LBFGS optimizer and identity omega
-    def __init__(self, model, num_knots=5, polyn_degree=2, **kwargs):
-        super().__init__(model=model, **kwargs)
-        self.basis = MultiOutputPolynomialSplineBasis(z_dim=self.model.dim_z, num_out=self.dim_psi,
-                                                      num_knots=num_knots, degree=polyn_degree)
+    def __init__(self, model, moment_function, num_knots=5, polyn_degree=2, **kwargs):
+        super().__init__(model=model, moment_function=moment_function, **kwargs)
+        self.num_knots = num_knots
+        self.polyn_degree = polyn_degree
+        self.basis = None
+
+    def init_estimator(self, x, z):
+        super().init_estimator(x, z)
+        self.basis = MultiOutputPolynomialSplineBasis(z_dim=self.dim_z, num_out=self.dim_psi,
+                                                      num_knots=self.num_knots, degree=self.polyn_degree)
 
     def _train_internal(self, x, z, x_val, z_val, debugging):
-        self.basis.setup(z)
-        f_z = self._calc_f_z(z)
+        self.basis.setup(tensor_to_np(z))
+        f_z = self._calc_f_z(tensor_to_np(z))
         n = x[0].shape[0]
-        x_tensor = self._to_tensor(x)
-        z_torch = self._to_tensor(z)
         omega_inv = np.ones((1, self.dim_psi)).repeat(n, 0)
-        self._fit_theta(x, x_tensor, z_torch, f_z, omega_inv)
+        self._fit_theta(x, f_z, omega_inv)
 
     def _calc_f_z(self, z):
         # compute basis expansion on instruments
@@ -31,8 +35,8 @@ class SMDIdentity(AbstractEstimationMethod):
         assert f_z.shape[2] == self.dim_psi
         return f_z
 
-    def _fit_theta(self, x, x_tensor, z_torch, f_z, omega_inv):
-        n = x[0].shape[0]
+    def _fit_theta(self, x_tensor, f_z, omega_inv):
+        n = x_tensor[0].shape[0]
 
         # first calculate weighting matrix w
         # f_f_m = (f_z @ f_z.transpose(0, 2, 1)).mean(0)
@@ -53,7 +57,7 @@ class SMDIdentity(AbstractEstimationMethod):
         # define loss and optimize
         def closure():
             optimizer.zero_grad()
-            psi = self.model.psi(x_tensor).view(n, self.dim_psi, 1)
+            psi = self.moment_function(x_tensor).view(n, self.dim_psi, 1)
             psi_f_z = torch.matmul(f_z_torch, psi).mean(0).squeeze(-1)
             loss = torch.matmul(w, psi_f_z).matmul(psi_f_z)
             loss.backward()
@@ -68,27 +72,25 @@ class SMDHomoskedastic(SMDIdentity):
                              num_knots=num_knots, polyn_degree=polyn_degree)
 
     def _train_internal(self, x, z, x_val, z_val, debugging):
-        self.basis.setup(z)
-        f_z = self._calc_f_z(z)
+        self.basis.setup(tensor_to_np(z))
+        f_z = self._calc_f_z(tensor_to_np(z))
         n = x[0].shape[0]
-        x_tensor = self._to_tensor(x)
-        z_torch = self._to_tensor(z)
 
         for iter_i in range(self.num_iter):
             if iter_i == 0:
                 var_inv = np.ones(self.dim_psi)
             else:
-                psi = self.model.psi(x_tensor).detach().numpy()
+                psi = self.moment_function(x).detach().numpy()
                 psi_residual = psi - psi.mean(0, keepdims=True)
                 var_inv = (psi_residual ** 2).mean(0) ** -1
             omega_inv = var_inv.reshape(1, self.dim_psi).repeat(n, 0)
-            self._fit_theta(x, x_tensor, z_torch, f_z, omega_inv)
+            self._fit_theta(x, f_z, omega_inv)
 
         if self.model.is_finite():
             return
         else:
             self.model.initialize()
-            SMDIdentity._train_internal(self, x, z, x_val, z_val)
+            SMDIdentity._train_internal(self, x, z, x_val, z_val, debugging)
 
 
 class FlexibleVarNetwork(nn.Module):
@@ -109,45 +111,43 @@ class FlexibleVarNetwork(nn.Module):
 
 
 class SMDHeteroskedastic(SMDIdentity):
-    def __init__(self, model, num_knots=5, polyn_degree=2, num_iter=2, **kwargs):
+    def __init__(self, model, moment_function, num_knots=5, polyn_degree=2, num_iter=2, **kwargs):
+        super().__init__(model=model, moment_function=moment_function,
+                         num_knots=num_knots, polyn_degree=polyn_degree, **kwargs)
         self.num_iter = num_iter
-        self.var_network = FlexibleVarNetwork(model.dim_z, model.dim_psi)
+        self.var_network = None
 
-        SMDIdentity.__init__(self, model=model,
-                             num_knots=num_knots, polyn_degree=polyn_degree, **kwargs)
+    def init_estimator(self, x, z):
+        super().init_estimator(x, z)
+        self.var_network = FlexibleVarNetwork(self.dim_z, self.dim_psi)
 
-    def _train_internal(self, x, z, x_val, z_val, debugging):
-        self.basis.setup(z)
-        f_z = self._calc_f_z(z)
-        n = x[0].shape[0]
-        x_tensor = self._to_tensor(x)
-        z_torch = self._to_tensor(z)
+    def _train_internal(self, x_train, z_train, x_val, z_val, debugging):
+        self.basis.setup(tensor_to_np(z_train))
+        f_z = self._calc_f_z(tensor_to_np(z_train))
+        n = x_train[0].shape[0]
 
         for iter_i in range(self.num_iter):
             if iter_i == 0:
                 omega_inv = np.ones((1, self.dim_psi)).repeat(n, 0)
             else:
-                psi = self.model.psi(x_tensor)
+                psi = self.moment_function(x_train)
                 targets = ((psi - psi.mean(0, keepdim=True)) ** 2).detach()
                 if z_val is not None:
-                    z_val_torch = self._to_tensor(z_val)
-                    x_val_torch = self._to_tensor(x_val)
-                    psi_dev = self.model.psi(x_val_torch)
+                    psi_dev = self.moment_function(x_val)
                     targets_dev = ((psi_dev - psi_dev.mean(0, keepdim=True)) ** 2).detach()
                 else:
-                    z_val_torch = None
                     targets_dev = None
-                self._fit_var_network(z_torch, targets, z_val=z_val_torch,
+                self._fit_var_network(z_train, targets, z_val=z_val,
                                       targets_dev=targets_dev)
-                omega_inv = (self.var_network(z_torch) ** -1).detach().numpy()
+                omega_inv = (self.var_network(z_train) ** -1).detach().numpy()
 
-            self._fit_theta(x, x_tensor, z_torch, f_z, omega_inv)
+            self._fit_theta(x_train, f_z, omega_inv)
 
         if self.model.is_finite():
             return
         else:
             self.model.initialize()
-            SMDIdentity._train_internal(self, x, z, x_val, z_val)
+            SMDIdentity._train_internal(self, x_train, z_train, x_val, z_val, debugging)
 
     def _fit_var_network(self, z, targets, z_val=None, targets_dev=None,
                          max_epochs=10000, batch_size=128, max_no_improve=20):

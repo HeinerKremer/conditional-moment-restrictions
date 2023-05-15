@@ -25,7 +25,7 @@ def add_to_arguments(arg_str, hyperparams, subfile):
         if hyperparams[arg_str]:
             subfile.write(' --' + arg_str)
         else:
-            subfile.write(' --not_' + arg_str)
+            subfile.write(' --no-' + arg_str)
     else:
         subfile.write(' --' + arg_str + ' {}'.format(hyperparams[arg_str]))
 

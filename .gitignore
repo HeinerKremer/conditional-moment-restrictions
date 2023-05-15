@@ -136,4 +136,7 @@ cluster_utils/cluster/*
 experiments/.DS_Store
 .DS_Store
 results/*
+cluster
+kmm_env
+val_losses.pdf
 

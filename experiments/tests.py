@@ -16,14 +16,16 @@ def test_mr_estimator(estimation_method, n_train=200, n_runs=10, hyperparams=Non
     mses = []
     for _ in range(n_runs):
         exp.prepare_dataset(n_train=n_train, n_val=n_train, n_test=20000)
-        model = exp.init_model()
+        model = exp.get_model()
         trained_model, stats = estimation(model=model,
                                           train_data=exp.train_data,
                                           moment_function=exp.moment_function,
                                           estimation_method=estimation_method,
                                           estimator_kwargs=None,
                                           hyperparams=hyperparams,
-                                          validation_data=exp.val_data, val_loss_func=exp.validation_loss,
+                                          validation_data=exp.val_data,
+                                          val_loss_func=exp.validation_loss if hasattr(exp, "validation_loss") else None,
+                                          sweep_hparams=False,
                                           verbose=True
                                           )
 
@@ -45,13 +47,15 @@ def test_cmr_estimator(estimation_method, n_train=200, n_runs=10, hyperparams=No
     mses = []
     for _ in range(n_runs):
         exp.prepare_dataset(n_train=n_train, n_val=n_train, n_test=20000)
-        model = exp.init_model()
+        model = exp.get_model()
         trained_model, stats = estimation(model=model,
                                           train_data=exp.train_data,
                                           moment_function=exp.moment_function,
                                           estimation_method=estimation_method,
                                           estimator_kwargs=None, hyperparams=hyperparams,
-                                          validation_data=exp.val_data, val_loss_func=exp.validation_loss,
+                                          validation_data=exp.val_data,
+                                          val_loss_func=exp.validation_loss if hasattr(exp, "validation_loss") else None,
+                                          sweep_hparams=False,
                                           verbose=True
                                           )
         thetas.append(float(np.squeeze(trained_model.get_parameters())))

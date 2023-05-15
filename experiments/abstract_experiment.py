@@ -15,12 +15,7 @@ class AbstractExperiment:
          parameters and the model we want to train is non-parametric or a NN"""
         return None
 
-    def validation_loss(self, model, val_data):
-        """If no validation loss func with signature `validation_loss(self, model, val_data) -> float` is defined the
-        # estimators automatically use MMR for conditional moment restrictions and \|psi\|^2 for unconditional MR"""
-        return None
-
-    def generate_data(self, num_data):
+    def generate_data(self, num_data, **kwargs):
         raise NotImplementedError
 
     def prepare_dataset(self, n_train, n_val=None, n_test=None):
@@ -31,5 +26,5 @@ class AbstractExperiment:
     def eval_risk(self, model, data):
         return 0
 
-    def init_model(self):
+    def get_model(self):
         raise NotImplementedError

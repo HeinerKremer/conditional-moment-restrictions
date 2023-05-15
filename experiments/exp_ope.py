@@ -143,7 +143,7 @@ class OffPolicyEvaluationExperiment(AbstractExperiment):
                         device='cpu')
         return pi_b, pi_t, env
 
-    def init_model(self):
+    def get_model(self):
         return DensityModel(self.s_dim, 1)
 
     def policy_log_ratio(self, s, a):
@@ -271,7 +271,7 @@ if __name__ == "__main__":
         for method in methods:
             test_risks = []
             for i in range(1):
-                model = exp.init_model()
+                model = exp.get_model()
                 try:
                     trained_model, stats = estimation(model=model,
                                                       train_data=exp.train_data,

@@ -7,13 +7,16 @@ import numpy as np
 import torch
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
+from threadpoolctl import threadpool_limits
 
+
+from cmr.default_config import methods
 from cmr.estimation import estimation
 from experiments.exp_config import experiment_setups
 
 
 def run_experiment(experiment, exp_params, n_train, estimation_method, estimator_kwargs=None,
-                   hyperparams=None, seed0=12345):
+                   hyperparams=None, sweep_hparams=True, seed0=12345):
     """
     Runs experiment with specified estimator and choice of hyperparams and returns the best model and the
     corresponding error measures.
@@ -22,15 +25,17 @@ def run_experiment(experiment, exp_params, n_train, estimation_method, estimator
     torch.random.manual_seed(seed0+1)
 
     exp = experiment(**exp_params)
-    exp.prepare_dataset(n_train=n_train, n_val=n_train, n_test=20000)
-    model = exp.init_model()
+    exp.prepare_dataset(n_train=n_train, n_val=max(n_train, 1000), n_test=20000)
 
-    trained_model, full_results = estimation(model=model,
+    trained_model, full_results = estimation(model=exp.get_model(),
                                              train_data=exp.train_data,
                                              moment_function=exp.moment_function,
                                              estimation_method=estimation_method,
-                                             estimator_kwargs=estimator_kwargs, hyperparams=hyperparams,
-                                             validation_data=exp.val_data, val_loss_func=exp.validation_loss,
+                                             estimator_kwargs=estimator_kwargs,
+                                             hyperparams=hyperparams,
+                                             sweep_hparams=sweep_hparams,
+                                             validation_data=exp.val_data,
+                                             val_loss_func=exp.validation_loss if hasattr(exp, 'validation_loss') else None,
                                              verbose=True)
 
     test_risks = []
@@ -57,23 +62,26 @@ def run_experiment(experiment, exp_params, n_train, estimation_method, estimator
     return result
 
 
-def run_parallel(experiment, exp_params, n_train, estimation_method, estimator_kwargs, hyperparams, repititions, seed0):
+def run_parallel(experiment, exp_params, n_train, estimation_method, estimator_kwargs, hyperparams, sweep_hparams,
+                 repititions, seed0):
     experiment_list = [copy.deepcopy(experiment) for _ in range(repititions)]
     exp_params_list = [copy.deepcopy(exp_params) for _ in range(repititions)]
     n_train_list = [copy.deepcopy(n_train) for _ in range(repititions)]
     estimator_method_list = [copy.deepcopy(estimation_method) for _ in range(repititions)]
     estimator_kwargs_list = [copy.deepcopy(estimator_kwargs) for _ in range(repititions)]
     hyperparams_list = [copy.deepcopy(hyperparams) for _ in range(repititions)]
+    sweep_hparams_list = [sweep_hparams] * repititions
     seeds = [seed0+i for i in range(repititions)]
 
-    with ProcessPoolExecutor(min(multiprocessing.cpu_count(), repititions)) as ex:
-        results = ex.map(run_experiment, experiment_list, exp_params_list, n_train_list, estimator_method_list,
-                         estimator_kwargs_list, hyperparams_list, seeds)
+    with threadpool_limits(limits=1, user_api="blas"):
+        with ProcessPoolExecutor(min(multiprocessing.cpu_count(), repititions)) as ex:
+            results = ex.map(run_experiment, experiment_list, exp_params_list, n_train_list, estimator_method_list,
+                             estimator_kwargs_list, hyperparams_list, sweep_hparams_list, seeds)
     return results
 
 
 def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, estimator_kwargs=None, hyperparams=None,
-                            repititions=2, seed0=12345, parallel=True, filename=None, exp_name=None,
+                            sweep_hparams=True, repititions=2, seed0=12345, parallel=True, filename=None, exp_name=None,
                             run_dir=None, overwrite=False):
     """
     Runs the same experiment `repititions` times and computes statistics.
@@ -91,27 +99,35 @@ def run_experiment_repeated(experiment, exp_params, n_train, estimation_method, 
             return result_dict
     except FileNotFoundError:
         if parallel:
+            estimator_kwargs["gpu"] = False
             results = run_parallel(experiment=experiment, exp_params=exp_params, n_train=n_train,
                                    estimation_method=estimation_method, estimator_kwargs=estimator_kwargs,
-                                   hyperparams=hyperparams, repititions=repititions, seed0=seed0)
+                                   hyperparams=hyperparams, sweep_hparams=sweep_hparams, repititions=repititions,
+                                   seed0=seed0)
             results = list(results)
         else:
-            print('Using sequential debugging mode.')
+            print(f'Using sequential debugging mode.')
             results = []
             for i in range(repititions):
                 stats = run_experiment(experiment=experiment, exp_params=exp_params, n_train=n_train,
                                        estimation_method=estimation_method, estimator_kwargs=estimator_kwargs,
-                                       hyperparams=hyperparams, seed0=seed0+i)
+                                       hyperparams=hyperparams, sweep_hparams=sweep_hparams, seed0=seed0+i)
                 results.append(stats)
 
+        estimator_kwargs_updated = copy.deepcopy(methods[estimation_method])
+        if estimator_kwargs_updated and estimator_kwargs:
+            estimator_kwargs_updated.update(estimator_kwargs)
+
         results_summarized = summarize_results(results)
-        result_dict = {"results_summarized": results_summarized, "results": results}
+        result_dict = {"results_summarized": results_summarized,
+                       "results": results,
+                       "training_config": estimator_kwargs_updated}
         if filename is not None:
             if exp_name is None:
                 exp_name = str(experiment.__name__)
             if run_dir != '':
                 run_dir = run_dir + '/'
-            prefix = f"results/{exp_name}/{run_dir}{exp_name}_method={estimation_method}_n={n_train}"
+            prefix = f"results/{exp_name}/{run_dir}{exp_name}_method={estimation_method}_n={n_train}_seed0={seed0}"
             os.makedirs(os.path.dirname(prefix), exist_ok=True)
             print('Filepath: ', prefix + str(filename) + ".json")
             with open(prefix + filename + ".json", "w") as fp:
@@ -135,14 +151,19 @@ def summarize_results(result_list):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--run_parallel', action='store_true')
-    parser.add_argument('--overwrite', action='store_true')
-    parser.add_argument('--experiment', type=str, default='heteroskedastic')
-    parser.add_argument('--exp_option', default=None)
-    parser.add_argument('--n_train', type=int, default=100)
-    parser.add_argument('--method', type=str, default='KernelELNeural')
+    parser.add_argument('--no_overwrite', action='store_true')
+    parser.add_argument('--no_sweep', action='store_true')
+    parser.add_argument('--experiment', type=str, default='network_iv_sin')
+    parser.add_argument('--exp_option', default=None)  # TODO: Try to fix this since it should be a dict; H: Can just name the different exp versions [1,2,3,4] or something
+    parser.add_argument('--n_train', type=int, default=1000)
+    parser.add_argument('--method', type=str, default='VMM-neural')
     parser.add_argument('--method_option', default=None)
-    parser.add_argument('--rollouts', type=int, default=2)
+    parser.add_argument('--rollouts', type=int, default=1)
     parser.add_argument('--run_dir', type=str, default='')
+    parser.add_argument('--seed0', type=int, default=12345)
+    # parser.add_argument('--bw', type=float, default=0.1)
+    # parser.add_argument('--n_samples', type=int, default=0)
+    # parser.add_argument('--f_div', type=str, default='kl')
 
     args = parser.parse_args()
 
@@ -153,16 +174,26 @@ if __name__ == "__main__":
         filename = '_' + args.exp_option
     else:
         filename = ''
+    # if "KMM" in args.method:
+    #     estimator_kwargs = {
+    #         'n_reference_samples': args.n_samples,
+    #         'kde_bw': args.bw,
+    #         'divergence': args.f_div,
+    #     }
+    # else:
+    #     estimator_kwargs = {}
+
     results = run_experiment_repeated(experiment=exp_info['exp_class'],
                                       exp_params=exp_info['exp_params'],
+                                      sweep_hparams=not args.no_sweep,
                                       n_train=args.n_train,
                                       estimation_method=args.method,
                                       repititions=args.rollouts,
+                                      seed0=args.seed0,
                                       parallel=args.run_parallel,
                                       filename=filename,
                                       exp_name=args.experiment,
                                       run_dir=args.run_dir,
-                                      overwrite=args.overwrite)
+                                      overwrite=not args.no_overwrite)
     print(results['results_summarized'])
-    # print('Nachher: ', int(np.random.randint(10000, size=(1,1))), int(torch.randint(high=10000, size=(1, 1)).detach().numpy()))
 

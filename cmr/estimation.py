@@ -2,18 +2,16 @@ import copy
 
 import numpy as np
 import torch
-import torch.nn as nn
 
 from cmr.methods.mmr import MMR
 from cmr.methods.least_squares import OrdinaryLeastSquares
 from cmr.default_config import methods
-
-mr_estimators = ['OLS', 'GMM', 'GEL', 'MMDEL']
-cmr_estimators = [item for item in methods.keys() if item not in mr_estimators] + ['DeepIV']
+from cmr.import_estimator import mr_estimators, cmr_estimators, import_estimator
+from cmr.utils.torch_utils import to_device, np_to_tensor
 
 
 def estimation(model, train_data, moment_function, estimation_method,
-               estimator_kwargs=None, hyperparams=None,
+               estimator_kwargs=None, hyperparams=None, sweep_hparams=True,
                validation_data=None, val_loss_func=None,
                normalize_moment_function=True,
                verbose=True):
@@ -39,7 +37,7 @@ def estimation(model, train_data, moment_function, estimation_method,
         assert np.alltrue([isinstance(h, list) for h in list(hyperparams.values())]), '`hyperparams` arguments must be of the form {key: list}'
 
     method = methods[estimation_method]
-    estimator_class = method['estimator_class']
+    estimator_class = import_estimator(estimation_method)
     estimator_kwargs_default = method['estimator_kwargs']
     hyperparams_default = method['hyperparams']
 
@@ -50,6 +48,9 @@ def estimation(model, train_data, moment_function, estimation_method,
     if hyperparams is not None:
         hyperparams_default.update(hyperparams)
     hyperparams = hyperparams_default
+
+    if not sweep_hparams:
+        hyperparams = {}
 
     if normalize_moment_function:
         model, moment_function = pretrain_model_and_renormalize_moment_function(moment_function, model, train_data,
@@ -70,29 +71,17 @@ def estimation(model, train_data, moment_function, estimation_method,
 
 def pretrain_model_and_renormalize_moment_function(moment_function, model, train_data, conditional_mr):
     """Pretrains model and normalizes entries of moment function to variance 1"""
-    if train_data['z'] is None:
-        dim_z = None
-    else:
-        dim_z = train_data['z'].shape[1]
-
-    # Eval moment function once on a single sample to get its dimension
-    dim_psi = moment_function(model(torch.Tensor(train_data['t'][0:1])), torch.Tensor(train_data['y'][0:1])).shape[1]
-
-    model_wrapper = ModelWrapper(model=copy.deepcopy(model),
-                                 moment_function=moment_function,
-                                 dim_psi=dim_psi, dim_z=dim_z)
-
     if conditional_mr and train_data['z'].shape[0] < 5000:
-        estimator = MMR(model=model_wrapper)
+        estimator = MMR(model=copy.deepcopy(model), moment_function=moment_function)
     else:
-        estimator = OrdinaryLeastSquares(model=model_wrapper)
-    estimator.train(x_train=[train_data['t'], train_data['y']], z_train=train_data['z'], x_val=None, z_val=None)
+        estimator = OrdinaryLeastSquares(model=copy.deepcopy(model), moment_function=moment_function)
+    estimator.train(train_data=train_data)
     pretrained_model = estimator.model
     normalization = torch.Tensor(np.std(moment_function(pretrained_model(torch.Tensor(train_data['t'])),
                                                         torch.Tensor(train_data['y'])).detach().numpy(), axis=0))
 
     def moment_function_normalized(model_evaluation, y):
-        return moment_function(model_evaluation, y) / normalization
+        return moment_function(model_evaluation, y) / normalization.to(y.device)
 
     return pretrained_model, moment_function_normalized
 
@@ -112,90 +101,48 @@ def iterate_argument_combinations(argument_dict):
 
 def optimize_hyperparams(model, moment_function, estimator_class, estimator_kwargs, hyperparams,
                          train_data, validation_data=None, val_loss_func=None, verbose=True):
-    x_train = [train_data['t'], train_data['y']]
-    z_train = train_data['z']
-
     if validation_data is not None:
-        x_val = [validation_data['t'], validation_data['y']]
-        z_val = validation_data['z']
-    else:
-        x_val = x_train
-        z_val = z_train
-
-    if val_loss_func is None:
-        def val_loss_func(model, validation_data):
-            return None
-
-    if z_train is None:
-        dim_z = None
-    else:
-        dim_z = z_train.shape[1]
-
-    # Eval moment function once on a single sample to get its dimension
-    dim_psi = moment_function(model(torch.Tensor(x_train[0][0:1])), torch.Tensor(x_train[1][0:1])).shape[1]
+        validation_data = train_data
+    #     x_val = [validation_data['t'], validation_data['y']]
+    #     z_val = validation_data['z']
+    # else:
+    x_val = np_to_tensor([validation_data['t'], validation_data['y']])
+    z_val = np_to_tensor(validation_data['z'])
 
     models = []
     hparams = []
     validation_loss = []
+    train_stats = []
 
     for hyper in iterate_argument_combinations(hyperparams):
-        model_wrapper = ModelWrapper(model=copy.deepcopy(model),
-                                     moment_function=moment_function,
-                                     dim_psi=dim_psi, dim_z=dim_z)
+        # np.random.seed(123456)
+        # torch.random.manual_seed(123456)
+
         if verbose:
             print('Running hyperparams: ', f'{hyper}')
-        estimator = estimator_class(model=model_wrapper, val_loss_func=val_loss_func, **hyper, **estimator_kwargs)
-        estimator.train(x_train, z_train, x_val, z_val)
+        kwargs_and_hyper = copy.deepcopy(estimator_kwargs)
+        kwargs_and_hyper.update(hyper)
+        if val_loss_func is not None:
+            kwargs_and_hyper["val_loss_func"] = val_loss_func
+        estimator = estimator_class(model=copy.deepcopy(model), moment_function=moment_function,
+                                    verbose=verbose, **kwargs_and_hyper)
+        estimator.train(train_data, validation_data)
+        val_loss = estimator.calc_validation_metric(x_val, z_val)
 
-        val_loss = val_loss_func(model_wrapper, validation_data)
-        if val_loss is None:
-            val_loss = estimator.calc_validation_metric(x_val, z_val)
-
-        models.append(model_wrapper.cpu())
+        models.append(estimator.model.cpu())
         hparams.append(hyper)
         validation_loss.append(val_loss)
+        train_stats.append(estimator.train_stats)
 
-    best_val = np.nanargmin(validation_loss)
-    best_hparams = hparams[best_val]
+    try:
+        best_val = np.nanargmin(validation_loss)
+        best_hparams = hparams[best_val]
+    except ValueError:
+        best_val, best_hparams = -1, None
     if verbose:
         print('Best hyperparams: ', best_hparams)
     return models[best_val], {'models': models, 'val_loss': validation_loss, 'hyperparam': hparams,
-                              'best_index': int(best_val)}
-
-
-class ModelWrapper(nn.Module):
-    def __init__(self, model, moment_function, dim_psi, dim_z):
-        nn.Module.__init__(self)
-        self.model = model
-        self.moment_function = moment_function
-        self.dim_psi = dim_psi
-        self.dim_z = dim_z
-
-    def forward(self, t):
-        return self.model(t)
-
-    def psi(self, data):
-        t, y = torch.Tensor(data[0]), torch.Tensor(data[1])
-        return self.moment_function(self.model(t), y)
-
-    def get_parameters(self):
-        try:
-            return self.model.get_parameters()
-        except AttributeError:
-            param_tensor = list(self.model.parameters())
-            return [p.detach().cpu().numpy() for p in param_tensor]
-
-    def is_finite(self):
-        params = self.get_parameters()
-        isnan = bool(sum([np.sum(np.isnan(p)) for p in params]))
-        isinf = bool(sum([np.sum(np.isinf(p)) for p in params]))
-        return (not isnan) and (not isinf)
-
-    def initialize(self):
-        try:
-            self.model.initialize()
-        except AttributeError:
-            pass
+                              'best_index': int(best_val), 'train_stats': train_stats}
 
 
 if __name__ == "__main__":
@@ -213,34 +160,21 @@ if __name__ == "__main__":
     validation_data = generate_data(n_sample=100)
     test_data = generate_data(n_sample=10000)
 
-
-    class NetworkModel(nn.Module):
-        def __init__(self):
-            nn.Module.__init__(self)
-            self._model = torch.nn.Sequential(
-                torch.nn.Linear(1, 20),
-                torch.nn.LeakyReLU(),
-                torch.nn.Linear(20, 3),
-                torch.nn.LeakyReLU(),
-                torch.nn.Linear(3, 1)
-            )
-
-        def forward(self, t):
-            if not isinstance(t, torch.Tensor):
-                t = torch.tensor(t, dtype=torch.float32)
-            return self._model(t)
-
+    model = torch.nn.Sequential(
+        torch.nn.Linear(1, 20),
+        torch.nn.LeakyReLU(),
+        torch.nn.Linear(20, 3),
+        torch.nn.LeakyReLU(),
+        torch.nn.Linear(3, 1)
+    )
 
     def moment_function(model_evaluation, y):
         return model_evaluation - y
 
-
-    model = NetworkModel()
-
     trained_model, stats = estimation(model=model,
                                       train_data=train_data,
                                       moment_function=moment_function,
-                                      estimation_method='KernelFGEL',
+                                      estimation_method='FGEL-kernel',
                                       estimator_kwargs=None, hyperparams=None,
                                       validation_data=None, val_loss_func=None,
                                       verbose=True)

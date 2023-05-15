@@ -18,7 +18,7 @@ class PoissonExperiment(AbstractExperiment):
         super().__init__(dim_psi=2, dim_theta=1, dim_z=None)
         self.poisson_param = poisson_param
 
-    def init_model(self):
+    def get_model(self):
         return PoissonParameter()
 
     def generate_data(self, n_sample):
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     for i in range(1):
         exp = PoissonExperiment(poisson_param=52)
         exp.prepare_dataset(n_train=1000, n_val=1000, n_test=1000)
-        model = exp.init_model()
+        model = exp.get_model()
 
         print(np.mean(exp.moment_function(model(), exp.train_data['y']).detach().numpy(), axis=0))
 

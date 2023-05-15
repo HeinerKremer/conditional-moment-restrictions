@@ -76,7 +76,7 @@ class MultiOutputIVScenario(AbstractExperiment):
         y = g + y_noise
         return {'t': t, 'y': y, 'z': z}
 
-    def init_model(self):
+    def get_model(self):
         return Model()
 
     @staticmethod

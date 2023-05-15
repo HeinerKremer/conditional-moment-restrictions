@@ -3,51 +3,54 @@ import os
 from run_experiment import experiment_setups
 
 # ---------------- Cluster resources
-cpus = 32
-memory = 128000
+cpus = 8
+memory = 32000
 bid = 12
+kmm_on_gpu = False
+no_overwrite = True
 
 # ---------------- Simulation details ----------------
 experiments = [
-    # ('bennet_multi', {'n_train': experiment_setups['bennet_multi']['n_train'],
-    #                   'method': experiment_setups['bennet_multi']["methods"],
-    #                   'rollouts': [experiment_setups['bennet_multi']['rollouts']],
-    #                   }),
-    ('bennet_simple', {'n_train': experiment_setups['bennet_simple']['n_train'],
-                      'method': experiment_setups['bennet_simple']["methods"],
-                      'rollouts': [experiment_setups['bennet_simple']['rollouts']],
-                      }),
-    ('bennet_hetero', {'n_train': experiment_setups['bennet_hetero']['n_train'],
-                      'method': experiment_setups['bennet_hetero']["methods"],
-                      'rollouts': [experiment_setups['bennet_hetero']['rollouts']],
-                      }),
-
-    ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
-                         'method': experiment_setups['heteroskedastic_one']["methods"],
-                         'rollouts': [50],}),
+    # ('network_iv', {'n_train': [2000],
+    #                 'method': experiment_setups['network_iv']["methods"],
+    #                 'rollouts': [50],
+    #                 'exp_option': ['abs', 'sin', 'linear', 'step']}),
     #
-    ('heteroskedastic_three', {'n_train': experiment_setups['heteroskedastic_three']['n_train'],
-                         'method': experiment_setups['heteroskedastic_three']["methods"],
-                         'rollouts': [50], }),
+    # ('bennet_simple', {'n_train': experiment_setups['bennet_simple']['n_train'],
+    #                   'method': experiment_setups['bennet_simple']["methods"],
+    #                   'rollouts': [experiment_setups['bennet_simple']['rollouts']],
+    #                   }),
 
-    # ('heteroskedastic_reg_params', {'n_train': experiment_setups['heteroskedastic_reg_params']['n_train'],
-    #                      'method': experiment_setups['heteroskedastic_reg_params']["methods"],
-    #                      'rollouts': [5], }),
+    # ('network_iv', {'n_train': [2000],
+    #                 'method': experiment_setups['network_iv']["methods"],
+    #                 'rollouts': [1],
+    #                 'seed0': [12345 + i for i in range(10)],
+    #                 'exp_option': ['abs', 'linear']}),
 
-    ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
-                    'method': experiment_setups['network_iv']["methods"],
-                    'rollouts': [experiment_setups['network_iv']['rollouts']],
-                    'exp_option': ['abs', 'step', 'sin', 'linear']}),
+    ('bennet_hetero_new2', {'n_train': [1000, 2000, 4000, 10000],     # experiment_setups['bennet_hetero']['n_train'],
+                           'method': experiment_setups['bennet_hetero']["methods"],
+                           'rollouts': [1],
+                           'seed0': [12345 + i for i in range(10)],
+                      }),
+    # #
+    # ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
+    #                      'method': experiment_setups['heteroskedastic_one']["methods"],
+    #                      'rollouts': [10],}),
+    #
+    # ('network_iv', {'n_train': experiment_setups['network_iv']['n_train'],
+    #                 'method': experiment_setups['network_iv']["methods"],
+    #                 'rollouts': [experiment_setups['network_iv']['rollouts']],
+    #                 'exp_option': ['abs', 'step', 'sin']}),
 
-    ('network_iv_large', {'n_train': experiment_setups['network_iv_large']['n_train'],
-                    'method': experiment_setups['network_iv_large']["methods"],
-                    'rollouts': [experiment_setups['network_iv_large']['rollouts']],
-                    'exp_option': ['abs', 'step', 'sin', 'linear']}),
+    # ('network_iv_small', {'n_train': experiment_setups['network_iv_small']['n_train'],
+    #                 'method': experiment_setups['network_iv_small']["methods"],
+    #                 'rollouts': [experiment_setups['network_iv_small']['rollouts']],
+    #                 'exp_option': ['abs', 'step', 'sin']}),
 
-    # ('poisson', {'n_train': experiment_setups['poisson']['n_train'],
-    #                 'method': experiment_setups['poisson']["methods"],
-    #                 'rollouts': [experiment_setups['poisson']['rollouts']],}
-    #  ),
+    # ('network_iv_large', {'n_train': experiment_setups['network_iv_large']['n_train'],
+    #                 'method': experiment_setups['network_iv_large']["methods"],
+    #                 'rollouts': [experiment_setups['network_iv_large']['rollouts']],
+    #                 'exp_option': ['abs', 'step', 'sin', 'linear']}),
 ]
 
 max_parallel_rollouts = None
@@ -63,13 +66,13 @@ max_parallel_rollouts = None
 def get_run_path():
     path = os.path.realpath(__file__)
     path, file = os.path.split(path)
-    while file != 'Kernel-EL' and path != '/':
+    while file != 'wasserstein-method-of-moments' and path != '/':
         path, file = os.path.split(path)
-    return path + '/Kernel-EL'
+    return path + '/wasserstein-method-of-moments'
 
 path = get_run_path()
 # path = '/lustre/work/hkremer/Kernel-EL'
-venvpath = path + '/kel_venv'
+venvpath = path + '/kmm_env'
 
 # ----------------
 
@@ -92,6 +95,7 @@ def iterate_argument_combinations(argument_dict):
 
 
 # ------ Generate experiment scripts, bash and sub files -----
+counter = 0
 for experiment in experiments:
     sh_filenames = []
 
@@ -103,6 +107,9 @@ for experiment in experiments:
     for settings in iterate_argument_combinations(params):
         runline = f'python3 {path}/run_experiment.py --experiment {experiment}'
         filename = experiment
+
+        if no_overwrite:
+            runline += ' --no_overwrite'
 
         for arg, param_value in settings.items():
             runline += f' --{arg} {param_value}'
@@ -119,6 +126,10 @@ for experiment in experiments:
         st = os.stat(f'{path}/cluster/jobs_{experiment}/'+filename+'.sh')
         os.chmod(f'{path}/cluster/jobs_{experiment}/'+filename+'.sh', st.st_mode | 0o111)
 
+        if kmm_on_gpu and "KMM" in settings['method']:
+            additional_requirements = 'request_gpus = 1\n'
+        else:
+            additional_requirements = ""
         with open(f'{path}/cluster/jobs_{experiment}/'+filename + '.sub', 'w') as subfile:
             subfile.write(f'executable = {path}/cluster/jobs_{experiment}/{filename}.sh\n'
                           + f'error = {path}/cluster/jobs_{experiment}/{filename}.err\n'
@@ -126,7 +137,10 @@ for experiment in experiments:
                           + f'log = {path}/cluster/jobs_{experiment}/{filename}.log\n'
                           + f'request_cpus = {cpus}\n'
                           + f'request_memory = {memory}\n'
+                          + additional_requirements
+                          + "max_materialize = 150\n"
                           + f'queue')
+        counter += 1
 
 
     sub_file_experiment = f'submit_jobs_{experiment}.sh'
@@ -146,3 +160,5 @@ with open(f'{path}/cluster/submit_experiments.sh', 'w') as shfile:
 
 st = os.stat(f'{path}/cluster/submit_experiments.sh')
 os.chmod(f'{path}/cluster/submit_experiments.sh', st.st_mode | 0o111)
+
+print(f'Generated files for {counter} jobs.')

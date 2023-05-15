@@ -3,17 +3,20 @@ import scipy.linalg, scipy.sparse
 import torch
 
 from cmr.methods.abstract_estimation_method import AbstractEstimationMethod
+from cmr.default_config import gmm_kwargs
 
 
 class GMM(AbstractEstimationMethod):
-    def __init__(self, model, alpha, num_iter=2, verbose=False, **kwargs):
-        super().__init__(model=model, **kwargs)
-        self.alpha = alpha
-        self.num_iter = num_iter
-        self.verbose = verbose
+    def __init__(self, model, moment_function, verbose=0, **kwargs):
+        gmm_kwargs.update(kwargs)
+        kwargs = gmm_kwargs
+        super().__init__(model=model, moment_function=moment_function, verbose=verbose,
+                         **kwargs)
+        self.reg_param = kwargs["reg_param"]
+        self.num_iter = kwargs["num_iter"]
 
     def _train_internal(self, x, z, x_val, z_val, debugging):
-        alpha = self.alpha
+        alpha = self.reg_param
         while True:
             try:
                 self._try_fit_internal(x, z, x_val, z_val, alpha)
@@ -29,15 +32,13 @@ class GMM(AbstractEstimationMethod):
                 alpha *= 10
 
     def _try_fit_internal(self, x, z, x_val, z_val, alpha):
-        x_tensor = self._to_tensor(x)
-
         for iter_i in range(self.num_iter):
-            weighting_matrix = self._to_tensor(self._get_inverse_covariance_matrix(x_tensor, alpha))
+            weighting_matrix = self._to_tensor(self._get_inverse_covariance_matrix(x, alpha))
             optimizer = torch.optim.LBFGS(self.model.parameters(),
                                           line_search_fn="strong_wolfe")
             def closure():
                 optimizer.zero_grad()
-                psi = self.model.psi(x_tensor)
+                psi = self.moment_function(x)
                 print(psi.shape)
                 loss = torch.einsum('ik, kr, jr -> ', psi, weighting_matrix, psi) / x[0].shape[0]**2
                 loss.backward()
@@ -50,7 +51,7 @@ class GMM(AbstractEstimationMethod):
 
     def _get_inverse_covariance_matrix(self, x_tensor, alpha):
         n = x_tensor[0].shape[0]
-        psi = self.model.psi(x_tensor).detach().cpu().numpy()
+        psi = self.moment_function(x_tensor).detach().cpu().numpy()
         q = (psi.T  @ psi) / n  # dim_psi x dim_psi matrix
         l = scipy.sparse.identity(n=self.dim_psi)
         q += alpha * l
