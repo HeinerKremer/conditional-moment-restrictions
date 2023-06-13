@@ -354,8 +354,6 @@ class GeneralizedEL(AbstractEstimationMethod):
             n = x_train[0].shape[0]
             batch_iter = BatchIter(num=n, batch_size=self.batch_size)
             batches_per_epoch = np.ceil(n / self.batch_size)
-        #     eval_freq_epochs = np.ceil(self.eval_freq / batches_per_epoch)
-        # else:
         eval_freq_epochs = self.eval_freq
 
         train_losses = []
@@ -371,7 +369,7 @@ class GeneralizedEL(AbstractEstimationMethod):
         cycle_num = 0
 
         # exp = HeteroskedasticIVScenario()
-        exp = NetworkIVExperiment()
+        # exp = NetworkIVExperiment()
 
         for epoch_i in range(self.max_num_epochs):
             self.model.train()
@@ -396,7 +394,7 @@ class GeneralizedEL(AbstractEstimationMethod):
                 val_moment.append(self._calc_val_moment_violation(x_val, z_val))
                 val_mmr.append(self._calc_val_mmr(x_val, z_val))
                 val_hsic.append(self._calc_val_hsic(x_val, z_val))
-                val_risk.append(exp.eval_risk(self.model, {'t': x_val[0], 'y': x_val[1], 'z': z_val}))
+                # val_risk.append(exp.eval_risk(self.model, {'t': x_val[0], 'y': x_val[1], 'z': z_val}))
                 if self.verbose:
                     last_obj = obj[-1] if isinstance(obj, list) else obj
                     print("epoch %d, theta-obj=%f, val-loss=%f"

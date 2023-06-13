@@ -24,11 +24,11 @@ gel_kwargs = {
 
 kmm_kwargs = {
     "divergence": 'kl',
-    "entropy_reg_param": 10,
+    "entropy_reg_param": 1,
     "reg_param": 1.0,
     "kernel_x_kwargs": {},
-    "n_random_features": 10000,
-    "n_reference_samples": None,
+    "n_random_features": 2000,
+    "n_reference_samples": 200,
     "kde_bandwidth": 0.1,
     "annealing": False,
     "kernel_z_kwargs": {},
@@ -202,165 +202,6 @@ methods = {
         },
 }
 
-experimental_methods = {
-    'KMM-FB-kl':
-        {
-            'estimator_kwargs': kmm_neural_kwargs,
-            'hyperparams': {
-                "batch_size": [None],
-                "n_reference_samples": [None],
-                "entropy_reg_param": [1e0, 1e1, 1e2],
-                "reg_param": [0, 1e-4, 1e-2, 1e0],
-            }
-        },
-
-    'KMM-FB':
-        {
-            'estimator_kwargs': kmm_neural_kwargs,
-            'hyperparams': {
-                "batch_size": [None],
-                "n_reference_samples": [None],
-                "entropy_reg_param": [1e1],
-                "reg_param": [1e0, 1e0, 1e0],
-                "n_random_features": [None],
-            }
-        },
-
-    'KMM-MB':
-        {
-            'estimator_kwargs': kmm_neural_kwargs,
-            'hyperparams': {
-                "batch_size": [200],
-                "n_reference_samples": [0],
-                "entropy_reg_param": [1e1],
-                "reg_param": [1, 1, 1],
-            }
-        },
-
-    'KMM-RF-0x-ref-kl':
-        {
-            'estimator_kwargs': kmm_neural_kwargs,
-            'hyperparams': {
-                "batch_size": [200],
-                "n_reference_samples": [0],
-                "entropy_reg_param": [1, 1e1, 1e2],
-                "reg_param":  [0, 1e-4, 1e-2, 1e0],
-            }
-        },
-
-    'KMM-RF-0.5x-ref-kl':
-        {
-            'estimator_kwargs': kmm_neural_kwargs,
-            'hyperparams': {
-                "batch_size": [200],
-                "n_reference_samples": [100],
-                "entropy_reg_param": [1, 1e1, 1e2],
-                "reg_param":  [0, 1e-4, 1e-2, 1e0],
-                "kde_bandwidth": [0.1],
-            }
-        },
-
-    'KMM-RF-1x-ref-kl':
-        {
-            'estimator_kwargs': kmm_neural_kwargs,
-            'hyperparams': {
-                "batch_size": [200],
-                "n_reference_samples": [200],
-                "entropy_reg_param": [1, 1e1, 1e2],
-                "reg_param":  [0, 1e-4, 1e-2, 1e0],
-                "kde_bandwidth": [0.1],
-            }
-        },
-
-    'KMM-RF-2x-ref-kl':
-        {
-            'estimator_kwargs': kmm_neural_kwargs,
-            'hyperparams': {
-                "batch_size": [100],
-                "n_reference_samples": [200],
-                "entropy_reg_param": [1, 1e1, 1e2],
-                "reg_param":  [0, 1e-4, 1e-2, 1e0],
-                "kde_bandwidth": [0.1],
-            }
-        },
-
-    'KMM-FB-log':
-        {
-            'estimator_kwargs': kmm_neural_kwargs,
-            'hyperparams': {
-                "divergence": ['log'],
-                "batch_size": [None],
-                "n_reference_samples": [0],
-                "entropy_reg_param": [1e0, 1e1, 1e2],
-                "reg_param": [0, 1e-4, 1e-2, 1e0],
-            }
-        },
-
-    'KMM-RF-0x-ref-log':
-        {
-            'estimator_kwargs': kmm_neural_kwargs,
-            'hyperparams': {
-                "divergence": ['log'],
-                "batch_size": [200],
-                "n_reference_samples": [0],
-                "entropy_reg_param": [1, 1e1, 1e2],
-                "reg_param": [0, 1e-4, 1e-2, 1e0],
-            }
-        },
-
-    'KMM-RF-0.5x-ref-log':
-        {
-            'estimator_kwargs': kmm_neural_kwargs,
-            'hyperparams': {
-                "divergence": ['log'],
-                "batch_size": [200],
-                "n_reference_samples": [100],
-                "entropy_reg_param": [1, 1e1, 1e2],
-                "reg_param": [0, 1e-4, 1e-2, 1e0],
-                "kde_bandwidth": [0.1, 0.5],
-            }
-        },
-
-    'KMM-RF-1x-ref-log':
-        {
-            'estimator_kwargs': kmm_neural_kwargs,
-            'hyperparams': {
-                "divergence": ['log'],
-                "batch_size": [200],
-                "n_reference_samples": [200],
-                "entropy_reg_param": [1, 1e1, 1e2],
-                "reg_param": [0, 1e-4, 1e-2, 1e0],
-                "kde_bandwidth": [0.1, 0.5],
-            }
-        },
-
-    'KMM-RF-2x-ref-log':
-        {
-            'estimator_kwargs': kmm_neural_kwargs,
-            'hyperparams': {
-                "divergence": ['log'],
-                "batch_size": [100],
-                "n_reference_samples": [200],
-                "entropy_reg_param": [1, 1e1, 1e2],
-                "reg_param": [0, 1e-4, 1e-2, 1e0],
-                "kde_bandwidth": [0.1, 0.5],
-            }
-        },
-}
-
-# kmm_hyperparams = {"n_reference_samples": [0, 200, 400], # [0, 100, 200, 400],
-#                    "entropy_reg_param": [1, 10, 100],
-#                    "reg_param": [1e-1, 1, 10],
-#                    "kde_bandwidth": [0.1, 1],  # [0.1, 1],
-#                    "n_random_features": [10000],    # [5000, 10000],
-#                    "val_loss_func": ['hsic'],
-#                    'theta_lr': [5e-4],
-#                    'dual_lr': [1e-4],
-#                    'batch_size': [200],
-#                    'max_num_epochs': [10000],
-#                    #"max_no_improve": [15],
-#                    }
-
 kmm_hyperparams = {"n_reference_samples": [200],    # [0, 100, 200, 400],
                    "entropy_reg_param": [1, 10],
                    "reg_param": [0.01, 0.1, 1],
@@ -408,27 +249,6 @@ for config_id, hparam in enumerate(iterate_argument_combinations(kmm_hyperparams
 
 methods.update(kmm_methods)
 
-
-kmm_representer_hyperparams = {
-    "batch_size": [None],
-    "n_random_features": [None],
-    "entropy_reg_param": [1e-1, 1, 1e1, 1e2],
-    "reg_param": [1e-2, 1e-1, 1e0, 1e1],
-    "rkhs_reg_param": [1e-6, 1e-4, 1e-3, 1e-2, 1e-1, 1e0],
-    "val_loss_func": ['mmr', 'moment_violation'],
-}
-
-kmm_representer_methods = {}
-for hparam in iterate_argument_combinations(kmm_representer_hyperparams):
-    name = 'KMM'
-    for key, val in hparam.items():
-        name += f'_{key}_{val[0]}'
-    kmm_representer_methods[name] = {'estimator_kwargs': kmm_neural_kwargs,
-                                     'hyperparams': hparam, }
-
-methods.update(kmm_representer_methods)
-
-
 vmm_hyperparams = {"reg_param": [0, 1e-4, 1e-2, 1e0, 1e1],
                    "val_loss_func": ['mmr', 'moment_violation', 'hsic'], }
 
@@ -456,38 +276,6 @@ for hparam in iterate_argument_combinations(fgel_hyperparams):
                          'hyperparams': hparam, }
 
 methods.update(fgel_methods)
-
-
-
-future_methods = {
-    # 'KMM-Wasserstein':
-    #     {
-    #         'estimator_kwargs': {
-    #             "theta_optim_args": {"lr": 5e-4},
-    #             "dual_optim_args": {"lr": 5 * 5e-4},
-    #             "batch_size": None,
-    #             "max_num_epochs": 20000,
-    #             "burn_in_cycles": 5,
-    #             "eval_freq": 100,
-    #             "max_no_improve": 3, },
-    #         'hyperparams': {'entropy_reg_param': [0],
-    #                         "reg_param": [0, 1e-4, 1e-2, 1e0],
-    #                         }
-    #     },
-    #
-    # 'KMM-neural-annealed':
-    #     {
-    #         'estimator_kwargs': kmm_neural_kwargs,
-    #         'hyperparams': {
-    #             "annealing": [True],
-    #             "entropy_reg_param": [1e3],
-    #             "reg_param": [0, 1e-4, 1e-2, 1e0],
-    #         }
-    #     },
-}
-#
-# methods.update(experimental_methods)
-# methods.update(future_methods)
 
 
 if __name__ == '__main__':
