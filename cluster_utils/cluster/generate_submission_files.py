@@ -1,8 +1,8 @@
 import os
 
-from run_experiment import experiment_setups
+from cmr.default_config import kmm_methods
 
-# ---------------- Cluster resources
+# ---------------- Cluster resources ----------------
 cpus = 4
 memory = 16000
 bid = 50
@@ -12,6 +12,8 @@ no_overwrite = True
 no_sweep = True
 
 # ---------------- Simulation details ----------------
+methods = ['OLS', 'SMD', 'MMR', 'DeepIV', 'VMM-neural', 'FGEL-neural'] + list(kmm_methods.keys())
+
 experiments = [
     # ('network_iv', {'n_train': [2000],
     #                 'method': experiment_setups['network_iv']["methods"],
@@ -34,12 +36,12 @@ experiments = [
     #                        'rollouts': [1],
     #                        'seed0': [12345 + i + 10 for i in range(10)],
     #                   }),
-    ('bennet_hetero_validation', {'n_train': [10000],
-                                  'method': experiment_setups['bennet_hetero']["methods"],
+    ('bennet_hetero_validation', {'exp_name': 'bennet_hetero',
+                                  'n_train': [10000],
+                                  'method': methods,
                                   'rollouts': [1],
                                   'seed0': [12345 + i for i in range(10)],
                                  }),
-
     # #
     # ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
     #                      'method': experiment_setups['heteroskedastic_one']["methods"],
@@ -106,13 +108,13 @@ counter = 0
 for experiment in experiments:
     sh_filenames = []
 
-    params = dict()
-    if isinstance(experiment, tuple):
-        params = experiment[1]
-        experiment = experiment[0]
+    params = experiment[1]
+    exp_name = params["exp_name"]
+    del params["exp_name"]
+    experiment = experiment[0]
 
     for settings in iterate_argument_combinations(params):
-        runline = f'python3 {path}/run_experiment.py --experiment {experiment}'
+        runline = f'python3 {path}/run_experiment.py --experiment {exp_name}'
         filename = experiment
 
         if no_overwrite:

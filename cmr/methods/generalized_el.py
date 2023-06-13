@@ -408,13 +408,6 @@ class GeneralizedEL(AbstractEstimationMethod):
                 if num_no_improve == self.max_no_improve:
                     break
 
-        # plt.plot(val_losses)
-        # plt.savefig('val_losses.pdf')
-        # plt.close()
-        # plt.plot(train_losses)
-        # plt.title('Theta loss')
-        # plt.show()
-
         if self.verbose:
             print("time taken:", time.time() - time_0)
 

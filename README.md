@@ -21,8 +21,20 @@ pip install -e .
 ```
 
 ## Usage
-All moment restrictions estimators can be trained using the ```estimation``` function from the module [cmr/estimation.py](https://github.com/HeinerKremer/conditional-moment-restrictions/blob/main/cmr/estimation.py).
-Below we summarize its arguments.
+### High level usage with hyperparameter search
+The simplest way to train any moment restriction estimator is via the ```estimation``` function from the module [cmr/estimation.py](https://github.com/HeinerKremer/conditional-moment-restrictions/blob/main/cmr/estimation.py).
+This automatically involves a hyperparameter search and if applicable early stopping.
+The ```estimation``` uses the following syntax:
+```python
+from cmr import estimation
+trained_model, stats = estimation(model=model,  
+                                  train_data=train_data,
+                                  moment_function=moment_function,
+                                  estimation_method='KMM-neural',
+                                  **kwargs)
+```
+
+The relevant arguments are detailed below.
 
 | Argument                | Type | Description                                                   |
 |-----------------------|-------------|--------------------------------------------------------|
@@ -32,8 +44,8 @@ Below we summarize its arguments.
 | ```estimation_method``` | str | See below for implemented estimation methods |
 | ```estimator_kwargs``` | dict | Specify estimator parameters. Default setting is contained in [cmr/default_config.py](https://github.com/HeinerKremer/conditional-moment-restrictions/blob/main/cmr/default_config.py)|
 | ```hyperparams``` | dict | Specify estimator hyperparameters search space as ```{key: [val1, ...,]}```. Default setting is contained in [cmr/default_config.py](https://github.com/HeinerKremer/conditional-moment-restrictions/blob/main/cmr/default_config.py) |
-| ```validation_data``` | dict, {'t': t, 'y': y, 'z': z} | Validation data. If ```None```, ```training_data``` is used for validation.|
-| ```val_loss_func``` | func(model, val_data) -> float | Custom validation loss function. If `None` uses l2 norm of moment function for unconditional MR and maximum moment restrictions (MMR) for conditional MR.|
+| ```validation_data``` | dict, {'t': t, 'y': y, 'z': z} | Validation data. If ```None```, ```train_data``` is used for hyperparam tuning.|
+| ```val_loss_func``` | func(model, val_data) -> float | Custom validation loss function. If `None` uses l2 norm of moment function for unconditional MR and HSIC for conditional MR.|
 | ```normalize_moment_function``` | bool | Pretrains parameters and normalizes every output component of `moment_function` to variance 1. |
 | ```verbose``` | bool | If `True` prints out optimization information. If `2` prints out even more. |
 
@@ -44,7 +56,7 @@ Below we summarize its arguments.
 | `'OLS'`| Ordinary least squares |
 | `'GMM'`| Generalized method of moments |
 | `'GEL'`| Generalized empirical likelihood |
-| `'MMDEL'`| Maximum mean discrepancy empirical likelihood (MMD-EL) |
+| `'KMM'`| [Kernel Method of Moments](https://arxiv.org/abs/2305.10898) |
 | Conditional moment restrictions | |
 | `'SMD'`| [Sieve minimum distance](https://onlinelibrary.wiley.com/doi/epdf/10.1111/1468-0262.00470) |
 | `'MMR'`| [Maximum moment restrictions](https://arxiv.org/abs/2010.07684) |
@@ -52,11 +64,7 @@ Below we summarize its arguments.
 | `'VMM-neural'`| [Variational method of moments](https://arxiv.org/abs/2012.09422) with neural net instrument function (i.e., [DeepGMM](https://arxiv.org/abs/1905.12495))|
 | `'FGEL-kernel'`| [Functional generalized empirical likelihood](https://proceedings.mlr.press/v162/kremer22a.html) with RKHS instrument function |
 | `'FGEL-neural'`| [Functional generalized empirical likelihood](https://proceedings.mlr.press/v162/kremer22a.html) with neural net instrument function |
-| `'MMDEL-kernel'`| MMD-EL with RKHS instrument function |
-| `'MMDEL-neural'`| MMD-EL with neural net instrument function |
-| `'RF-MMDEL'`| Scalable version of MMDEL-neural using a random feature approximation |
-
-
+| `'KMM-neural'`| [Kernel Method of Moments](https://arxiv.org/abs/2305.10898) with neural net instrument function and RF approximation |
 
 
 ### Code example
@@ -91,29 +99,37 @@ model = torch.nn.Sequential(
             torch.nn.Linear(3, 1)
         )
 
+# Instrumental variable regression
 def moment_function(model_evaluation, y):
     return model_evaluation - y
 
 # Train the model
-trained_model, stats = estimation(model=model,  # Use any PyTorch model
-                                  train_data=train_data,    # Format {'t': t, 'y': y, 'z': z}
-                                  moment_function=moment_function,  # moment_function(model_eval, y) -> (n_sample, dim_y)
-                                  estimation_method='MMDEL',   # Method in ['OLS', 'GMM', 'GEL', 'KernelEL', 'KernelMMR', 'SMD', 'KernelVMM', 'NeuralVMM', 'KernelELKernel', 'KernelELNeural', 'KernelFGEL', 'NeuralFGEL']
-                                  estimator_kwargs=None,    # Non-default arguments for estimators (default at `kel.default_config.py`)
-                                  hyperparams=None,     # Non-default hyperparams for estimators as {name: [val1, ..]}
-                                  validation_data=None,     # Format {'t': t, 'y': y, 'z': z}
-                                  val_loss_func=None,   # Custom validation loss: val_loss_func(model, validation_data) -> float
-                                  verbose=True)
-
+trained_model, stats = estimation(model=model,  
+                                  train_data=train_data,
+                                  moment_function=moment_function,
+                                  estimation_method='KMM-neural')
 # Make prediction
 y_pred = trained_model(torch.Tensor(test_data['t']))
 ```
+
+### Low level usage
+Instead of relying on the ```estimation``` function every estimator can be trained with fixed hyperparameters ```kwargs``` with the following syntax:
+```python
+from cmr.methods.kmm_neural import KMMNeural
+
+estimator = KMMNeural(model=model, 
+                      moment_function=moment_function, 
+                      **kwargs)
+estimator.train(train_data, validation_data)
+trained_model = estimator.model
+```
+The optional keyword arguments ```kwargs``` are specific for each estimator and can be found in [cmr/default_config.py](https://github.com/HeinerKremer/conditional-moment-restrictions/blob/main/cmr/default_config.py).
 
 ## Experiments and reproducibility
 To efficiently run experiments with parallel processing refer to [run_experiments.py](https://github.com/HeinerKremer/conditional-moment-restrictions/blob/main/run_experiment.py).
 As an example you can run:
 ```python
-python run_experiment.py --experiment heteroskedastic --n_train 256 --method RF-MMDEL --rollouts 10
+python run_experiment.py --experiment heteroskedastic --n_train 256 --method KMM-neural --rollouts 10
 ```
 
 
@@ -131,6 +147,17 @@ python run_experiment.py --experiment heteroskedastic --n_train 256 --method RF-
 
 ## Citation
 If you use parts of the code in this repository for your own research purposes, please consider citing:
+```
+@misc{kremer2023estimation,
+      title={Estimation Beyond Data Reweighting: Kernel Method of Moments}, 
+      author={Heiner Kremer and Yassine Nemmour and Bernhard Schölkopf and Jia-Jie Zhu},
+      year={2023},
+      eprint={2305.10898},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
+```
+or
 ```
 @InProceedings{pmlr-v162-kremer22a,
   title = 	 {Functional Generalized Empirical Likelihood Estimation for Conditional Moment Restrictions},
