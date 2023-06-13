@@ -1,15 +1,19 @@
 import os
 
-from run_experiment import experiment_setups
+from cmr.default_config import kmm_methods
 
-# ---------------- Cluster resources
-cpus = 8
-memory = 32000
-bid = 12
+# ---------------- Cluster resources ----------------
+cpus = 4
+memory = 16000
+bid = 50
 kmm_on_gpu = False
+max_parallel_rollouts = None
 no_overwrite = True
+no_sweep = True
 
 # ---------------- Simulation details ----------------
+methods = ['OLS', 'SMD', 'MMR', 'DeepIV', 'VMM-neural', 'FGEL-neural'] + list(kmm_methods.keys())
+
 experiments = [
     # ('network_iv', {'n_train': [2000],
     #                 'method': experiment_setups['network_iv']["methods"],
@@ -21,17 +25,23 @@ experiments = [
     #                   'rollouts': [experiment_setups['bennet_simple']['rollouts']],
     #                   }),
 
-    # ('network_iv', {'n_train': [2000],
+    # ('network_iv_new', {'n_train': [1000],
     #                 'method': experiment_setups['network_iv']["methods"],
     #                 'rollouts': [1],
-    #                 'seed0': [12345 + i for i in range(10)],
-    #                 'exp_option': ['abs', 'linear']}),
+    #                 'seed0': [12345 + 20 + i for i in range(10)],
+    #                 'exp_option': ['sin', 'step', 'abs', 'linear']}),
 
-    ('bennet_hetero_new2', {'n_train': [1000, 2000, 4000, 10000],     # experiment_setups['bennet_hetero']['n_train'],
-                           'method': experiment_setups['bennet_hetero']["methods"],
-                           'rollouts': [1],
-                           'seed0': [12345 + i for i in range(10)],
-                      }),
+    # ('bennet_hetero_new2', {'n_train': [200, 500, 1000, 2000, 4000, 10000] ,#, 1000, 2000, 4000, 10000],     # experiment_setups['bennet_hetero']['n_train'],
+    #                        'method': experiment_setups['bennet_hetero']["methods"],
+    #                        'rollouts': [1],
+    #                        'seed0': [12345 + i + 10 for i in range(10)],
+    #                   }),
+    ('bennet_hetero_validation', {'exp_name': 'bennet_hetero',
+                                  'n_train': [10000],
+                                  'method': methods,
+                                  'rollouts': [1],
+                                  'seed0': [12345 + i for i in range(10)],
+                                 }),
     # #
     # ('heteroskedastic_one', {'n_train': experiment_setups['heteroskedastic_one']['n_train'],
     #                      'method': experiment_setups['heteroskedastic_one']["methods"],
@@ -53,7 +63,6 @@ experiments = [
     #                 'exp_option': ['abs', 'step', 'sin', 'linear']}),
 ]
 
-max_parallel_rollouts = None
 
 #######################################################################################################################
 #######################################################################################################################
@@ -99,17 +108,20 @@ counter = 0
 for experiment in experiments:
     sh_filenames = []
 
-    params = dict()
-    if isinstance(experiment, tuple):
-        params = experiment[1]
-        experiment = experiment[0]
+    params = experiment[1]
+    exp_name = params["exp_name"]
+    del params["exp_name"]
+    experiment = experiment[0]
 
     for settings in iterate_argument_combinations(params):
-        runline = f'python3 {path}/run_experiment.py --experiment {experiment}'
+        runline = f'python3 {path}/run_experiment.py --experiment {exp_name}'
         filename = experiment
 
         if no_overwrite:
             runline += ' --no_overwrite'
+
+        if no_sweep:
+            runline += ' --no_sweep'
 
         for arg, param_value in settings.items():
             runline += f' --{arg} {param_value}'
@@ -141,7 +153,6 @@ for experiment in experiments:
                           + "max_materialize = 150\n"
                           + f'queue')
         counter += 1
-
 
     sub_file_experiment = f'submit_jobs_{experiment}.sh'
     with open(f'{path}/cluster/jobs_{experiment}/'+sub_file_experiment, 'w') as shfile:
